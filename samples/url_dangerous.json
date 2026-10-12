@@ -1,0 +1,19 @@
+{
+  "type": "url",
+  "input": "http://naver-login.com/verify",
+  "score": 45,
+  "model_probability": 0.91,
+  "reasons": [
+    {
+      "factor": "도메인 유사",
+      "points": 35,
+      "text": "유명 포털('naver') 이름을 변형/교묘하게 섞어 쓴 도메인입니다."
+    },
+    {
+      "factor": "긴급 키워드",
+      "points": 10,
+      "text": "인증 또는 로그인을 강요하는 긴급성 키워드가 포함되어 있습니다."
+    }
+  ],
+  "unavailable": []
+}
