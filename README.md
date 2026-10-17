@@ -57,7 +57,7 @@ B(이메일 분석)─┘        └→ C가 장부에 저장
 
 | 파일 | 보여주는 것 |
 |---|---|
-| `url_dangerous.json` | 위험한 링크. 이유 4개, 모델 확률이 있는 경우 |
+| `url_dangerous.json` | 위험한 링크. 이유 2개, 모델 확률이 있는 경우 |
 | `url_whois_fail.json` | 도메인 조회에 실패한 링크. 실패한 항목은 0점이 아니라 `unavailable`에 적고, 나머지로만 점수를 낸 경우 |
 | `email_spoof.json` | 이메일 위조 의심. 모델이 없어서 `model_probability`가 `null`인 경우 |
 
