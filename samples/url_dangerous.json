@@ -1,19 +1,12 @@
 {
   "type": "url",
-  "input": "http://naver-login.com/verify",
-  "score": 45,
+  "input": "http://naver-login.example/verify",
+  "score": 75,
   "model_probability": 0.91,
   "reasons": [
-    {
-      "factor": "도메인 유사",
-      "points": 35,
-      "text": "유명 포털('naver') 이름을 변형/교묘하게 섞어 쓴 도메인입니다."
-    },
-    {
-      "factor": "긴급 키워드",
-      "points": 10,
-      "text": "인증 또는 로그인을 강요하는 긴급성 키워드가 포함되어 있습니다."
-    }
+    {"factor": "도메인 유사", "points": 35, "text": "유명 이름('naver')과 비슷하지만 똑같지는 않은 도메인입니다."},
+    {"factor": "생성일", "points": 30, "text": "도메인이 만들어진 지 3일밖에 안 됐습니다."},
+    {"factor": "키워드", "points": 10, "text": "주소에 verify, login처럼 인증을 유도하는 단어가 들어 있습니다."}
   ],
   "unavailable": []
 }
