@@ -1,0 +1,12 @@
+{
+  "type": "url",
+  "input": "http://kakao-pay-security.example/login/check",
+  "score": 55,
+  "model_probability": null,
+  "reasons": [
+    {"factor": "도메인 유사", "points": 35, "text": "유명 이름('kakao')과 비슷하지만 똑같지는 않은 도메인입니다."},
+    {"factor": "키워드", "points": 10, "text": "주소에 verify, login처럼 인증을 유도하는 단어가 들어 있습니다."},
+    {"factor": "URL 구조", "points": 10, "text": "주소에 하이픈(-)이 여러 개 들어 있어 진짜 주소처럼 꾸몄을 가능성이 있습니다."}
+  ],
+  "unavailable": ["whois"]
+}
