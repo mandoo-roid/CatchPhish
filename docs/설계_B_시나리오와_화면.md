@@ -9,8 +9,7 @@
 | 칸 이름(임시) | 뜻 | 비고 |
 |---|---|---|
 | scenario_id | 카드 번호 (S01~) | |
-| type | 종류: email / sms / url | sms는 결과 형식(type)에 없는 값이라 팀 확인 필요 |
-| job_group | common / hr / finance / sales / dev / office | 직군 목록은 임시(산업체 미팅 후 조정) |
+| channel | 메시지 종류: email / sms / url | 결과지의 type(url / email)과 겹치지 않게 channel로 함. A의 설계와 같은 이름 (팀 확인 대기) || job_group | common / hr / finance / sales / dev / office | 직군 목록은 임시(산업체 미팅 후 조정) |
 | is_phishing | 피싱이면 true, 정상이면 false | |
 | sender | 보낸 사람 (표시 이름과 주소 또는 번호) | 연습용 .example 주소, 가짜 번호만 사용 |
 | subject | 제목 (문자는 빈칸) | |
@@ -219,8 +218,7 @@ C의 설계 파일(`설계_C_기록과_통계.md`)에서 정한다. 이 파일�
 
 - 공통 시나리오 개수 (지금은 임시로 1개)
 - 직군 목록은 임시. 산업체 미팅 후 직군별 특화 시나리오 조정
-- type에 sms를 넣어도 되는지 / attachment 칸을 추가해도 되는지
-- 정상 시나리오를 몇 개로 할지 (지금 1개, 설계서 안내는 1~2개)
+- channel에 sms를 넣어도 되는지 / attachment 칸을 추가해도 되는지- 정상 시나리오를 몇 개로 할지 (지금 1개, 설계서 안내는 1~2개)
 - 연쇄형(유형 D)을 카드 한 장으로 둘지, 여러 화면으로 이어지게 할지 (S06 해설에만 써 둠)
 - 이메일 시나리오에 헤더 정보까지 넣을지 (엔진과 연결 방식)
 
@@ -241,8 +239,7 @@ A의 결과 형식(README)과 B의 화면·카드 칸 이름을 맞춰 본 표. 
 
 ### 6-2. 어긋날 수 있는 곳
 
-1. 카드의 type(email / sms / url)과 결과의 type(url / email)은 이름은 같고 뜻이 다르다. 카드 쪽 이름을 바꿀지 팀에서 정한다 (예: channel).
-2. 카드의 clues(factor, text)에는 points가 없어 결과의 reasons(factor, points, text)와 모양이 다르다. 맞출지 팀에서 정한다.
+1. 카드의 메시지 종류는 channel로 바꿨다. 결과의 type(url / email)과 이름이 겹치지 않게 하기 위해서이고, A의 설계와 같은 이름이다. (팀 확인 대기)2. 카드의 clues(factor, text)에는 points가 없어 결과의 reasons(factor, points, text)와 모양이 다르다. 맞출지 팀에서 정한다.
 3. 이메일 카드는 헤더 파일이 없어서 엔진(결과의 input = 메일 파일 이름)에 그대로 넣을 수 없다. 헤더 정보를 카드에 넣을지, 이메일은 엔진 분석 없이 해설만 보여 줄지 팀에서 정한다.
 4. 직군 코드(hr / finance / sales / dev / office)와 행동 코드(click / call / official)는 팀 결정과 같다.
 5. 문진표 답과 게임 결과를 C의 기록 한 줄(익명 번호, 직군, 시나리오 번호, 고른 행동, 맞았는지, 시간 등)에 어떻게 넣을지는 C의 설계 파일과 대조해야 한다.
