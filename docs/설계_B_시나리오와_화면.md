@@ -11,16 +11,8 @@
 | scenario_id | 카드 번호 (S01~) | |
 | channel | 메시지 종류: email / sms / url | 결과지의 type(url / email)과 겹치지 않게 channel로 함. A의 설계와 같은 이름 (팀 확인 대기) || job_group | common / hr / finance / sales / dev / office | 직군 목록은 임시(산업체 미팅 후 조정) |
 | is_phishing | 피싱이면 true, 정상이면 false | |
-
 | job_group | common / hr / finance / sales / dev / office | 직군 목록은 임시(산업체 미팅 후 조정). 직원의 직군(A 설계의 job)과 뜻이 달라서 이름을 다르게 둠. 칸 이름 사전에 추가 요청 |
 | sender | 보낸 사람 (표시 이름과 주소 또는 번호) | 연습용 .example 주소, 가짜 번호만 사용 |
-| subject | 제목 (문자는 빈칸) | |
-| body | 본문 | 실제 회사·사람 이름, 진짜 번호 쓰지 않기 |
-| link | 본문 속 링크 (없으면 빈칸) | 접속하지 않고 분석만 함 |
-| attachment | 첨부 파일 이름 (없으면 빈칸) | 이번 초안에서 추가 제안. 팀 확인 필요 |
-| clues | 수상한 점 목록 (이름 + 설명 문장) | A의 reasons와 비슷한 모양 |
-| explanation | 정답 해설 (쉬운 말 2~3문장) | |
-| source | 참고한 사례 | 사례조사 번호 또는 "가상 구성" |
 | subject | 제목 (문자는 빈칸) | |
 | body | 본문 | 실제 회사·사람 이름, 진짜 번호 쓰지 않기 |
 | link | 본문 속 링크 (없으면 빈칸) | 접속하지 않고 분석만 함 |
