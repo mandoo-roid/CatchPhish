@@ -42,19 +42,3 @@ def verify_chain(entries):
         prev_hash = e["hash"]
     return {"ok": True, "count": len(entries)}
 
-import copy
-from hashchain import build_entry, verify_chain
-
-chain, prev = [], None
-for i in range(1, 4):
-    record = {"anon_id": "U7F3A", "job": "hr", "scenario_id": f"S0{i}",
-              "choice": "click", "is_correct": False,
-              "analysis": {"type": "url", "score": 60}}
-    prev = build_entry(prev, record)
-    chain.append(prev)
-
-print("1) 정상:", verify_chain(chain))
-t = copy.deepcopy(chain); t[1]["record"]["is_correct"] = True
-print("2) 2번 기록 수정:", verify_chain(t))
-t = copy.deepcopy(chain); del t[1]
-print("3) 2번 기록 삭제:", verify_chain(t))
