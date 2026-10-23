@@ -162,7 +162,7 @@ const SURVEY = [
     options: ["링크를 눌러 확인한다", "문자에 적힌 번호로 전화해 본다", "공식 앱이나 대표번호로 직접 확인한다", "무시한다"] },
   { id: "Q4", text: "최근 1년 안에 정보보안(피싱) 교육을 받은 적이 있나요?", options: ["있다", "없다", "기억나지 않는다"] }
 ];
-const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과" };
+const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
 
 const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [] };
 const $ = id => document.getElementById(id);
@@ -264,12 +264,13 @@ function renderExplain(r) {
   const a = r.analysis;
   html += `<h2>탐지 엔진 분석</h2>`;
   if (a) {
-    html += `<p class="score-line">링크 위험 점수 <b>${a.score}</b> / 100</p>`;
+    html += `<p class="score-line">${a.type === "email" ? "메일" : "링크"} 위험 점수 <b>${a.score}</b> / 100</p>`;
     if (a.reasons.length) html += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
     else html += `<p class="muted">링크에서 위험 신호를 찾지 못했어요.</p>`;
     if (a.unavailable.length) html += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+    if (r.is_phishing && a.score < 30) html += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
   } else {
-    html += `<p class="muted">이 메시지는 링크가 없어요. 메일 분석은 이메일 검사기를 연결한 뒤에 보여 드려요.</p>`;
+    html += `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
   }
   $("explain").innerHTML = html;
   $("explain-progress").textContent = `문제 ${state.i + 1}/${state.cards.length}`;
