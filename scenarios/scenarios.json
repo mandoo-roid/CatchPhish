@@ -1,81 +1,183 @@
 {
-  "_설명": "B 설계(docs/설계_B_시나리오와_화면.md)의 시나리오 6개를 내용 그대로 옮긴 파일. 서버만 읽고 화면에는 정답 관련 칸을 빼고 보낸다. 문구 수정은 B가 이 파일에서 하면 된다.",
+  "_설명": "B 설계(docs/설계_B_시나리오와_화면.md)의 시나리오 6개를 내용 그대로 옮긴 파일. 서버만 읽고 화면에는 정답 관련 칸을 빼고 보낸다. 문구 수정은 B가 이 파일에서 하면 된다. from·reply_to·auth_results는 이메일 탐지 엔진에 넣을 헤더로 A가 10/23 추가(B 확인 필요). S03은 공격자가 진짜처럼 비슷한 도메인을 직접 등록해 메일 인증을 통과한 경우로 설정.",
   "scenarios": [
     {
-      "scenario_id": "S01", "channel": "sms", "job_group": "common", "is_phishing": true, "case_type": "A+C",
-      "sender": "건강보험 / 010-0000-0000", "subject": null,
+      "scenario_id": "S01",
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "건강보험 / 010-0000-0000",
+      "subject": null,
       "body": "[건강보험] 올해 건강검진 결과 통보 내역이 도착했습니다. 아래 주소에서 확인해 주세요. 확인하지 않으면 불이익이 있을 수 있습니다.",
-      "link": "https://health-notice.example/check", "attachment": null,
+      "link": "https://health-notice.example/check",
+      "attachment": null,
       "clues": [
-        {"factor": "발신자 불일치", "text": "표시 이름은 기관인데 번호는 개인 휴대폰 형태"},
-        {"factor": "불안 압박 표현", "text": "\"확인하지 않으면 불이익\""},
-        {"factor": "낯선 주소", "text": "공식 기관 주소가 아님"}
+        {
+          "factor": "발신자 불일치",
+          "text": "표시 이름은 기관인데 번호는 개인 휴대폰 형태"
+        },
+        {
+          "factor": "불안 압박 표현",
+          "text": "\"확인하지 않으면 불이익\""
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "공식 기관 주소가 아님"
+        }
       ],
       "explanation": "공공기관 이름을 빌려 믿게 만드는 문자입니다. 링크를 누르지 말고 공식 앱이나 대표번호로 직접 확인해야 합니다.",
       "source": "사례조사 사례 1 바탕 (문구는 바꿔 씀)"
     },
     {
-      "scenario_id": "S02", "channel": "email", "job_group": "hr", "is_phishing": true, "case_type": "A+C",
-      "sender": "인사팀 <hr-support@company-notice.example>", "subject": "[긴급] 연말정산 서류 오늘 중 제출 안내",
+      "scenario_id": "S02",
+      "channel": "email",
+      "job_group": "hr",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "인사팀 <hr-support@company-notice.example>",
+      "from": "인사팀 <hr-support@company-notice.example>",
+      "reply_to": null,
+      "auth_results": "spf=fail smtp.mailfrom=company-notice.example; dkim=none; dmarc=fail",
+      "subject": "[긴급] 연말정산 서류 오늘 중 제출 안내",
       "body": "인사팀입니다. 연말정산 서류에 오류가 발견되었습니다. 오늘 중에 첨부 파일을 열어 내용을 확인하고 제출해 주세요. 미제출 시 급여에 불이익이 있을 수 있습니다.",
-      "link": null, "attachment": "연말정산_안내.pdf.lnk",
+      "link": null,
+      "attachment": "연말정산_안내.pdf.lnk",
       "clues": [
-        {"factor": "보낸 주소 불일치", "text": "회사 주소(company.example)가 아님"},
-        {"factor": "이중 확장자", "text": "문서처럼 보이지만 .lnk 바로가기 파일"},
-        {"factor": "긴급성 압박", "text": "\"오늘 중\", \"불이익\""}
+        {
+          "factor": "보낸 주소 불일치",
+          "text": "회사 주소(company.example)가 아님"
+        },
+        {
+          "factor": "이중 확장자",
+          "text": "문서처럼 보이지만 .lnk 바로가기 파일"
+        },
+        {
+          "factor": "긴급성 압박",
+          "text": "\"오늘 중\", \"불이익\""
+        }
       ],
       "explanation": "내부 부서를 사칭해 첨부 파일을 열게 하는 메일입니다. 파일을 열지 말고 인사팀에 사내 연락처로 직접 확인해야 합니다.",
       "source": "사례조사 사례 7 (첨부파일 실행 유도) 기법 바탕"
     },
     {
-      "scenario_id": "S03", "channel": "email", "job_group": "finance", "is_phishing": true, "case_type": "A+C",
-      "sender": "예시물산 경리팀 <account@yesi-trade.example>", "subject": "대금 입금 계좌 변경 안내",
+      "scenario_id": "S03",
+      "channel": "email",
+      "job_group": "finance",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "예시물산 경리팀 <account@yesi-trade.example>",
+      "from": "예시물산 경리팀 <account@yesi-trade.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=yesi-trade.example; dkim=pass; dmarc=pass",
+      "subject": "대금 입금 계좌 변경 안내",
       "body": "안녕하세요, 예시물산 경리팀입니다. 거래 은행이 변경되어 이번 달 대금부터 새 계좌로 보내 주셔야 합니다. 새 계좌 정보는 아래 번호로 전화 주시면 바로 안내드리겠습니다. 오늘 마감이라 빠른 처리를 부탁드립니다. 문의: 010-0000-0000",
-      "link": null, "attachment": null,
+      "link": null,
+      "attachment": null,
       "clues": [
-        {"factor": "계좌 변경 요청", "text": "돈이 오가는 정보를 메일로만 바꾸자는 요구"},
-        {"factor": "전화 유도", "text": "메일에 적힌 번호로 걸면 공격자에게 연결됨"},
-        {"factor": "마감 압박", "text": "\"오늘 마감\""},
-        {"factor": "낯선 발신 주소", "text": "평소 거래 경로와 다른 발신 주소"}
+        {
+          "factor": "계좌 변경 요청",
+          "text": "돈이 오가는 정보를 메일로만 바꾸자는 요구"
+        },
+        {
+          "factor": "전화 유도",
+          "text": "메일에 적힌 번호로 걸면 공격자에게 연결됨"
+        },
+        {
+          "factor": "마감 압박",
+          "text": "\"오늘 마감\""
+        },
+        {
+          "factor": "낯선 발신 주소",
+          "text": "평소 거래 경로와 다른 발신 주소"
+        }
       ],
       "explanation": "기존에 알고 있는 거래처 담당자 연락처나 대표번호로 직접 확인해야 합니다. 메일에 적힌 번호로 전화하는 것 자체가 함정입니다.",
       "source": "가상 구성 (사례조사 유형 A·C 응용, 직접 사례 없음)"
     },
     {
-      "scenario_id": "S04", "channel": "sms", "job_group": "sales", "is_phishing": true, "case_type": "B+C",
-      "sender": "Telegram / 010-0000-0000", "subject": null,
+      "scenario_id": "S04",
+      "channel": "sms",
+      "job_group": "sales",
+      "is_phishing": true,
+      "case_type": "B+C",
+      "sender": "Telegram / 010-0000-0000",
+      "subject": null,
       "body": "[Telegram] 정책 위반이 확인되어 계정이 제한될 예정입니다. 아래 링크에서 재로그인을 진행해 주세요.",
-      "link": "https://taiegram-login.example/verify", "attachment": null,
+      "link": "https://taiegram-login.example/verify",
+      "attachment": null,
       "clues": [
-        {"factor": "도메인 유사", "text": "telegram 과 한 글자만 다른 taiegram"},
-        {"factor": "보안 경고 사칭", "text": "\"정책 위반\", \"계정 제한\""},
-        {"factor": "링크로 재로그인 요구", "text": "문자 속 링크로 재로그인을 요구함"}
+        {
+          "factor": "도메인 유사",
+          "text": "telegram 과 한 글자만 다른 taiegram"
+        },
+        {
+          "factor": "보안 경고 사칭",
+          "text": "\"정책 위반\", \"계정 제한\""
+        },
+        {
+          "factor": "링크로 재로그인 요구",
+          "text": "문자 속 링크로 재로그인을 요구함"
+        }
       ],
       "explanation": "진짜와 한 글자 차이인 주소로 로그인 정보를 빼 가는 방식입니다. 문자의 링크가 아니라 공식 앱에서 직접 계정 상태를 확인해야 합니다. 영업·고객 업무는 메신저로 고객과 연락이 많아 특히 노려집니다.",
       "source": "사례조사 사례 2, 3 바탕"
     },
     {
-      "scenario_id": "S05", "channel": "email", "job_group": "dev", "is_phishing": false, "case_type": null,
-      "sender": "정보보안팀 <security@company.example>", "subject": "[공지] 정기 비밀번호 변경 안내",
+      "scenario_id": "S05",
+      "channel": "email",
+      "job_group": "dev",
+      "is_phishing": false,
+      "case_type": null,
+      "sender": "정보보안팀 <security@company.example>",
+      "from": "정보보안팀 <security@company.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=company.example; dkim=pass; dmarc=pass",
+      "subject": "[공지] 정기 비밀번호 변경 안내",
       "body": "정보보안팀입니다. 정기 보안 점검에 따라 이번 달 말까지 사내 포털에서 비밀번호를 변경해 주세요. 변경은 포털의 [내 정보 > 비밀번호 변경] 메뉴에서 하며, 이 메일로 비밀번호를 회신하실 필요는 없습니다. 문의는 사내 메신저 보안팀 채널로 주세요.",
-      "link": "https://portal.company.example/security", "attachment": null,
+      "link": "https://portal.company.example/security",
+      "attachment": null,
       "clues": [
-        {"factor": "수상한 점 없음", "text": "보낸 주소와 링크가 모두 회사 주소"},
-        {"factor": "비밀번호를 묻지 않음", "text": "비밀번호를 메일로 묻지 않음"},
-        {"factor": "공식 경로 안내", "text": "확인 방법도 사내 공식 경로"}
+        {
+          "factor": "수상한 점 없음",
+          "text": "보낸 주소와 링크가 모두 회사 주소"
+        },
+        {
+          "factor": "비밀번호를 묻지 않음",
+          "text": "비밀번호를 메일로 묻지 않음"
+        },
+        {
+          "factor": "공식 경로 안내",
+          "text": "확인 방법도 사내 공식 경로"
+        }
       ],
       "explanation": "정상 메일입니다. 링크를 눌러도 괜찮고, 공식 경로로 확인해도 맞는 행동이지만 매번 확인하느라 업무가 늦어지면 과잉 의심으로 집계됩니다.",
       "source": "가상 구성 (정상 대조군)"
     },
     {
-      "scenario_id": "S06", "channel": "sms", "job_group": "office", "is_phishing": true, "case_type": "A+D",
-      "sender": "정부24 / 010-0000-0000", "subject": null,
+      "scenario_id": "S06",
+      "channel": "sms",
+      "job_group": "office",
+      "is_phishing": true,
+      "case_type": "A+D",
+      "sender": "정부24 / 010-0000-0000",
+      "subject": null,
       "body": "[정부24] 민생 지원금 신청 대상자입니다. 아래 주소에서 신청 앱을 설치하고 신청을 완료해 주세요.",
-      "link": "https://gov24-support.example/app", "attachment": null,
+      "link": "https://gov24-support.example/app",
+      "attachment": null,
       "clues": [
-        {"factor": "기관 사칭 + 지원금 미끼", "text": "기대감을 이용함"},
-        {"factor": "앱 설치 유도", "text": "공식 앱스토어가 아닌 별도 페이지에서 설치"},
-        {"factor": "낯선 주소", "text": "gov 가 들어간 주소지만 정부 주소가 아님"}
+        {
+          "factor": "기관 사칭 + 지원금 미끼",
+          "text": "기대감을 이용함"
+        },
+        {
+          "factor": "앱 설치 유도",
+          "text": "공식 앱스토어가 아닌 별도 페이지에서 설치"
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "gov 가 들어간 주소지만 정부 주소가 아님"
+        }
       ],
       "explanation": "문자 → 가짜 설치 페이지 → 가짜 문서 뷰어 앱 → 2차 악성 앱 → 화면 정보 탈취로 이어지는 연쇄형 공격입니다. 첫 클릭 전에 멈추고 공식 사이트에서 직접 확인해야 합니다.",
       "source": "사례조사 사례 4, 5 바탕 (유형 D 연쇄형)"
