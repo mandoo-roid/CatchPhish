@@ -1,9 +1,11 @@
 # 캐치피싱 서버 입구 (Vercel이 이 파일의 app을 실행함)
 # 서버 약속 (docs/설계_A_흐름과_서버약속.md):
 #   1 /api/start   2 /api/answer   3 /api/result   4 /api/check-url
-# 5, 6(관리자)과 7(장부 기록)은 C의 DB 연결 뒤에 추가한다.
+# 5, 6(관리자)은 겉모양과 주소만 먼저 만들어 둠. 통계 계산·장부 검사는 C의 DB 연결 뒤에 채운다.
+# 7(장부 기록)은 C의 DB 연결 뒤에 추가한다.
 # 지금은 DB가 없어서 서버가 기록을 저장하지 않는다. 결과(3번)는 화면이 보낸 선택 목록으로 서버가 다시 채점한다.
 
+import hmac
 import json
 import os
 import secrets
@@ -87,6 +89,12 @@ def check_page():
 @app.get("/game")
 def game():
     return send_from_directory(FRONTEND, "game.html")
+
+
+@app.get("/admin")
+def admin_page():
+    # 회사 담당자용 관리자 화면 (회사 코드로 입장)
+    return send_from_directory(FRONTEND, "admin.html")
 
 
 @app.post("/api/start")
@@ -178,3 +186,42 @@ def check_url():
         return bad(str(e))
     except Exception:
         return jsonify({"error": "분석 중 문제가 생겼습니다. 잠시 후 다시 시도해 주세요."}), 500
+
+
+# ───────── 관리자 (서버 약속 5, 6번) ─────────
+# 회사 코드는 Vercel 환경 변수 COMPANY_CODE에만 둔다. 저장소·문서에 코드 값을 적지 않는다.
+
+def _check_company_code(data):
+    expected = os.environ.get("COMPANY_CODE")
+    if not expected:
+        return jsonify({"error": "관리자 화면이 아직 설정되지 않았습니다. (회사 코드 미설정)"}), 503
+    given = data.get("company_code")
+    if not isinstance(given, str) or not hmac.compare_digest(given, expected):
+        return jsonify({"error": "회사 코드가 맞지 않습니다."}), 401
+    return None
+
+
+@app.post("/api/admin/stats")
+def admin_stats():
+    # 서버 약속 5번. C가 DB와 통계 계산을 연결하면 아래 "connected": False 부분을 채운다.
+    # 채울 모양 (설계 A 기준):
+    # {"connected": true, "participants": 37,
+    #  "wrong_rate_by_job": {"hr": 0.42, ...},          # 직군별 오답률 (0~1)
+    #  "weak_types": [{"type": "기관 사칭", "count": 21}, ...],   # 많이 속은 유형
+    #  "confidence_gap": {"confident_wrong_rate": 0.38, "unconfident_wrong_rate": 0.29},  # 자신감 vs 실제
+    #  "over_suspicion_rate": 0.18}                       # 정상 메시지 과잉 의심 비율
+    data = request.get_json(silent=True) or {}
+    err = _check_company_code(data)
+    if err:
+        return err
+    return jsonify({"connected": False, "message": "기록 저장(DB)이 아직 연결되지 않아 통계가 없습니다."})
+
+
+@app.post("/api/admin/verify")
+def admin_verify():
+    # 서버 약속 6번. C의 verify_chain 결과를 그대로 돌려줄 자리.
+    data = request.get_json(silent=True) or {}
+    err = _check_company_code(data)
+    if err:
+        return err
+    return jsonify({"connected": False, "message": "기록 저장(DB)이 아직 연결되지 않아 검사할 장부가 없습니다."})
