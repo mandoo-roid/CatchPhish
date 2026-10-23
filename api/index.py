@@ -67,6 +67,13 @@ def bad(msg):
 
 @app.get("/")
 def home():
+    # 첫 화면: 체험 시작 / 링크 바로 검사 (설계 A 화면 순서)
+    return send_from_directory(FRONTEND, "home.html")
+
+
+@app.get("/check")
+def check_page():
+    # 링크 직접 검사 화면 (서버 약속 4번을 쓰는 화면)
     return send_from_directory(FRONTEND, "index.html")
 
 
