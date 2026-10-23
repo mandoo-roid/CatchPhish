@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>캐치피싱 링크 검사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --ink: #1B2A41;
+  --muted: #5B6B7D;
+  --paper: #FFFFFF;
+  --field: #F1F4F7;
+  --line: #D5DDE3;
+  --danger: #B3261E;
+  --danger-soft: #FCEBEA;
+  --caution: #8A5A00;
+  --caution-soft: #FFF3D6;
+  --safe: #1F6B4A;
+  --safe-soft: #E4F3EB;
+  --focus: #2457C5;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: #E6ECF2;
+    --muted: #9AA8B6;
+    --paper: #12181F;
+    --field: #1C242D;
+    --line: #2E3A46;
+    --danger: #FF8A80;
+    --danger-soft: #3A1D1B;
+    --caution: #F2C14E;
+    --caution-soft: #3A2E14;
+    --safe: #7FD3A8;
+    --safe-soft: #16302A;
+    --focus: #8DB2FF;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+}
+main { max-width: 34rem; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; letter-spacing: -0.01em; }
+.lead { color: var(--muted); margin: 0 0 2rem; }
+label { display: block; font-weight: 500; margin-bottom: .5rem; }
+.row { display: flex; gap: .5rem; }
+input {
+  flex: 1; min-width: 0;
+  font: 400 1rem/1.4 var(--mono);
+  color: var(--ink); background: var(--field);
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: .85rem .9rem;
+}
+button {
+  font: 500 1rem var(--sans);
+  color: var(--paper); background: var(--ink);
+  border: 0; border-radius: 10px; padding: 0 1.2rem; cursor: pointer;
+}
+button:disabled { opacity: .5; cursor: wait; }
+input:focus-visible, button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.hint { font-size: .875rem; color: var(--muted); margin: .6rem 0 0; }
+.examples { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+.examples button {
+  font: 400 .8rem var(--mono); color: var(--ink); background: transparent;
+  border: 1px solid var(--line); padding: .35rem .6rem; border-radius: 8px;
+}
+#result { margin-top: 2.25rem; }
+.verdict { border-radius: 14px; padding: 1.25rem 1.25rem 1rem; }
+.verdict.danger { background: var(--danger-soft); color: var(--danger); }
+.verdict.caution { background: var(--caution-soft); color: var(--caution); }
+.verdict.safe { background: var(--safe-soft); color: var(--safe); }
+.score { display: flex; align-items: baseline; gap: .6rem; }
+.score strong { font-size: 3.25rem; line-height: 1; font-weight: 700; }
+.score span { font-size: 1rem; }
+.verdict p { margin: .6rem 0 0; font-weight: 500; }
+.target { font: 400 .85rem var(--mono); color: var(--muted); margin: .9rem 0 0; word-break: break-all; }
+h2 { font-size: 1.05rem; margin: 1.75rem 0 .5rem; }
+ul.reasons { list-style: none; margin: 0; padding: 0; }
+ul.reasons li { display: flex; gap: 1rem; justify-content: space-between; padding: .8rem 0; border-top: 1px solid var(--line); }
+ul.reasons li:last-child { border-bottom: 1px solid var(--line); }
+.factor { font-weight: 500; display: block; }
+.text { color: var(--muted); font-size: .925rem; }
+.pts { font-weight: 700; white-space: nowrap; }
+.note { font-size: .9rem; color: var(--muted); margin: 1rem 0 0; }
+.error { color: var(--danger); margin-top: 1rem; }
+footer { margin-top: 3rem; font-size: .8rem; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .verdict { animation: show .25s ease-out; }
+  @keyframes show { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>이 링크, 눌러도 될까요?</h1>
+  <p class="lead">문자나 메일로 받은 링크를 붙여 넣으면 위험한 점을 찾아 알려 드려요. 링크에 직접 접속하지 않고 주소만 분석하니 안심하세요.</p>
+
+  <form id="form" novalidate>
+    <label for="url">검사할 링크</label>
+    <div class="row">
+      <input id="url" name="url" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="예: gov-support.example/apply" required maxlength="2000">
+      <button id="go" type="submit">검사하기</button>
+    </div>
+    <p class="hint">연습해 보기</p>
+    <div class="examples">
+      <button type="button" data-url="http://gov-support.example/apply">gov-support.example/apply</button>
+      <button type="button" data-url="https://taiegram-login.example/verify">taiegram-login.example/verify</button>
+      <button type="button" data-url="https://www.gov.kr/">www.gov.kr</button>
+    </div>
+  </form>
+
+  <section id="result" aria-live="polite"></section>
+
+  <footer>캐치피싱 · 배화여자대학교 소프트웨어공학과 Phish&amp;Chips 캡스톤디자인</footer>
+</main>
+
+<script>
+const form = document.getElementById('form');
+const input = document.getElementById('url');
+const go = document.getElementById('go');
+const result = document.getElementById('result');
+
+// 확인 못 한 항목의 코드 이름을 읽기 쉬운 말로 바꿈 (B 설계 6-3 초안)
+const UNAVAILABLE = {
+  whois: '도메인이 언제 만들어졌는지 확인하지 못했어요',
+  spf: '메일 서버 검사 결과가 없어요'
+};
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// 점수 구간 (임시, 팀 논의로 조정)
+function verdict(score) {
+  if (score >= 60) return { cls: 'danger', word: '위험해요', tip: '링크를 누르지 말고, 공식 앱이나 대표번호로 직접 확인하세요.' };
+  if (score >= 30) return { cls: 'caution', word: '주의가 필요해요', tip: '보낸 사람을 공식 경로로 한 번 더 확인한 뒤에 여세요.' };
+  return { cls: 'safe', word: '눈에 띄는 위험 신호가 없어요', tip: '그래도 개인정보나 비밀번호를 요구하면 한 번 더 의심하세요.' };
+}
+
+function render(r) {
+  const v = verdict(r.score);
+  let html = `<div class="verdict ${v.cls}">
+      <div class="score"><strong>${r.score}</strong><span>/ 100점</span></div>
+      <p>${v.word}</p>
+    </div>
+    <p class="target">${esc(r.input)}</p>`;
+  if (r.reasons.length) {
+    html += '<h2>이렇게 판단했어요</h2><ul class="reasons">' +
+      r.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join('') +
+      '</ul>';
+  }
+  if (r.model_probability !== null && r.model_probability !== undefined) {
+    html += `<p class="note">AI 모델이 판단한 피싱 확률: ${Math.round(r.model_probability * 100)}%</p>`;
+  }
+  if (r.unavailable.length) {
+    html += `<p class="note">${r.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(', ')}. 이 항목이 빠져서 실제 위험보다 점수가 낮게 나올 수 있어요.</p>`;
+  }
+  html += `<p class="note">${v.tip}</p>`;
+  result.innerHTML = html;
+}
+
+async function check(url) {
+  if (!url.trim()) { result.innerHTML = '<p class="error">검사할 링크를 입력해 주세요.</p>'; input.focus(); return; }
+  go.disabled = true; go.textContent = '검사 중';
+  try {
+    const res = await fetch('/api/check-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '검사하지 못했어요.');
+    render(data);
+  } catch (e) {
+    result.innerHTML = `<p class="error">${esc(e.message || '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.')}</p>`;
+  } finally {
+    go.disabled = false; go.textContent = '검사하기';
+  }
+}
+
+form.addEventListener('submit', e => { e.preventDefault(); check(input.value); });
+document.querySelectorAll('.examples button').forEach(b => b.addEventListener('click', () => {
+  input.value = b.dataset.url; check(b.dataset.url);
+}));
+</script>
+</body>
+</html>
