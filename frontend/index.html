@@ -194,7 +194,7 @@ async function check(url) {
 
 form.addEventListener('submit', e => { e.preventDefault(); check(input.value); });
 document.querySelectorAll('.examples button').forEach(b => b.addEventListener('click', () => {
-  input.value = b.dataset.url; check(b.dataset.url);
+  input.value = b.dataset.url; input.focus();
 }));
 </script>
 </body>
