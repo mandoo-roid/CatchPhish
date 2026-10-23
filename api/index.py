@@ -13,8 +13,10 @@ from flask import Flask, jsonify, request, send_from_directory
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "backend", "url_analyzer"))
+sys.path.insert(0, os.path.join(ROOT, "backend", "email_analyzer"))
 
 from url_analyzer import analyze_url  # noqa: E402
+from email_analyzer import analyze_email, build_raw  # noqa: E402
 
 app = Flask(__name__)
 FRONTEND = os.path.join(ROOT, "frontend")
@@ -52,7 +54,12 @@ def grade(card, choice):
 
 
 def analyze_card(card):
-    # 링크가 있는 카드는 링크 탐지 엔진으로 분석. 링크가 없는 이메일은 이메일 엔진 연결 전까지 null
+    # 이메일 카드는 이메일 탐지 엔진, 링크가 있는 문자 카드는 링크 탐지 엔진으로 분석
+    if card.get("channel") == "email":
+        try:
+            return analyze_email(build_raw(card), f"{card['scenario_id']}.eml", card.get("attachment"))
+        except Exception:
+            return None
     if card.get("link"):
         try:
             return analyze_url(card["link"])
