@@ -23,6 +23,10 @@ OFFICIAL_DOMAINS = {
     "coupang.com", "microsoft.com", "gov.kr",
 }
 
+# 게임 속 가상 회사의 공식 주소 (B 설계: company.example을 회사 공식 주소로 가정)
+# .example은 진짜 인터넷 끝자리가 아니라서 위 목록과 따로 확인한다
+OFFICIAL_HOSTS = {"company.example"}
+
 # 정부기관 이름: 도메인 유사(35점)에 씀
 GOV_WORDS = ["gov", "minwon"]
 
@@ -78,7 +82,9 @@ def analyze_url(url, use_whois=True):
     if not name:
         raise ValueError("링크에서 사이트 주소를 찾지 못했습니다.")
     registered = f"{ext.domain}.{ext.suffix}".lower() if ext.suffix else name
-    is_official = registered in OFFICIAL_DOMAINS or _is_real_gov(ext)
+    host_full = ".".join(p for p in [ext.subdomain, ext.domain, ext.suffix] if p).lower()
+    is_official = (registered in OFFICIAL_DOMAINS or _is_real_gov(ext)
+                   or any(host_full == h or host_full.endswith("." + h) for h in OFFICIAL_HOSTS))
 
     # 주소 조각 모으기: 이름 + 앞부분을 점(.)과 하이픈(-)으로 잘게 나눔
     # 예: taiegram-login.example → ["example", "taiegram-login", "taiegram", "login"]
