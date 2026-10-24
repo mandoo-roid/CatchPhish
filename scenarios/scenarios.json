@@ -1,5 +1,5 @@
 {
-  "_설명": "B 설계(docs/설계_B_시나리오와_화면.md)의 시나리오 6개를 내용 그대로 옮긴 파일. 서버만 읽고 화면에는 정답 관련 칸을 빼고 보낸다. 문구 수정은 B가 이 파일에서 하면 된다. from·reply_to·auth_results는 이메일 탐지 엔진에 넣을 헤더로 A가 10/23 추가(B 확인 필요). S03은 공격자가 진짜처럼 비슷한 도메인을 직접 등록해 메일 인증을 통과한 경우로 설정.",
+  "_설명": "시나리오 9개(공통 4 + 직군별 특화 1개씩). 서버만 읽고 화면에는 정답 관련 칸을 빼고 보낸다. 문구 수정은 B가 이 파일에서 하면 된다. 이메일 카드의 from·reply_to·auth_results는 이메일 탐지 엔진에 넣을 헤더(게임 속 설정값)다. S03은 공격자가 진짜처럼 비슷한 도메인을 직접 등록해 메일 인증을 통과한 경우로 설정(점수가 일부러 낮음). S09의 코드허브는 가상 서비스 이름이다.",
   "scenarios": [
     {
       "scenario_id": "S01",
@@ -126,7 +126,7 @@
     {
       "scenario_id": "S05",
       "channel": "email",
-      "job_group": "dev",
+      "job_group": "common",
       "is_phishing": false,
       "case_type": null,
       "sender": "정보보안팀 <security@company.example>",
@@ -181,6 +181,97 @@
       ],
       "explanation": "문자 → 가짜 설치 페이지 → 가짜 문서 뷰어 앱 → 2차 악성 앱 → 화면 정보 탈취로 이어지는 연쇄형 공격입니다. 첫 클릭 전에 멈추고 공식 사이트에서 직접 확인해야 합니다.",
       "source": "사례조사 사례 4, 5 바탕 (유형 D 연쇄형)"
+    },
+    {
+      "scenario_id": "S07",
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "사이버수사 안내 / 010-0000-0000",
+      "subject": null,
+      "body": "[사이버수사] 회원님의 번호가 불법 스팸 발송에 이용되어 이용정지될 예정입니다. 아래 주소에서 사건 안내를 확인하고 벌금 납부 방법을 확인해 주세요.",
+      "link": "https://police-notice.example/case",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "발신자 불일치",
+          "text": "표시 이름은 수사기관인데 번호는 개인 휴대폰 형태"
+        },
+        {
+          "factor": "공포 유발",
+          "text": "\"이용정지\", \"벌금\"으로 겁을 줌"
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "수사기관의 공식 주소가 아님"
+        }
+      ],
+      "explanation": "수사기관 이름을 빌려 겁을 주고 서두르게 하는 문자입니다. 문자 속 링크를 누르거나 적힌 번호로 전화하지 말고, 해당 기관의 대표번호로 직접 확인해야 합니다.",
+      "source": "사례조사 사례 6 바탕 (문구는 바꿔 씀)"
+    },
+    {
+      "scenario_id": "S08",
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "택배 안내 / 010-0000-0000",
+      "subject": null,
+      "body": "[택배] 물품 배송이 불가하여 보관 중입니다. 아래 주소에서 배송지를 다시 확인해 주세요. 오늘 안에 확인하지 않으면 반송됩니다.",
+      "link": "https://parcel-recheck.example/addr",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "발신자 불일치",
+          "text": "택배 회사 이름인데 번호는 개인 휴대폰 형태"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"오늘 안에\", \"반송\""
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "택배 회사의 공식 주소나 앱이 아님"
+        }
+      ],
+      "explanation": "흔한 택배 사칭 문자입니다. 링크를 누르지 말고, 택배 회사 공식 앱이나 대표번호에서 배송 상태를 직접 확인해야 합니다.",
+      "source": "사례조사 사례 1 바탕 (문구는 바꿔 씀)"
+    },
+    {
+      "scenario_id": "S09",
+      "channel": "email",
+      "job_group": "dev",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "코드허브 계정 알림 <security-alert@codehub-support.example>",
+      "from": "코드허브 계정 알림 <security-alert@codehub-support.example>",
+      "reply_to": "코드허브 지원 <help@codehub-verify.example>",
+      "auth_results": "spf=fail smtp.mailfrom=codehub-support.example; dkim=none; dmarc=fail",
+      "subject": "[보안 경고] 비정상 로그인 시도가 감지되었습니다",
+      "body": "코드허브 보안팀입니다. 회원님의 계정에서 비정상 로그인 시도가 감지되었습니다. 24시간 안에 아래 주소에서 본인 확인을 하지 않으면 계정이 잠깁니다.",
+      "link": "https://codehub-verify.example/login",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "보낸 주소 불일치",
+          "text": "서비스의 공식 주소가 아님"
+        },
+        {
+          "factor": "답장 주소 불일치",
+          "text": "답장하면 보낸 주소와 다른 곳으로 감"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"24시간 안에\", \"계정이 잠깁니다\""
+        },
+        {
+          "factor": "로그인 유도",
+          "text": "메일 속 링크로 로그인하게 함"
+        }
+      ],
+      "explanation": "개발자가 자주 쓰는 서비스의 보안 경고를 흉내 낸 메일입니다(코드허브는 가상 서비스입니다). 링크로 로그인하지 말고, 평소에 쓰던 공식 주소나 앱으로 직접 접속해서 계정 상태를 확인해야 합니다.",
+      "source": "가상 구성 (사례조사 유형 A·C 응용, 직접 사례 없음)"
     }
   ]
 }
