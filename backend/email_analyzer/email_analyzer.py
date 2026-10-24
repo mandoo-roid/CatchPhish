@@ -7,12 +7,12 @@ from email import message_from_string
 from email.utils import parseaddr
 
 POINTS = {  # 합계 100 (임시)
-    "DMARC 실패": 25,
-    "SPF 실패": 15,
-    "DKIM 실패": 10,
-    "표시 이름 위장": 15,
-    "답장 주소 불일치": 15,
-    "첨부 파일 위험": 10,
+    "DMARC 실패": 28,
+    "SPF 실패": 17,
+    "DKIM 실패": 0,
+    "표시 이름 위장": 17,
+    "답장 주소 불일치": 17,
+    "첨부 파일 위험": 11,
     "긴급성·압박 문구": 10,
 }
 
