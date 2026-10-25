@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>캐치피싱 피싱 대응 체험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
+  --danger: #B3261E; --danger-soft: #FCEBEA; --caution: #8A5A00; --caution-soft: #FFF3D6;
+  --safe: #1F6B4A; --safe-soft: #E4F3EB; --link: #1F56C9; --focus: #2457C5;
+  --bubble: #E9EEF3;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+    --danger: #FF8A80; --danger-soft: #3A1D1B; --caution: #F2C14E; --caution-soft: #3A2E14;
+    --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --focus: #8DB2FF; --bubble: #232D38;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
+main { max-width: 34rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 .5rem; }
+h2 { font-size: 1.05rem; margin: 1.75rem 0 .5rem; }
+p { margin: 0 0 1rem; }
+.muted { color: var(--muted); }
+.progress { font-size: .875rem; color: var(--muted); margin-bottom: .75rem; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ink); transition: width .2s; }
+.choices { display: grid; gap: .5rem; margin: 1rem 0; }
+.choices.scale { grid-template-columns: repeat(5, 1fr); }
+.choice { font: 400 1rem var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line);
+  border-radius: 10px; padding: .85rem 1rem; text-align: left; cursor: pointer; }
+.choices.scale .choice { text-align: center; padding: .85rem 0; }
+.choice[aria-pressed="true"] { border: 2px solid var(--ink); padding: calc(.85rem - 1px) calc(1rem - 1px); font-weight: 500; }
+.choices.scale .choice[aria-pressed="true"] { padding: calc(.85rem - 1px) 0; }
+.choice small { display: block; color: var(--muted); font-size: .825rem; margin-top: .15rem; font-weight: 400; }
+.scale-labels { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: -.5rem; }
+.nav { display: flex; gap: .5rem; margin-top: 1.5rem; }
+.primary, .secondary { font: 500 1rem var(--sans); border-radius: 10px; padding: .9rem 1.2rem; cursor: pointer; }
+.primary { flex: 1; color: var(--paper); background: var(--ink); border: 0; }
+.secondary { color: var(--ink); background: transparent; border: 1px solid var(--line); }
+.primary:disabled { opacity: .35; cursor: not-allowed; }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* 메시지 카드 (B 10/25: 실제 폰 문자·메일 화면 모양)
+   하는 일: 카드를 휴대폰 화면처럼 그린다 (위쪽 상태 표시줄, 앱 제목 줄, 말풍선 또는 메일 머리말)
+   이유: 직원이 평소 폰으로 문자·메일을 받는 모습과 비슷해야 실제처럼 판단하고, 체험 결과가 현실에 가까워진다
+   참고: 이미지 파일이 아니라 코드로 그려서 서버 설정을 바꿀 필요가 없다. 로고·앱 이름은 쓰지 않았다 (10/24 기본안) */
+.phone { max-width: 22rem; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 28px; overflow: hidden; }
+.status { display: flex; justify-content: space-between; align-items: center; padding: .55rem 1.4rem .3rem; font-size: .75rem; font-weight: 500; }
+.status .icons { display: flex; gap: .35rem; align-items: center; }
+.sig { display: flex; gap: 2px; align-items: flex-end; height: 10px; }
+.sig i { width: 3px; background: var(--ink); border-radius: 1px; }
+.sig i:nth-child(1) { height: 4px; } .sig i:nth-child(2) { height: 6px; } .sig i:nth-child(3) { height: 8px; } .sig i:nth-child(4) { height: 10px; }
+.bat { width: 20px; height: 10px; border: 1.5px solid var(--ink); border-radius: 3px; padding: 1px; }
+.bat i { display: block; width: 70%; height: 100%; background: var(--ink); border-radius: 1px; }
+.appbar { display: flex; align-items: center; gap: .6rem; padding: .4rem 1rem .7rem; border-bottom: 1px solid var(--line); }
+.appbar .back { font-size: 1.5rem; line-height: 1; color: var(--muted); }
+.who { line-height: 1.3; min-width: 0; }
+.who b { display: block; }
+.who b { font-size: 1.05rem; letter-spacing: .02em; }
+/* 문자 화면 */
+.thread { padding: .9rem .9rem 1.2rem; min-height: 15rem; }
+.day { text-align: center; font-size: .75rem; color: var(--muted); margin: 0 0 .8rem; }
+.msg { display: flex; align-items: flex-end; gap: .4rem; }
+.msg .bubble { background: var(--bubble); border-radius: 18px 18px 18px 4px; padding: .7rem .9rem; max-width: 85%; font-size: .95rem; word-break: keep-all; overflow-wrap: anywhere; }
+.msg time, .mail-from time { font-size: .7rem; color: var(--muted); white-space: nowrap; }
+/* 메일 화면 */
+.mail-subject { font-size: 1.15rem; font-weight: 700; line-height: 1.4; padding: 1rem 1rem .8rem; }
+.mail-from { display: flex; gap: .7rem; align-items: flex-start; padding: 0 1rem .9rem; border-bottom: 1px solid var(--line); }
+.mail-from .meta { flex: 1; min-width: 0; line-height: 1.35; }
+.mail-from .meta > span { display: block; }
+.mail-from .addr { font-weight: 400; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.mail-from .to { font-size: .8rem; color: var(--muted); }
+.mail-body { padding: 1rem; font-size: .95rem; word-break: keep-all; overflow-wrap: anywhere; }
+.file { display: flex; gap: .7rem; align-items: center; margin: 0 1rem 1.1rem; border: 1px solid var(--line); border-radius: 10px; padding: .6rem .75rem; }
+.file .ico { flex: none; width: 1.6rem; height: 2rem; border: 1.5px solid var(--muted); border-radius: 3px 9px 3px 3px; }
+.file b { display: block; font-family: var(--mono); font-weight: 500; font-size: .85rem; overflow-wrap: anywhere; }
+.file span { font-size: .75rem; color: var(--muted); }
+.fake-link { color: var(--link); text-decoration: underline; word-break: normal; overflow-wrap: anywhere; }
+.fake-note { font-size: .78rem; color: var(--muted); margin: .5rem 0 0; }
+.msg + .fake-note { padding-left: .25rem; }
+.question { font-weight: 500; margin: 1.5rem 0 0; }
+/* 해설 */
+.banner { border-radius: 14px; padding: 1.1rem 1.25rem; font-weight: 700; font-size: 1.2rem; }
+.banner.danger { background: var(--danger-soft); color: var(--danger); }
+.banner.caution { background: var(--caution-soft); color: var(--caution); }
+.banner.safe { background: var(--safe-soft); color: var(--safe); }
+.banner small { display: block; font-weight: 400; font-size: .95rem; margin-top: .25rem; }
+ul.list { list-style: none; margin: 0; padding: 0; }
+ul.list li { padding: .7rem 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 1rem; }
+ul.list li:last-child { border-bottom: 1px solid var(--line); }
+.factor { font-weight: 500; display: block; }
+.text { color: var(--muted); font-size: .925rem; }
+.pts { font-weight: 700; white-space: nowrap; }
+.score-line { font-size: .95rem; margin: 0 0 .25rem; }
+.note { font-size: .875rem; color: var(--muted); margin-top: .75rem; }
+/* 결과 */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 1rem 0; }
+.stat { background: var(--field); border-radius: 12px; padding: .9rem .75rem; }
+.stat b { display: block; font-size: 1.6rem; line-height: 1.2; }
+.stat span { font-size: .8rem; color: var(--muted); }
+.gap { font-size: 1.15rem; font-weight: 700; margin: 1.25rem 0 .25rem; }
+.error { color: var(--danger); }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+
+<!-- 화면 1. 시작 안내 -->
+<section id="s-start">
+  <p style="margin:0 0 1.5rem"><a href="/" style="color:inherit;font-size:.9rem">← 처음으로</a></p>
+  <h1>캐치피싱</h1>
+  <p><b>평소 업무 중이라고 생각해 주세요.</b></p>
+  <p>회사에서 받은 것 같은 메일과 문자 6개가 차례로 나와요. 진짜 업무 메시지도 섞여 있어요.</p>
+  <p>평소에 하던 대로 골라 주세요. 모든 메시지를 의심하면, 확인하느라 업무가 늦어진 것으로 기록돼요.</p>
+  <p class="muted">이 체험은 평가가 아니며 결과는 익명으로 모입니다.</p>
+  <h2>내 직군</h2>
+  <div class="choices" id="jobs"></div>
+  <div class="nav"><button class="primary" id="btn-start" disabled>시작하기</button></div>
+</section>
+
+<!-- 화면 2. 문진표 -->
+<section id="s-survey" hidden>
+  <div class="progress" id="survey-progress"></div>
+  <div class="bar"><i id="survey-bar"></i></div>
+  <p class="muted">정답이 있는 질문이 아닙니다. 평소 모습 그대로 답해 주세요. 답은 익명 번호로만 저장됩니다.</p>
+  <p class="question" id="survey-q"></p>
+  <div id="survey-choices"></div>
+  <div class="nav">
+    <button class="secondary" id="survey-prev">이전</button>
+    <button class="primary" id="survey-next" disabled>다음</button>
+  </div>
+  <p class="error" id="start-error" role="alert"></p>
+</section>
+
+<!-- 화면 3-1. 게임: 문제 보기 -->
+<section id="s-game" hidden>
+  <div class="progress" id="game-progress"></div>
+  <div class="bar"><i id="game-bar"></i></div>
+  <div id="card"></div>
+  <p class="question">이 메시지를 받았다면 어떻게 하시겠어요?</p>
+  <div class="choices">
+    <button class="choice" data-choice="click">링크·첨부를 열어 본다</button>
+    <button class="choice" data-choice="call">적힌 번호로 전화해 본다</button>
+    <button class="choice" data-choice="official">공식 경로로 직접 확인한다<small>공식 앱, 대표번호, 사내 담당자 등</small></button>
+  </div>
+  <p class="error" id="game-error" role="alert"></p>
+</section>
+
+<!-- 화면 3-2. 게임: 해설 -->
+<section id="s-explain" hidden>
+  <div class="progress" id="explain-progress"></div>
+  <div id="explain"></div>
+  <div class="nav"><button class="primary" id="btn-next">다음 문제</button></div>
+</section>
+
+<!-- 화면 4. 결과 -->
+<section id="s-result" hidden>
+  <h1>내 결과</h1>
+  <div id="result"></div>
+  <div class="nav">
+    <a class="primary" href="/check" style="text-align:center;text-decoration:none">링크 직접 검사해 보기</a>
+    <button class="secondary" id="btn-restart">처음으로</button>
+  </div>
+</section>
+
+</main>
+<script>
+// 직군 (팀 결정, 임시)
+const JOBS = [["hr","인사"],["finance","재무·회계"],["sales","영업·고객"],["dev","개발·IT"],["office","일반 사무"]];
+// 문진표 (B 설계 3번)
+const SURVEY = [
+  { id: "Q1", text: "수상한 메일이나 문자를 받으면 피싱인지 구분할 자신이 있다.", scale: true },
+  { id: "Q2", text: "최근 1년 안에 피싱이 의심되는 메일·문자를 받아 본 적이 있나요?",
+    options: ["없다", "있었지만 그냥 지웠다", "있었고 링크나 첨부를 열어 본 적이 있다", "있었고 공식 경로로 확인했다", "잘 모르겠다"] },
+  { id: "Q3", text: "모르는 링크가 담긴 문자를 받으면 보통 어떻게 하나요?",
+    options: ["링크를 눌러 확인한다", "문자에 적힌 번호로 전화해 본다", "공식 앱이나 대표번호로 직접 확인한다", "무시한다"] },
+  { id: "Q4", text: "최근 1년 안에 정보보안(피싱) 교육을 받은 적이 있나요?", options: ["있다", "없다", "기억나지 않는다"] }
+];
+const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
+
+const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function show(id) {
+  ["s-start", "s-survey", "s-game", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
+  window.scrollTo(0, 0);
+}
+async function post(url, body) {
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "서버에 연결하지 못했어요.");
+  return data;
+}
+
+// 화면 1
+$("jobs").innerHTML = JOBS.map(([v, t]) => `<button class="choice" data-job="${v}" aria-pressed="false">${t}</button>`).join("");
+$("jobs").addEventListener("click", e => {
+  const b = e.target.closest("[data-job]"); if (!b) return;
+  state.job = b.dataset.job;
+  $("jobs").querySelectorAll("[data-job]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  $("btn-start").disabled = false;
+});
+$("btn-start").onclick = () => { state.q = 0; renderSurvey(); show("s-survey"); };
+
+// 화면 2
+function renderSurvey() {
+  const q = SURVEY[state.q], cur = state.survey[q.id];
+  $("survey-progress").textContent = `질문 ${state.q + 1}/${SURVEY.length}`;
+  $("survey-bar").style.width = `${(state.q + 1) / SURVEY.length * 100}%`;
+  $("survey-q").textContent = q.text;
+  if (q.scale) {
+    $("survey-choices").innerHTML = `<div class="choices scale">${[1,2,3,4,5].map(n => `<button class="choice" data-v="${n}" aria-pressed="${cur === n}">${n}</button>`).join("")}</div>
+      <div class="scale-labels"><span>전혀 아니다</span><span>매우 그렇다</span></div>`;
+  } else {
+    $("survey-choices").innerHTML = `<div class="choices">${q.options.map(o => `<button class="choice" data-v="${esc(o)}" aria-pressed="${cur === o}">${esc(o)}</button>`).join("")}</div>`;
+  }
+  $("survey-prev").style.visibility = state.q === 0 ? "hidden" : "visible";
+  $("survey-next").textContent = state.q === SURVEY.length - 1 ? "게임 시작" : "다음";
+  $("survey-next").disabled = cur === undefined;
+}
+$("survey-choices").addEventListener("click", e => {
+  const b = e.target.closest("[data-v]"); if (!b) return;
+  const q = SURVEY[state.q];
+  state.survey[q.id] = q.scale ? Number(b.dataset.v) : b.dataset.v;
+  renderSurvey();
+});
+$("survey-prev").onclick = () => { if (state.q > 0) { state.q--; renderSurvey(); } };
+$("survey-next").onclick = async () => {
+  if (state.q < SURVEY.length - 1) { state.q++; renderSurvey(); return; }
+  $("survey-next").disabled = true; $("start-error").textContent = "";
+  try {
+    const d = await post("/api/start", { job: state.job, self_check: state.survey });
+    Object.assign(state, { anon: d.anon_id, cards: d.scenarios, i: 0, answers: [] });
+    renderCard(); show("s-game");
+  } catch (err) { $("start-error").textContent = err.message; $("survey-next").disabled = false; }
+};
+
+// 화면 3-1 (B 10/25: 카드를 폰 문자·메일 화면 모양으로)
+// 하는 일: 문제마다 화면에 보일 시각. 문제 순서대로 하나씩 쓴다
+// 이유: 실제 폰 화면에는 받은 시각이 늘 보여서, 없으면 어색하다
+// 참고: 꾸밈용 가짜 시각이다. 채점·기록과는 상관없다
+const TIMES = ["오전 9:12", "오전 10:47", "오전 11:30", "오후 1:05", "오후 2:18", "오후 3:41", "오후 4:26", "오후 5:09", "오후 5:52"];
+
+// 하는 일: 폰 맨 위 상태 표시줄(시각, 신호, 배터리)을 만든다
+// 이유: 이 줄이 있어야 한눈에 "폰 화면"으로 보인다
+// 참고: aria-hidden이라 화면 낭독기는 이 줄을 읽지 않는다 (꾸밈이라서)
+function statusBar(t) {
+  return `<div class="status" aria-hidden="true"><span>${t.replace(/^오[전후] /, "")}</span>
+    <span class="icons"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"><i></i></span></span></div>`;
+}
+
+// 하는 일: 카드 1장을 폰 화면 HTML 글자로 만들어 돌려준다 (화면에 넣는 일은 renderCard가 한다)
+// 이유: 만드는 일과 넣는 일을 나누면, 미리보기에서 카드 9장을 한꺼번에 그려 볼 수 있다
+// 참고: 서버가 보내 주는 칸(channel, sender, subject, body, link, attachment)만 쓴다. 서버는 고치지 않았다
+function cardHTML(c, i) {
+  const t = TIMES[i % TIMES.length];
+  // 하는 일: 링크 주소의 / 뒤에 <wbr>(줄을 바꿔도 되는 자리)를 넣는다
+  // 이유: 좁은 폰에서 주소가 길면 단어 가운데가 아니라 / 뒤에서 줄이 바뀌게 하려고
+  // 참고: esc로 먼저 안전한 글자로 바꾼 다음에 넣는다 (순서가 바뀌면 안전 처리가 깨진다)
+  const link = c.link ? `<br><span class="fake-link">${esc(c.link).replace(/\/(?!\/)/g, "/<wbr>")}</span>` : "";
+  const note = c.link ? `<p class="fake-note">연습용 주소라 눌러도 열리지 않아요</p>` : "";
+  if (c.channel === "email") {
+    // 하는 일: "인사팀 <hr@...>"를 이름과 주소로 나눈다
+    // 이유: 열린 메일 화면처럼 "이름 <주소>"를 보여 주려고. 주소는 수상한 점을 찾는 단서라 꼭 보여야 한다
+    const [name, addr] = (c.sender || "").split("<");
+    const nm = name.trim(), ad = addr ? addr.replace(">", "").trim() : "";
+    return `<div class="phone" role="group" aria-label="받은 메일">${statusBar(t)}
+      <div class="appbar"><span class="back" aria-hidden="true">‹</span><b>받은편지함</b></div>
+      <div class="mail-subject">${esc(c.subject)}</div>
+      <div class="mail-from"><div class="meta"><span><b>${esc(nm)}</b> ${ad ? `<span class="addr">&lt;${esc(ad)}&gt;</span>` : ""}</span>
+        <span class="to">받는 사람: 나</span></div><time>${t}</time></div>
+      <div class="mail-body">${esc(c.body)}${link}${note}</div>
+      ${c.attachment ? `<div class="file"><span class="ico" aria-hidden="true"></span><div><b>${esc(c.attachment)}</b><span>첨부 파일 1개</span></div></div>` : ""}
+    </div>`;
+  }
+  // 하는 일: "건강보험 / 010-0000-0000"에서 번호만 꺼낸다
+  // 이유: 저장 안 된 번호로 온 문자는 실제 폰에서 맨 위에 번호만 보인다 (10/24 기본안: 맨 위에 발신 번호)
+  // 참고: 이름(건강보험 등)은 본문 맨 앞 [건강보험]에 이미 들어 있어서 빠지는 정보가 없다
+  const [name, num] = (c.sender || "").split(" / ");
+  return `<div class="phone" role="group" aria-label="받은 문자">${statusBar(t)}
+    <div class="appbar"><span class="back" aria-hidden="true">‹</span><div class="who"><b>${esc(num || name)}</b></div></div>
+    <div class="thread"><p class="day">오늘</p>
+      <div class="msg"><div class="bubble">${esc(c.body)}${link}</div><time>${t}</time></div>${note}</div>
+  </div>`;
+}
+
+function renderCard() {
+  const c = state.cards[state.i], n = state.cards.length;
+  $("game-progress").textContent = `문제 ${state.i + 1}/${n}`;
+  $("game-bar").style.width = `${(state.i + 1) / n * 100}%`;
+  $("card").innerHTML = cardHTML(c, state.i);
+  $("game-error").textContent = "";
+}
+document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = async () => {
+  const c = state.cards[state.i];
+  document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = true);
+  try {
+    const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice });
+    state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
+    renderExplain(r); show("s-explain");
+  } catch (err) { $("game-error").textContent = err.message; }
+  finally { document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = false); }
+});
+
+// 화면 3-2 (배너 문구는 B 설계 그대로)
+function renderExplain(r) {
+  let cls, head;
+  if (r.is_phishing) [cls, head] = r.is_correct ? ["safe", "잘 막았어요"] : ["danger", "속았어요"];
+  else [cls, head] = r.over_suspicion ? ["caution", "안전하지만 확인이 조금 지나쳤어요 (과잉 의심)"] : ["safe", "정상 메시지였어요. 괜찮아요"];
+  let html = `<div class="banner ${cls}">${head}<small>이 메시지는 ${r.is_phishing ? "피싱" : "정상"}입니다</small></div>
+    <h2>해설</h2><p>${esc(r.explanation)}</p>
+    <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
+    <ul class="list">${r.clues.map(c => `<li><div><span class="factor">${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>`;
+  const a = r.analysis;
+  html += `<h2>탐지 엔진 분석</h2>`;
+  if (a) {
+    html += `<p class="score-line">${a.type === "email" ? "메일" : "링크"} 위험 점수 <b>${a.score}</b> / 100</p>`;
+    if (a.reasons.length) html += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
+    else html += `<p class="muted">링크에서 위험 신호를 찾지 못했어요.</p>`;
+    if (a.unavailable.length) html += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+    if (r.is_phishing && a.score < 30) html += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
+  } else {
+    html += `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
+  }
+  $("explain").innerHTML = html;
+  $("explain-progress").textContent = `문제 ${state.i + 1}/${state.cards.length}`;
+  $("btn-next").textContent = state.i === state.cards.length - 1 ? "결과 보기" : "다음 문제";
+}
+$("btn-next").onclick = async () => {
+  if (state.i < state.cards.length - 1) { state.i++; renderCard(); show("s-game"); return; }
+  $("btn-next").disabled = true;
+  try {
+    const r = await post("/api/result", { anon_id: state.anon, self_check: state.survey, answers: state.answers });
+    renderResult(r); show("s-result");
+  } catch (err) { $("explain").insertAdjacentHTML("beforeend", `<p class="error">${esc(err.message)}</p>`); }
+  finally { $("btn-next").disabled = false; }
+};
+
+// 화면 4
+function renderResult(r) {
+  let html = `<div class="stats">
+      <div class="stat"><b>${r.correct}/${r.played}</b><span>맞힌 문제</span></div>
+      <div class="stat"><b>${r.wrong}</b><span>속은 횟수</span></div>
+      <div class="stat"><b>${r.over_suspicion}</b><span>과잉 의심</span></div>
+    </div>
+    <p class="gap">${esc(r.gap_message)}</p>
+    <p class="muted">자신감 ${r.confidence}점 / 정답률 ${r.accuracy}%</p>`;
+  if (r.weak_types.length) {
+    html += `<h2>많이 속은 유형</h2><p>${r.weak_types.map(esc).join(", ")}</p>`;
+    html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
+  }
+  html += `<p class="note">익명 번호 ${esc(state.anon)}</p>`;
+  $("result").innerHTML = html;
+}
+$("btn-restart").onclick = () => {
+  Object.assign(state, { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [] });
+  $("jobs").querySelectorAll("[data-job]").forEach(x => x.setAttribute("aria-pressed", "false"));
+  $("btn-start").disabled = true; show("s-start");
+};
+</script>
+</body>
+</html>
