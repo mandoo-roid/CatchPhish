@@ -172,6 +172,156 @@ docs/
 
 ## 📢 팀 공지 (단톡 대신 여기에 모아 둠, 최신이 위)
 
+<!--
+사용법 (이 주석은 올릴 때 지워도 돼요)
+1. 저장소에서 docs/AI_인수인계.md를 열고 연필(Edit) 아이콘을 누른다.
+2. "## 📢 팀 공지" 바로 아래, "### 10/25 (B)" 위에 아래 "### 10/25 (C)" 부분 전체를 붙여넣는다. (최신이 위)
+3. 맨 아래 "다른 칸도 같이 고치기"의 두 가지도 반영한다.
+4. 커밋 메시지: [C] 인수인계서에 해시체인·장부 저장 공지 추가
+※ backend/db_logs/ledger.py 와 test_ledger.py 를 저장소에 올린 뒤에 이 공지를 올려요.
+-->
+
+### 10/25 (C)
+
+**한눈에 보기**
+
+| 구분 | 내용 | 상태 |
+|---|---|---|
+| 해시체인 (`backend/db_logs/hashchain.py`) | 지문 계산, 기록 생성, 체인 검증 | ✅ 저장, Colab 시험 통과 |
+| 장부 저장 (`backend/db_logs/ledger.py`) | DB에 저장·불러오기 (`append_record`, `load_entries`) | ✅ 저장, Colab(SQLite) 시험 통과. **진짜 Postgres는 아직 시험 못 함** |
+| 시험 코드 (`backend/db_logs/test_ledger.py`) | 정상·수정·삭제·동시 저장 4가지 시험 | ✅ 저장 |
+| 통계 (`backend/db_logs/stats.py`) | `compute_stats` | ⏳ C |
+| 서버 연결 (서버 약속 7번·6번·5번) | `api/index.py`에서 위 함수 호출 | ⏳ A (아래 3번 참고) |
+| 설계 C 문서 | `docs/설계_C_기록과_통계.md` | ⏳ C |
+
+**1. 해시체인 (`hashchain.py`): 무엇을 하는 코드인가요**
+
+- 게임 결과를 적는 장부에 **고치면 들키는 도장**을 찍는 코드예요. 기록마다 **바로 앞 기록의 지문**을 함께 묶어서 지문을 만들어요. 중간 기록을 고치면 그 기록의 지문이 달라지고, 뒤 기록에 적힌 "앞 지문"과도 안 맞아서 바로 들켜요
+- 함수 3개 (+ 보조 2개):
+
+| 함수 | 하는 일 |
+|---|---|
+| `build_entry(prev_entry, record)` | 새 기록 한 줄을 만들고 지문을 찍어요. `prev_entry`는 바로 앞 기록(첫 기록이면 `None`) |
+| `verify_chain(entries)` | 장부 전체를 처음부터 다시 계산해서 도장이 맞는지 검사해요 |
+| `compute_hash(seq, prev_hash, record, created_at)` | 지문 하나를 계산해요 |
+| `canonical(obj)` | 같은 내용이면 항상 같은 글자가 되게 정리해요 (키 순서 정렬, 공백 없음, 한글 그대로) |
+
+- 지문은 `SHA-256( canonical({seq, prev_hash, record, created_at}) )`이에요. 첫 기록의 `prev_hash`는 `"0"`을 64개 쓴 값이에요
+- `entry` 모양: `{"seq", "prev_hash", "record", "created_at", "hash"}`. `record`는 서버가 만든 10칸(설계 A의 "장부 한 줄에 넣을 것")이 그대로 들어가요
+- `verify_chain`이 알려 주는 것:
+
+| 상황 | 돌려주는 값 |
+|---|---|
+| 이상 없음 | `{"ok": True, "count": 개수}` |
+| 기록 내용이 바뀜 | `{"ok": False, "broken_seq": 번호, "reason": "기록 내용이 바뀜 (변조)"}` |
+| 기록이 중간에서 삭제·삽입됨 | `... "reason": "순번이 끊김 (기록 삭제·삽입 의심)"` |
+| 순서가 바뀜 | `... "reason": "앞 기록의 지문이 안 맞음"` |
+
+- ⚠️ **변조를 막는 것이 아니라 들키게 하는 것**이에요. 작품설명서에는 "위변조 탐지·검증"이라고 써요
+- ⚠️ **맨 끝 기록들을 통째로 지우면 못 잡아요.** 또 서버 관리자가 장부를 처음부터 다시 계산해서 통째로 바꾸는 것도 못 막아요. 보완책(마지막 지문·개수를 따로 저장, 서버만 아는 비밀 열쇠 HMAC)은 **예정**이고 아직 안 만들었어요
+
+**2. 장부 저장 (`ledger.py`): 무엇을 하는 코드인가요**
+
+| 함수 | 하는 일 |
+|---|---|
+| `append_record(record: dict) -> dict` | 마지막 기록을 읽고 `build_entry`로 새 기록을 만들어 DB에 저장한 뒤, 저장된 `entry`를 돌려줘요 |
+| `load_entries() -> list` | 모든 기록을 `seq` 순서대로 돌려줘요 (`verify_chain`과 통계 계산에 씀) |
+
+- **어디에 저장하나:** 환경 변수 `DATABASE_URL`이 **있으면** Neon Postgres, **없으면** SQLite 파일을 써요 (파일 이름은 환경 변수 `LEDGER_SQLITE`, 없으면 `ledger_test.db`). 그래서 같은 코드를 Colab에서 시험하고 Vercel에서는 진짜 DB로 돌릴 수 있어요
+- **테이블 하나:**
+
+```sql
+CREATE TABLE IF NOT EXISTS ledger (
+    seq        BIGINT PRIMARY KEY,
+    prev_hash  TEXT NOT NULL,
+    record     TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    hash       TEXT NOT NULL UNIQUE
+)
+```
+
+- **지켜야 할 약속 (바꾸면 장부 검사가 틀어져요):**
+  - `record`는 **JSONB가 아니라 TEXT**로 저장해요. JSONB는 키 순서와 공백을 바꿔 저장해서, 다시 계산한 지문이 달라져요
+  - `created_at`도 날짜 형식이 아니라 **글자** 그대로 저장해요 (지문 계산에 쓴 글자와 같아야 해요)
+  - 두 요청이 동시에 같은 `seq`를 쓰면 한쪽이 저장에 실패해요. 코드가 **마지막 기록을 다시 읽고 최대 8번 재시도**해요
+  - 호출할 때마다 DB 연결을 열고 닫아요 (Vercel처럼 요청 때만 켜지는 서버에 맞춤)
+- **시험 결과 (Colab, SQLite, 10/25):**
+
+| 시험 | 결과 |
+|---|---|
+| 5건 저장 후 검증 | `ok: True, count: 5` |
+| DB에서 2번 기록을 몰래 수정 | `broken_seq: 2`, "기록 내용이 바뀜 (변조)" |
+| DB에서 3번 기록을 삭제 | `broken_seq: 3`, "순번이 끊김" |
+| 5명이 동시에 8건씩 저장 | 40건 저장, 오류 없음, 체인 정상 |
+
+- **Colab에서 시험하는 법:** 새 노트북에서 `ledger.py`, `test_ledger.py`를 왼쪽 파일 패널의 업로드 버튼으로 올리고, `hashchain.py`는 아래로 받아요. 세 파일이 **같은 폴더**에 있어야 해요
+  ```
+  !wget -q https://raw.githubusercontent.com/mandoo-roid/CatchPhish/main/backend/db_logs/hashchain.py
+  !ls
+  !python test_ledger.py
+  ```
+
+**3. A에게 부탁: 서버에 연결하기**
+
+- 올리는 순서 (순서가 바뀌면 사이트가 잠깐 안 열려요): ① `requirements.txt`에 **`psycopg[binary]`** 한 줄 추가 → ② `api/index.py` 수정. (`ledger.py`는 이미 저장소에 있어요)
+- `api/index.py`의 가져오기는 기존 방식(`sys.path.insert`)과 똑같이 하면 돼요. `ledger.py`가 `from hashchain import ...`로 같은 폴더의 파일을 쓰기 때문이에요 (예시, 확정 아님):
+
+```python
+sys.path.insert(0, os.path.join(ROOT, "backend", "db_logs"))
+from ledger import append_record, load_entries   # noqa: E402
+from hashchain import verify_chain               # noqa: E402
+
+# 서버 약속 7번: /api/answer에서 채점이 끝난 뒤, 장부 한 줄 10칸을 저장
+append_record({"anon_id": ..., "job": ..., "self_check": ..., "scenario_id": ...,
+               "case_type": ..., "is_phishing": ..., "choice": ...,
+               "is_correct": ..., "over_suspicion": ..., "analysis": ...})
+
+# 서버 약속 6번: /api/admin/verify
+result = verify_chain(load_entries())   # {"ok": ..., ...} 를 그대로 돌려줌
+```
+
+- `record`에 넣는 칸과 값은 `설계_A_흐름과_서버약속.md`의 "장부 한 줄에 넣을 것"과 같아야 해요. `append_record`는 칸을 검사하지 않고 **받은 그대로 저장**해요
+- 연결한 뒤 확인: 게임을 한 판 하고, 관리자 화면에서 [기록 검사]가 "정상"인지 봐요
+- ⚠️ DB 주소·비밀번호는 Vercel 환경 변수에만 있고 코드·문서·캡처에 쓰지 않아요 (10/23 공지 3번, 5번)
+
+**4. 아직 안 된 것과 알려진 한계**
+
+- **진짜 Neon Postgres로는 시험하지 않았어요.** 같은 로직을 SQLite로 시험했고 연결 부분만 달라요. 첫 확인은 A가 연결할 때예요. 에러가 나면 메시지를 그대로 C에게 전해 주세요
+- `stats.py`(관리자 통계 계산, 맞춤 피드백 규칙)는 아직 없어요 (C)
+- 마지막 기록 삭제 감지, 비밀 열쇠(HMAC)는 예정이에요 (1번 참고)
+- `load_entries`는 모든 기록을 한꺼번에 읽어요. 기록이 수백 건 규모인 지금은 충분하지만, 아주 많아지면 느려질 수 있어요
+- Colab에서 시험하며 만들어진 `ledger_test.db` 같은 파일은 저장소에 올리지 않아요
+
+**5. 팀이 정할 것 (새로 생긴 것)**
+
+- 장부 저장(`append_record`)이 **실패하면** 게임을 계속 진행할지, 오류를 보여 줄지. 조용히 넘기면 기록이 빠져 증적의 신뢰가 떨어져요 (A와 C)
+- `/api/result`를 지금처럼 화면이 보낸 선택 목록으로 채점할지, 장부 기록 기준으로 바꿀지. 장부 기준이 조작에 더 강해요 (A와 C)
+- 인원이 적은 직군(예: 3명 미만)의 통계를 숨길지 (관리자 통계)
+
+**6. 이 부분을 AI와 이어서 작업할 때 (AI에게)**
+
+- 칸 이름은 이 파일의 "칸 이름 사전"과 설계 A의 장부 양식을 그대로 써요. 새 칸(예: `kind`, `outcome`)은 만들지 말고 팀 논의 포인트로 제안만 해요
+- `record`는 TEXT, 시각은 글자라는 약속(2번)을 깨는 제안은 하지 않아요
+- 시험은 Colab에서 SQLite로 해요. 진짜 DB에 접속하게 하지 않아요
+- 실제 DB 주소·비밀번호·회사 코드·비밀 열쇠는 코드나 문서에 쓰지 않아요
+- 이 파트의 다음 일은 `stats.py` → 마지막 기록 삭제 감지·HMAC → 관리자 화면 연결 순이에요
+
+---
+
+## 다른 칸도 같이 고치기
+
+**(1) "### 아직 안 된 것"의 첫 줄을 이렇게 바꿔요**
+
+```
+- 기록 저장(`ledger.py`)과 해시체인(`hashchain.py`)은 저장됨 (10/25 C, Colab SQLite 시험 통과). 서버 연결(7번·6번), 관리자 통계 계산(`stats.py`), 진짜 Postgres 시험은 아직 (C, A)
+```
+
+**(2) 맨 아래 "마지막 수정" 줄 끝에 한 문장 덧붙여요**
+
+```
+10/25 (C): 해시체인·장부 저장 공지를 추가함.
+```
+
 ### 10/25 (B)
 
 **한눈에 보기**
