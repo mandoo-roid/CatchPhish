@@ -62,6 +62,20 @@ main.wide { max-width: 78rem; }
   .answer-col { position: sticky; top: 1.5rem; }
   .answer-col .question { margin-top: 0; }
 }
+/* 해설 화면 배치 (B 10/26: 해설에서도 메시지를 계속 보여 주기, 팀 결정)
+   하는 일: 넓은 화면에서는 왼쪽에 방금 본 메시지, 오른쪽에 해설을 둔다. 좁은 화면(폰)에서는 해설이 위, 메시지가 아래
+   이유: "수상한 점"을 메시지와 나란히 보면 어디가 이상했는지 바로 찾을 수 있다 (교육 효과)
+   참고: 폰에서는 해설 → 메시지 → 다음 버튼 순서. 결과를 먼저 보여 주고, 메시지를 본 뒤에 다음으로 넘어가게 하려고. 넓은 화면에서는 메시지가 화면에 붙어 있어서 해설을 내려 읽어도 메시지가 보인다 */
+.explain-grid { display: grid; gap: 1.5rem; }
+.explain-col { order: -1; word-break: keep-all; overflow-wrap: anywhere; }
+.next-col { order: 1; margin-top: 0; }
+@media (min-width: 62rem) {
+  /* 하는 일: 왼쪽 칸 전체에 메시지, 오른쪽 위에 해설, 오른쪽 아래에 다음 버튼 */
+  .explain-grid { grid-template-columns: minmax(0, 1fr) 26rem; grid-template-areas: "screen text" "screen next"; gap: 1.5rem 2rem; align-items: start; }
+  .explain-grid .screen-col { grid-area: screen; position: sticky; top: 1.5rem; }
+  .explain-col { grid-area: text; }
+  .next-col { grid-area: next; }
+}
 .screen-note { font-size: .78rem; color: var(--muted); margin: .5rem 0 0; text-align: center; }
 
 /* 메일: PC 브라우저에서 웹메일을 연 화면
@@ -215,11 +229,14 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
   </div>
 </section>
 
-<!-- 화면 3-2. 게임: 해설 -->
+<!-- 화면 3-2. 게임: 해설 (B 10/26: 왼쪽에 방금 본 메시지, 오른쪽에 해설) -->
 <section id="s-explain" hidden>
   <div class="progress" id="explain-progress"></div>
-  <div id="explain"></div>
-  <div class="nav"><button class="primary" id="btn-next">다음 문제</button></div>
+  <div class="explain-grid">
+    <div class="screen-col"><div id="explain-card"></div></div>
+    <div class="explain-col"><div id="explain"></div></div>
+    <div class="nav next-col"><button class="primary" id="btn-next">다음 문제</button></div>
+  </div>
 </section>
 
 <!-- 화면 4. 결과 -->
@@ -253,8 +270,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 
 function show(id) {
   ["s-start", "s-survey", "s-game", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
-  // 하는 일: 문제 화면일 때만 넓은 배치를 쓴다 / 이유: 왼쪽 메시지 화면과 오른쪽 버튼을 나란히 두려고
-  document.querySelector("main").classList.toggle("wide", id === "s-game");
+  // 하는 일: 문제 화면과 해설 화면일 때만 넓은 배치를 쓴다 / 이유: 왼쪽 메시지 화면과 오른쪽 버튼·해설을 나란히 두려고
+  document.querySelector("main").classList.toggle("wide", id === "s-game" || id === "s-explain");
   window.scrollTo(0, 0);
 }
 async function post(url, body) {
@@ -402,6 +419,10 @@ function renderExplain(r) {
     html += `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
   }
   $("explain").innerHTML = html;
+  // 하는 일: 방금 답한 메시지를 해설 화면 왼쪽에 다시 그린다
+  // 이유: 해설의 수상한 점을 메시지와 나란히 보며 확인하게 하려고
+  // 참고: 문제 화면과 같은 cardHTML을 써서 글자와 모양이 똑같다
+  $("explain-card").innerHTML = cardHTML(state.cards[state.i], state.i);
   $("explain-progress").textContent = `문제 ${state.i + 1}/${state.cards.length}`;
   $("btn-next").textContent = state.i === state.cards.length - 1 ? "결과 보기" : "다음 문제";
 }
