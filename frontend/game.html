@@ -51,19 +51,96 @@ p { margin: 0 0 1rem; }
 .secondary { color: var(--ink); background: transparent; border: 1px solid var(--line); }
 .primary:disabled { opacity: .35; cursor: not-allowed; }
 button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-/* 메시지 카드 */
-.sms { background: var(--field); border-radius: 16px; padding: 1rem; }
-.sms .from { font-size: .85rem; color: var(--muted); margin-bottom: .5rem; }
-.sms .bubble { background: var(--bubble); border-radius: 4px 16px 16px 16px; padding: .8rem 1rem; display: inline-block; max-width: 100%; }
-.mail { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.mail .head { background: var(--field); padding: .8rem 1rem; font-size: .9rem; }
-.mail .head div { display: flex; gap: .5rem; }
-.mail .head span:first-child { color: var(--muted); white-space: nowrap; }
-.mail .subject { font-weight: 700; padding: .9rem 1rem 0; }
-.mail .body { padding: .5rem 1rem 1rem; }
-.fake-link { color: var(--link); text-decoration: underline; word-break: break-all; font-family: var(--mono); font-size: .9rem; }
-.fake-note { display: block; font-size: .8rem; color: var(--muted); margin-top: .2rem; }
-.attach { display: inline-block; margin: 0 1rem 1rem; border: 1px solid var(--line); border-radius: 8px; padding: .4rem .7rem; font-size: .875rem; font-family: var(--mono); }
+/* 문제 화면 배치 (B 10/26: 왼쪽 메시지 화면, 오른쪽 질문·버튼)
+   하는 일: 넓은 화면에서는 메시지를 왼쪽, 답 고르기를 오른쪽에 나란히 둔다. 좁은 화면(폰)에서는 위아래로 쌓는다
+   이유: 실제로 메일·문자를 받은 화면을 크게 보면서 바로 옆에서 행동을 고르게 하려고
+   참고: main.wide는 문제 화면일 때만 붙는다 (show 함수). 다른 화면은 예전 폭 그대로 */
+main.wide { max-width: 78rem; }
+.game-grid { display: grid; gap: 1.5rem; }
+@media (min-width: 62rem) {
+  .game-grid { grid-template-columns: minmax(0, 1fr) 19rem; gap: 2rem; align-items: start; }
+  .answer-col { position: sticky; top: 1.5rem; }
+  .answer-col .question { margin-top: 0; }
+}
+.screen-note { font-size: .78rem; color: var(--muted); margin: .5rem 0 0; text-align: center; }
+
+/* 메일: PC 브라우저에서 웹메일을 연 화면
+   하는 일: 창 제목 줄, 주소창, 메일함 목록(왼쪽), 읽기 화면(오른쪽)을 그린다
+   이유: 회사 PC에서 메일을 열어 본 모습과 비슷해야 실제처럼 판단한다
+   참고: 특정 회사의 로고·이름·색 배치는 쓰지 않았다 (지식재산권). 주소창 주소는 연습용 .example */
+.pc { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); box-shadow: 0 6px 24px rgba(0,0,0,.08); }
+.pc-title { display: flex; align-items: center; justify-content: space-between; background: var(--field); font-size: .78rem; color: var(--muted); padding-left: .9rem; }
+.pc-title .win { display: flex; }
+.pc-title .win span { width: 2.6rem; height: 2rem; display: grid; place-items: center; font-size: .8rem; }
+.pc-addr { display: flex; align-items: center; gap: .6rem; padding: .4rem .7rem; border-bottom: 1px solid var(--line); background: var(--field); }
+.pc-addr .nav-ico { color: var(--muted); font-size: .9rem; letter-spacing: .35rem; }
+.pc-addr .url { flex: 1; background: var(--paper); border-radius: 999px; padding: .25rem .9rem; font-size: .8rem; color: var(--muted); }
+.wm-top { display: flex; align-items: center; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); }
+.wm-top .brand { font-weight: 700; white-space: nowrap; }
+.wm-top .search { flex: 1; max-width: 30rem; background: var(--field); border-radius: 8px; padding: .45rem .9rem; font-size: .85rem; color: var(--muted); }
+.wm-body { display: grid; grid-template-columns: 11rem minmax(0, 1fr); }
+.wm-side { padding: .8rem .6rem; font-size: .88rem; border-right: 1px solid var(--line); }
+.wm-side .compose { display: inline-block; border: 1px solid var(--line); border-radius: 12px; padding: .6rem 1rem; margin-bottom: .8rem; font-weight: 500; }
+.wm-side div { padding: .3rem .7rem; border-radius: 0 999px 999px 0; display: flex; justify-content: space-between; }
+.wm-side .on { background: var(--bubble); font-weight: 700; }
+.wm-read { padding: .9rem 1.4rem 1.4rem; min-width: 0; }
+.wm-tools { color: var(--muted); font-size: .85rem; letter-spacing: .6rem; margin-bottom: .8rem; }
+.wm-subject { font-size: 1.35rem; font-weight: 400; line-height: 1.4; margin: 0 0 1rem; word-break: keep-all; }
+.wm-subject .tag { font-size: .72rem; background: var(--field); border-radius: 4px; padding: .1rem .4rem; vertical-align: middle; margin-left: .4rem; color: var(--muted); }
+.wm-from { display: flex; gap: .8rem; align-items: flex-start; }
+.wm-from .avatar { flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--bubble); display: grid; place-items: center; font-weight: 700; }
+.wm-from .meta { flex: 1; min-width: 0; line-height: 1.4; }
+.wm-from .addr { color: var(--muted); font-size: .85rem; overflow-wrap: anywhere; }
+.wm-from .to { display: block; color: var(--muted); font-size: .8rem; }
+.wm-from time { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+.wm-text { margin: 1.2rem 0 0 3.3rem; font-size: .95rem; word-break: keep-all; overflow-wrap: anywhere; }
+.wm-file { display: inline-flex; gap: .7rem; align-items: center; margin: 1.2rem 0 0 3.3rem; border: 1px solid var(--line); border-radius: 8px; padding: .7rem .9rem; max-width: calc(100% - 3.3rem); }
+.wm-file .ico { flex: none; width: 1.6rem; height: 2rem; border: 1.5px solid var(--muted); border-radius: 3px 9px 3px 3px; }
+.wm-file b { display: block; font-family: var(--mono); font-weight: 500; font-size: .85rem; overflow-wrap: anywhere; }
+.wm-file span { font-size: .75rem; color: var(--muted); }
+.wm-reply { display: flex; gap: .5rem; margin: 1.4rem 0 0 3.3rem; }
+.wm-reply span { border: 1px solid var(--line); border-radius: 999px; padding: .4rem 1.1rem; font-size: .85rem; color: var(--muted); }
+@media (max-width: 44rem) {
+  .wm-side, .wm-top .search, .pc-addr .nav-ico { display: none; }
+  .wm-body { grid-template-columns: minmax(0, 1fr); }
+  .wm-read { padding: .9rem 1rem 1.2rem; }
+  .wm-text, .wm-file, .wm-reply { margin-left: 0; max-width: 100%; }
+}
+
+/* 문자: 휴대폰 문자 앱 화면
+   하는 일: 폰 테두리, 상태 표시줄, 보낸 번호, 날짜, 말풍선, 아래 입력칸을 그린다
+   이유: 직원이 폰으로 문자를 확인하는 모습과 비슷하게 하려고
+   참고: 특정 회사의 로고·이름은 쓰지 않았다. 입력칸은 꾸밈이라 눌러도 아무 일이 없다 */
+.phone { max-width: 21rem; margin: 0 auto; background: var(--paper); border: 9px solid var(--ink); border-radius: 40px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.12); }
+.status { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1.5rem .3rem; font-size: .8rem; font-weight: 700; }
+.status .icons { display: flex; gap: .35rem; align-items: center; }
+.sig { display: flex; gap: 2px; align-items: flex-end; height: 10px; }
+.sig i { width: 3px; background: var(--ink); border-radius: 1px; }
+.sig i:nth-child(1) { height: 4px; } .sig i:nth-child(2) { height: 6px; } .sig i:nth-child(3) { height: 8px; } .sig i:nth-child(4) { height: 10px; }
+.bat { width: 22px; height: 11px; border: 1.5px solid var(--ink); border-radius: 3px; padding: 1px; }
+.bat i { display: block; width: 70%; height: 100%; background: var(--ink); border-radius: 1px; }
+.sms-head { text-align: center; padding: .3rem 1rem .7rem; border-bottom: 1px solid var(--line); position: relative; }
+.sms-head .back { position: absolute; left: .9rem; top: .9rem; font-size: 1.6rem; line-height: 1; color: var(--link); }
+.sms-head .pic { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--bubble); margin: 0 auto .3rem; display: grid; place-items: center; color: var(--muted); }
+.sms-head .pic i { width: .9rem; height: .9rem; border-radius: 50%; background: var(--muted); box-shadow: 0 1rem 0 .35rem var(--muted); margin-top: -.6rem; }
+.sms-head b { font-size: .9rem; font-weight: 500; }
+.thread { padding: .9rem .8rem 1.4rem; min-height: 18rem; }
+.day { text-align: center; font-size: .72rem; color: var(--muted); margin: 0 0 .7rem; }
+.day b { font-weight: 700; }
+.msg .bubble { background: var(--bubble); border-radius: 18px; padding: .6rem .85rem; max-width: 80%; display: inline-block; font-size: .93rem; word-break: keep-all; overflow-wrap: anywhere; }
+.sms-input { display: flex; align-items: center; gap: .5rem; padding: .5rem .8rem 1rem; }
+.sms-input .plus { width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--field); display: grid; place-items: center; color: var(--muted); }
+.sms-input .box { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-size: .85rem; color: var(--muted); }
+.fake-link { color: var(--link); text-decoration: underline; word-break: normal; overflow-wrap: anywhere; }
+
+/* 답 고르기 버튼: 마우스를 올리면 테두리를 진하고 두껍게 (B 10/26)
+   하는 일: 마우스가 올라간 버튼의 테두리를 파란색 2px로 바꾸고 바탕을 살짝 칠한다
+   이유: 지금 어느 버튼을 누르려는지 잘 보이게 하려고
+   참고: box-shadow로 두께를 더해서 버튼 크기가 바뀌지 않는다 (글자가 흔들리지 않음). 마우스가 있는 기기에서만 동작 */
+@media (hover: hover) {
+  .choice:not(:disabled):hover { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); background: var(--field); }
+}
+.choice:disabled { cursor: wait; opacity: .6; }
 .question { font-weight: 500; margin: 1.5rem 0 0; }
 /* 해설 */
 .banner { border-radius: 14px; padding: 1.1rem 1.25rem; font-weight: 700; font-size: 1.2rem; }
@@ -98,7 +175,7 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
   <p style="margin:0 0 1.5rem"><a href="/" style="color:inherit;font-size:.9rem">← 처음으로</a></p>
   <h1>캐치피싱</h1>
   <p><b>평소 업무 중이라고 생각해 주세요.</b></p>
-  <p>회사에서 받은 것 같은 메일과 문자 6개가 차례로 나와요. 진짜 업무 메시지도 섞여 있어요.</p>
+  <p>회사에서 받은 것 같은 메일과 문자가 차례로 나와요. 진짜 업무 메시지도 섞여 있어요.</p>
   <p>평소에 하던 대로 골라 주세요. 모든 메시지를 의심하면, 확인하느라 업무가 늦어진 것으로 기록돼요.</p>
   <p class="muted">이 체험은 평가가 아니며 결과는 익명으로 모입니다.</p>
   <h2>내 직군</h2>
@@ -124,14 +201,18 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
 <section id="s-game" hidden>
   <div class="progress" id="game-progress"></div>
   <div class="bar"><i id="game-bar"></i></div>
-  <div id="card"></div>
-  <p class="question">이 메시지를 받았다면 어떻게 하시겠어요?</p>
-  <div class="choices">
-    <button class="choice" data-choice="click">링크·첨부를 열어 본다</button>
-    <button class="choice" data-choice="call">적힌 번호로 전화해 본다</button>
-    <button class="choice" data-choice="official">공식 경로로 직접 확인한다<small>공식 앱, 대표번호, 사내 담당자 등</small></button>
+  <div class="game-grid">
+    <div class="screen-col"><div id="card"></div></div>
+    <div class="answer-col">
+      <p class="question">이 메시지를 받았다면 어떻게 하시겠어요?</p>
+      <div class="choices">
+        <button class="choice" data-choice="click">링크·첨부를 열어 본다</button>
+        <button class="choice" data-choice="call">적힌 번호로 전화해 본다</button>
+        <button class="choice" data-choice="official">공식 경로로 직접 확인한다<small>공식 앱, 대표번호, 사내 담당자 등</small></button>
+      </div>
+      <p class="error" id="game-error" role="alert"></p>
+    </div>
   </div>
-  <p class="error" id="game-error" role="alert"></p>
 </section>
 
 <!-- 화면 3-2. 게임: 해설 -->
@@ -172,6 +253,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 
 function show(id) {
   ["s-start", "s-survey", "s-game", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
+  // 하는 일: 문제 화면일 때만 넓은 배치를 쓴다 / 이유: 왼쪽 메시지 화면과 오른쪽 버튼을 나란히 두려고
+  document.querySelector("main").classList.toggle("wide", id === "s-game");
   window.scrollTo(0, 0);
 }
 async function post(url, body) {
@@ -224,23 +307,67 @@ $("survey-next").onclick = async () => {
   } catch (err) { $("start-error").textContent = err.message; $("survey-next").disabled = false; }
 };
 
-// 화면 3-1
+// 화면 3-1 (B 10/25: 카드를 폰 문자·메일 화면 모양으로)
+// 하는 일: 문제마다 화면에 보일 시각. 문제 순서대로 하나씩 쓴다
+// 이유: 실제 폰 화면에는 받은 시각이 늘 보여서, 없으면 어색하다
+// 참고: 꾸밈용 가짜 시각이다. 채점·기록과는 상관없다
+const TIMES = ["오전 9:12", "오전 10:47", "오전 11:30", "오후 1:05", "오후 2:18", "오후 3:41", "오후 4:26", "오후 5:09", "오후 5:52"];
+
+// 하는 일: 폰 맨 위 상태 표시줄(시각, 신호, 배터리)을 만든다
+// 참고: aria-hidden이라 화면 낭독기는 읽지 않는다 (꾸밈이라서)
+function statusBar(t) {
+  return `<div class="status" aria-hidden="true"><span>${t.replace(/^오[전후] /, "")}</span>
+    <span class="icons"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"><i></i></span></span></div>`;
+}
+
+// 하는 일: 카드 1장을 화면 HTML 글자로 만들어 돌려준다 (메일은 PC 웹메일, 문자는 휴대폰 문자 앱)
+// 이유: 만드는 일과 넣는 일을 나누면, 미리보기에서 카드 9장을 한꺼번에 그려 볼 수 있다
+// 참고: 보낸 사람·제목·본문·링크·첨부는 scenarios.json에 적힌 글자를 그대로 쓴다 (esc로 안전하게만 바꿈)
+function cardHTML(c, i) {
+  const t = TIMES[i % TIMES.length];
+  // 하는 일: 링크 주소의 / 뒤에 <wbr>(줄을 바꿔도 되는 자리)를 넣는다. 눈에 보이는 글자는 그대로다
+  const link = c.link ? `<br><span class="fake-link">${esc(c.link).replace(/\/(?!\/)/g, "/<wbr>")}</span>` : "";
+  const note = c.link ? `<p class="screen-note">연습용 주소라 눌러도 열리지 않아요</p>` : "";
+  if (c.channel === "email") {
+    // 하는 일: "인사팀 <hr@...>"를 이름과 주소로 나눈다 (두 글자 모두 그대로 보여 준다)
+    const [name, addr] = (c.sender || "").split("<");
+    const nm = name.trim(), ad = addr ? addr.replace(">", "").trim() : "";
+    return `<div class="pc" role="group" aria-label="PC에서 연 메일">
+      <div class="pc-title" aria-hidden="true"><span>받은편지함 - 사내 메일</span><span class="win"><span>─</span><span>☐</span><span>✕</span></span></div>
+      <div class="pc-addr" aria-hidden="true"><span class="nav-ico">← → ↻</span><span class="url">mail.company.example/inbox</span></div>
+      <div class="wm-top" aria-hidden="true"><span class="brand">사내 메일</span><span class="search">메일 검색</span></div>
+      <div class="wm-body">
+        <nav class="wm-side" aria-hidden="true"><span class="compose">✎ 편지쓰기</span>
+          <div class="on"><span>받은편지함</span><span>3</span></div><div><span>별표편지함</span></div><div><span>보낸편지함</span></div><div><span>임시보관함</span></div></nav>
+        <div class="wm-read">
+          <div class="wm-tools" aria-hidden="true">← ▣ 🗑 ✉</div>
+          <h3 class="wm-subject">${esc(c.subject)}<span class="tag" aria-hidden="true">받은편지함</span></h3>
+          <div class="wm-from"><span class="avatar" aria-hidden="true">${esc(nm.charAt(0))}</span>
+            <div class="meta"><b>${esc(nm)}</b> ${ad ? `<span class="addr">&lt;${esc(ad)}&gt;</span>` : ""}<span class="to">받는 사람: 나 ▾</span></div>
+            <time>${t}</time></div>
+          <div class="wm-text">${esc(c.body)}${link}</div>
+          ${c.attachment ? `<div class="wm-file"><span class="ico" aria-hidden="true"></span><div><b>${esc(c.attachment)}</b><span>첨부파일 1개</span></div></div>` : ""}
+          <div class="wm-reply" aria-hidden="true"><span>↩ 답장</span><span>↪ 전달</span></div>
+        </div>
+      </div>
+    </div>${note}`;
+  }
+  // 하는 일: "건강보험 / 010-0000-0000"에서 번호를 꺼내 맨 위에 보여 준다 (10/24 기본안)
+  // 참고: 이름(건강보험 등)은 본문 맨 앞 [건강보험]에 그대로 들어 있다
+  const [name, num] = (c.sender || "").split(" / ");
+  return `<div class="phone" role="group" aria-label="휴대폰으로 받은 문자">${statusBar(t)}
+    <div class="sms-head"><span class="back" aria-hidden="true">‹</span><div class="pic" aria-hidden="true"><i></i></div><b>${esc(num || name)}</b></div>
+    <div class="thread"><p class="day"><b>문자 메시지</b><br>오늘 ${t}</p>
+      <div class="msg"><div class="bubble">${esc(c.body)}${link}</div></div></div>
+    <div class="sms-input" aria-hidden="true"><span class="plus">+</span><span class="box">문자 메시지</span></div>
+  </div>${note}`;
+}
+
 function renderCard() {
   const c = state.cards[state.i], n = state.cards.length;
   $("game-progress").textContent = `문제 ${state.i + 1}/${n}`;
   $("game-bar").style.width = `${(state.i + 1) / n * 100}%`;
-  const link = c.link ? `<br><span class="fake-link">${esc(c.link)}</span><span class="fake-note">연습용이라 열리지 않아요</span>` : "";
-  if (c.channel === "email") {
-    const [name, addr] = (c.sender || "").split("<");
-    $("card").innerHTML = `<div class="mail">
-      <div class="head"><div><span>보낸 사람</span><span>${esc(name.trim())} ${addr ? "&lt;" + esc(addr.replace(">", "")) + "&gt;" : ""}</span></div></div>
-      <div class="subject">${esc(c.subject)}</div>
-      <div class="body">${esc(c.body)}${link}</div>
-      ${c.attachment ? `<span class="attach">📎 ${esc(c.attachment)}</span>` : ""}
-    </div>`;
-  } else {
-    $("card").innerHTML = `<div class="sms"><div class="from">${esc(c.sender)}</div><div class="bubble">${esc(c.body)}${link}</div></div>`;
-  }
+  $("card").innerHTML = cardHTML(c, state.i);
   $("game-error").textContent = "";
 }
 document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = async () => {
