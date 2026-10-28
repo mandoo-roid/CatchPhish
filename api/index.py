@@ -8,6 +8,7 @@
 import hmac
 import json
 import os
+import random
 import secrets
 import sys
 
@@ -43,9 +44,12 @@ PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", 
 
 
 def pick_scenarios(job):
-    # 팀 결정은 "공통 4개 + 직군 특화 1개"지만, B의 시나리오가 아직 공통 1개 + 특화 5개라서
-    # 지금은 모두에게 6개를 다 보여 준다. B가 시나리오를 정리하면 여기만 바꾸면 된다.
-    return list(SCENARIOS.values())
+    # 하는 일: 공통 카드(job_group이 common)와 내 직군 카드만 골라 순서를 섞는다 (팀 결정: 공통 4 + 직군 1 = 5개)
+    # 이유: 직군에 맞는 문제를 풀게 하고, 정상 메시지가 늘 같은 자리에 나와 위치를 외우는 일을 막으려고
+    # 참고: 정답·채점은 scenario_id로 찾기 때문에 순서를 섞어도 채점에는 영향이 없다
+    cards = [s for s in SCENARIOS.values() if s.get("job_group") in ("common", job)]
+    random.shuffle(cards)
+    return cards
 
 
 def grade(card, choice):
