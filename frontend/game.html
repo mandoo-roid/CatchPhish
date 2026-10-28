@@ -391,7 +391,8 @@ document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = asyn
   const c = state.cards[state.i];
   document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = true);
   try {
-    const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice });
+    
+    const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice, job: state.job, self_check: state.survey });
     state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
     renderExplain(r); show("s-explain");
   } catch (err) { $("game-error").textContent = err.message; }
