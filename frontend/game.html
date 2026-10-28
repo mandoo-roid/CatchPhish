@@ -448,7 +448,8 @@ function renderResult(r) {
        // 하는 일: 진짜 업무 메시지까지 의심한 횟수를 "업무 지연"으로 보여 준다 (과잉 의심 반영, A 10/28)
      // 이유: 시작 안내문에서 "모두 의심하면 업무가 늦어진 것으로 기록돼요"라고 약속했기 때문. 다 의심하는 것도 대가가 있다는 걸 보여 준다
      // 참고: 색은 해설 화면의 "과잉 의심" 배너와 같은 노란색. 숫자는 서버가 다시 채점한 over_suspicion 그대로
-     if (r.over_suspicion > 0) html += `<div class="banner caution" style="margin-top:1rem">확인하느라 업무가 ${r.over_suspicion}번 늦어졌어요<small>진짜 업무 메시지까지 의심해서 따로 확인했어요. 모든 메시지를 의심하면 일이 늦어져요.</small></div>`;
+          
+  if (r.over_suspicion > 0) html += `<div class="banner caution" style="margin-top:1rem;word-break:keep-all">확인은 잘했지만, 업무가 ${r.over_suspicion}번 늦어졌어요<small>정상 메시지의 특징을 알면 더 빨리 구분할 수 있어요.</small></div>`;
   if (r.weak_types.length) {
     html += `<h2>많이 속은 유형</h2><p>${r.weak_types.map(esc).join(", ")}</p>`;
     html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
