@@ -1,12 +1,13 @@
 # 캐치피싱 이메일 탐지 엔진 (웹용)
 # email_practice.ipynb의 analyze_email_sample을 웹용으로 옮기고 항목을 늘린 파일
 # 결과는 README의 결과지 6칸 그대로 돌려준다.
-# ⚠️ 배점은 임시값 (이메일 배점은 B가 확정. 확정되면 POINTS만 바꾸면 된다)
+# 배점은 B 확정 (10/24). 배점을 바꿀 때는 POINTS만 바꾸면 된다
 
+import re
 from email import message_from_string
 from email.utils import parseaddr
 
-POINTS = {  # 합계 100 (임시)
+POINTS = {  # 합계 100 (B 확정 10/24)
     "DMARC 실패": 28,
     "SPF 실패": 17,
     "DKIM 실패": 0,
@@ -19,11 +20,21 @@ POINTS = {  # 합계 100 (임시)
 # 우리 회사 공식 메일 주소 (게임 속 가상 회사, B 설계: company.example)
 COMPANY_DOMAINS = {"company.example"}
 # 회사 내부 부서처럼 보이게 하는 표시 이름에 자주 쓰이는 말
-INTERNAL_WORDS = ["인사", "총무", "보안", "정보보안", "경영지원", "재무", "회계", "IT", "관리자", "HR"]
+INTERNAL_WORDS = ["인사", "총무", "보안", "정보보안", "경영지원", "재무", "회계", "관리자"]
+# 영어 부서 이름은 대문자 낱말로만 찾는다 (Smith의 ith, Chris의 hr 같은 오탐 방지, A 10/28)
+INTERNAL_WORDS_EN = ["IT", "HR"]
 # 위험한 첨부 확장자 (실행되는 파일)
 DANGEROUS_EXT = (".lnk", ".exe", ".scr", ".js", ".vbs", ".bat", ".cmd", ".hta", ".iso")
 # 서두르게 하거나 겁주는 말 (사례조사 유형 C)
 URGENT_WORDS = ["오늘 중", "오늘 마감", "즉시", "긴급", "불이익", "벌금", "정지", "제한", "마감", "빠른 처리"]
+
+
+def _looks_internal(display):
+    """표시 이름이 회사 내부 부서처럼 보이면 True"""
+    if any(w in display for w in INTERNAL_WORDS):
+        return True
+    # 앞뒤에 영어 글자가 붙어 있지 않을 때만 인정 (IT팀, HR 담당은 O / Smith, CHRIS는 X)
+    return any(re.search(rf"(?<![A-Za-z]){w}(?![A-Za-z])", display) for w in INTERNAL_WORDS_EN)
 
 
 def _domain(header_value):
@@ -55,7 +66,7 @@ def analyze_email(raw_text, filename="message.eml", attachment=None):
 
     # 2. 표시 이름 위장: 이름은 회사 내부 부서인데 주소는 회사 도메인이 아님
     from_domain, display = _domain(msg.get("From"))
-    if from_domain and from_domain not in COMPANY_DOMAINS and any(w.lower() in display.lower() for w in INTERNAL_WORDS):
+    if from_domain and from_domain not in COMPANY_DOMAINS and _looks_internal(display):
         add("표시 이름 위장", f"보낸 사람 이름은 회사 부서('{display}')처럼 보이지만 주소는 회사 도메인이 아닌 {from_domain} 입니다.")
 
     # 3. 답장 주소 불일치: 답장이 다른 곳으로 감
