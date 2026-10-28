@@ -63,7 +63,8 @@ B(이메일 분석)─┘        └→ C가 장부에 저장
 |---|---|---|---|---|
 | `url_dangerous.json` | 75 | 도메인 유사 / 생성일 / 키워드 | 유명 이름(naver)을 따라 한 위험 링크. 모델 확률 값이 들어 있는 경우 | 손으로 작성 (0.91은 가짜 예시 값) |
 | `url_whois_fail.json` | 60 | 도메인 유사 / 기관명 불일치 / URL 구조 | 정부기관(gov)을 사칭한 링크. 도메인 조회에 실패해서 생성일을 `unavailable`에 적고, 나머지로만 점수를 낸 경우 | `url_practice.ipynb` 셀 7~10으로 생성 |
-| `email_spoof.json` | 70 | SPF 실패 / 보낸 사람 불일치 | 인사팀을 사칭한 위조 의심 메일. 모델이 없어서 `model_probability`가 `null`인 경우 | `email_practice.ipynb`로 생성 |
+
+| `email_spoof.json` | 62 | DMARC 실패 / SPF 실패 / 답장 주소 불일치 | 인사팀을 사칭한 위조 의심 메일. 모델이 없어서 `model_probability`가 `null`인 경우 | `email_practice.ipynb`의 연습 메일을 `email_analyzer.py`(B 확정 배점)로 다시 생성 (10/28) |
 
 샘플 3개를 합치면 링크 배점 5개 항목(도메인 유사, 생성일, 기관명 불일치, 키워드, URL 구조)이 모두 한 번 이상 나옵니다.
 
