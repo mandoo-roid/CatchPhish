@@ -2,13 +2,14 @@
 # 서버 약속 (docs/설계_A_흐름과_서버약속.md):
 #   1 /api/start   2 /api/answer   3 /api/result   4 /api/check-url
 # 5, 6(관리자)은 겉모양과 주소만 먼저 만들어 둠. 통계 계산·장부 검사는 C의 DB 연결 뒤에 채운다.
-# 7(장부 기록)은 C의 DB 연결 뒤에 추가한다.
-# 지금은 DB가 없어서 서버가 기록을 저장하지 않는다. 결과(3번)는 화면이 보낸 선택 목록으로 서버가 다시 채점한다.
+# 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger.append_record로 장부에 한 줄 저장한다 (A 10/28).
+# 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
 import hmac
 import json
 import os
 import random
+import re
 import secrets
 import sys
 
@@ -20,6 +21,18 @@ sys.path.insert(0, os.path.join(ROOT, "backend", "email_analyzer"))
 
 from url_analyzer import analyze_url  # noqa: E402
 from email_analyzer import analyze_email, build_raw  # noqa: E402
+
+# 장부(DB) 저장 코드 (C의 ledger.py, hashchain.py)
+# 하는 일: db_logs 폴더의 장부 코드를 불러온다
+# 이유: 게임 기록을 해시체인 장부에 남기려고 (서버 약속 7번)
+# 참고: 불러오기에 실패해도 게임은 그대로 돌아가게 try로 감쌌다 (팀 결정: 장부 저장이 실패해도 게임은 계속)
+sys.path.insert(0, os.path.join(ROOT, "backend", "db_logs"))
+try:
+    from ledger import append_record  # noqa: E402
+    LEDGER_READY = True
+except Exception as e:  # noqa: BLE001
+    print("장부 코드 불러오기 실패:", type(e).__name__)
+    LEDGER_READY = False
 
 app = Flask(__name__)
 FRONTEND = os.path.join(ROOT, "frontend")
@@ -74,6 +87,36 @@ def analyze_card(card):
     return None
 
 
+ANON_ID = re.compile(r"^U[0-9A-F]{6}$")  # /api/start가 만드는 익명 번호 모양
+SURVEY_KEYS = ("Q1", "Q2", "Q3", "Q4")
+
+
+def save_to_ledger(data, card, choice, ok, over, analysis):
+    # 하는 일: 장부 한 줄(10칸, 설계 A "장부 한 줄에 넣을 것")을 만들어 C의 append_record로 저장한다
+    # 이유: 서버 약속 7번. 관리자 통계와 기록 검사가 이 장부를 쓴다
+    # 참고: 화면이 직군·문진표를 안 보내면(옛 화면) 저장하지 않고 넘어간다. 저장이 실패해도 게임은 계속하고 서버 로그에만 남긴다
+    if not LEDGER_READY:
+        return False
+    anon, job, sc = data.get("anon_id"), data.get("job"), data.get("self_check")
+    if not (isinstance(anon, str) and ANON_ID.match(anon) and job in JOBS and isinstance(sc, dict)):
+        return False
+    # 하는 일: 문진표는 Q1~Q4만, 짧은 값만 남긴다 / 이유: 정해진 값만 받는다는 보안 원칙
+    self_check = {k: sc[k] for k in SURVEY_KEYS if isinstance(sc.get(k), (int, str)) and len(str(sc[k])) <= 60}
+    record = {
+        "anon_id": anon, "job": job, "self_check": self_check,
+        "scenario_id": card["scenario_id"], "case_type": card.get("case_type"),
+        "is_phishing": card["is_phishing"], "choice": choice,
+        "is_correct": ok, "over_suspicion": over, "analysis": analysis,
+    }
+    try:
+        append_record(record)
+        return True
+    except Exception as e:  # noqa: BLE001
+        # 참고: DB 주소가 로그에 남지 않게 오류 종류와 앞부분만 적는다
+        print("장부 저장 실패:", type(e).__name__, str(e)[:120])
+        return False
+
+
 def bad(msg):
     return jsonify({"error": msg}), 400
 
@@ -123,13 +166,16 @@ def answer():
     if data.get("choice") not in CHOICES:
         return bad("행동은 click, call, official 중 하나여야 합니다.")
     ok, over = grade(card, data["choice"])
+    analysis = analyze_card(card)
+    logged = save_to_ledger(data, card, data["choice"], ok, over, analysis)
     return jsonify({
         "is_correct": ok,
         "over_suspicion": over,
         "is_phishing": card["is_phishing"],
-        "analysis": analyze_card(card),
+        "analysis": analysis,
         "clues": card["clues"],
         "explanation": card["explanation"],
+        "logged": logged,  # 장부에 저장됐는지 (확인용)
     })
 
 
