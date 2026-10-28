@@ -1,18 +1,23 @@
 {
   "type": "email",
   "input": "sample_hr_notice.eml",
-  "score": 70,
+  "score": 62,
   "model_probability": null,
   "reasons": [
     {
-      "factor": "SPF 실패",
-      "points": 40,
-      "text": "보낸 사람 도메인이 허용하지 않은 서버에서 발송된 메일입니다."
+      "factor": "DMARC 실패",
+      "points": 28,
+      "text": "보낸 도메인의 메일 정책 검사(DMARC)에 실패했습니다. 회사 이름을 빌려 보냈을 가능성이 큽니다."
     },
     {
-      "factor": "보낸 사람 불일치",
-      "points": 30,
-      "text": "화면에 보이는 보낸 사람(From)과 실제 회신 주소(Reply-To)의 도메인이 다릅니다."
+      "factor": "SPF 실패",
+      "points": 17,
+      "text": "보낸 도메인이 허락하지 않은 서버에서 발송된 메일입니다."
+    },
+    {
+      "factor": "답장 주소 불일치",
+      "points": 17,
+      "text": "답장하면 보낸 주소(company.example)가 아닌 다른 곳(company-notice.example)으로 갑니다."
     }
   ],
   "unavailable": []
