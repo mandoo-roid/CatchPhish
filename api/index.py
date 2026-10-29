@@ -1,7 +1,8 @@
 # 캐치피싱 서버 입구 (Vercel이 이 파일의 app을 실행함)
 # 서버 약속 (docs/설계_A_흐름과_서버약속.md):
 #   1 /api/start   2 /api/answer   3 /api/result   4 /api/check-url
-# 5, 6(관리자)은 겉모양과 주소만 먼저 만들어 둠. 통계 계산·장부 검사는 C의 DB 연결 뒤에 채운다.
+# 5(관리자 통계)는 겉모양과 주소만 먼저 만들어 둠. 통계 계산은 C의 stats.py가 오면 채운다.
+# 6(기록 검사): C의 hashchain.verify_chain으로 장부 전체를 다시 계산해 위변조를 검사한다 (A 10/28 연결).
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger.append_record로 장부에 한 줄 저장한다 (A 10/28).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -28,7 +29,8 @@ from email_analyzer import analyze_email, build_raw  # noqa: E402
 # 참고: 불러오기에 실패해도 게임은 그대로 돌아가게 try로 감쌌다 (팀 결정: 장부 저장이 실패해도 게임은 계속)
 sys.path.insert(0, os.path.join(ROOT, "backend", "db_logs"))
 try:
-    from ledger import append_record  # noqa: E402
+    from ledger import append_record, load_entries  # noqa: E402
+    from hashchain import verify_chain  # noqa: E402
     LEDGER_READY = True
 except Exception as e:  # noqa: BLE001
     print("장부 코드 불러오기 실패:", type(e).__name__)
@@ -269,9 +271,18 @@ def admin_stats():
 
 @app.post("/api/admin/verify")
 def admin_verify():
-    # 서버 약속 6번. C의 verify_chain 결과를 그대로 돌려줄 자리.
+    # 서버 약속 6번: 장부 전체를 불러와 C의 verify_chain으로 검사한 결과를 그대로 돌려준다
+    # 하는 일: 이상 없으면 {"ok": true, "count": 개수}, 문제가 있으면 {"ok": false, "broken_seq": 번호, "reason": 이유}
+    # 이유: 기록이 몰래 바뀌거나 중간에 지워졌는지 관리자가 직접 확인하게 하려고 (증적 로그)
+    # 참고: 관리자 화면(admin.html)은 이 모양을 이미 보여 줄 수 있다. 회사 코드가 맞아야 검사한다
     data = request.get_json(silent=True) or {}
     err = _check_company_code(data)
     if err:
         return err
-    return jsonify({"connected": False, "message": "기록 저장(DB)이 아직 연결되지 않아 검사할 장부가 없습니다."})
+    if not LEDGER_READY:
+        return jsonify({"connected": False, "message": "장부 코드를 불러오지 못해 검사할 수 없습니다."})
+    try:
+        return jsonify(verify_chain(load_entries()))
+    except Exception as e:  # noqa: BLE001
+        print("기록 검사 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"error": "기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."}), 500
