@@ -37,6 +37,17 @@ except Exception as e:  # noqa: BLE001
     print("장부 코드 불러오기 실패:", type(e).__name__)
     LEDGER_READY = False
 
+# 관리자 통계 계산 코드 (C의 stats.py)
+# 하는 일: 장부 기록 목록을 관리자 화면용 숫자로 바꾸는 compute_stats를 불러온다
+# 이유: 서버 약속 5번 (/api/admin/stats)
+# 참고: 장부 코드와 따로 감쌌다. 통계 코드에 문제가 생겨도 게임 기록 저장과 기록 검사는 그대로 돌아간다
+try:
+    from stats import compute_stats  # noqa: E402
+    STATS_READY = True
+except Exception as e:  # noqa: BLE001
+    print("통계 코드 불러오기 실패:", type(e).__name__)
+    STATS_READY = False
+
 app = Flask(__name__)
 FRONTEND = os.path.join(ROOT, "frontend")
 
@@ -321,18 +332,26 @@ def _check_company_code(data):
 
 @app.post("/api/admin/stats")
 def admin_stats():
-    # 서버 약속 5번. C가 DB와 통계 계산을 연결하면 아래 "connected": False 부분을 채운다.
-    # 채울 모양 (설계 A 기준):
+    # 서버 약속 5번: 장부 전체를 불러와 C의 compute_stats로 계산한 결과를 그대로 돌려준다
+    # 돌려주는 모양 (설계 A 기준, C의 stats.py):
     # {"connected": true, "participants": 37,
-    #  "wrong_rate_by_job": {"hr": 0.42, ...},          # 직군별 오답률 (0~1)
+    #  "wrong_rate_by_job": {"hr": 0.42, ...},          # 직군별 오답률 (0~1). 인원 3명 미만 직군은 빠짐
     #  "weak_types": [{"type": "기관 사칭", "count": 21}, ...],   # 많이 속은 유형
     #  "confidence_gap": {"confident_wrong_rate": 0.38, "unconfident_wrong_rate": 0.29},  # 자신감 vs 실제
     #  "over_suspicion_rate": 0.18}                       # 정상 메시지 과잉 의심 비율
+    # 참고: 기록이 없어서 계산할 수 없는 비율은 0이 아니라 null로 온다. 회사 코드가 맞아야 계산한다
     data = request.get_json(silent=True) or {}
     err = _check_company_code(data)
     if err:
         return err
-    return jsonify({"connected": False, "message": "기록 저장(DB)이 아직 연결되지 않아 통계가 없습니다."})
+    if not (LEDGER_READY and STATS_READY):
+        return jsonify({"connected": False, "message": "장부나 통계 코드를 불러오지 못해 통계를 보여 줄 수 없습니다."})
+    try:
+        return jsonify(compute_stats(load_entries()))
+    except Exception as e:  # noqa: BLE001
+        # 참고: DB 주소가 로그에 남지 않게 오류 종류와 앞부분만 적는다
+        print("통계 계산 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"error": "통계를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."}), 500
 
 
 @app.post("/api/admin/verify")
