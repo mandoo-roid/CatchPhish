@@ -488,6 +488,12 @@ function renderExplain(r) {
     if (a.reasons.length) html += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
     else html += `<p class="muted">링크에서 위험 신호를 찾지 못했어요.</p>`;
     if (a.unavailable.length) html += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+    // 하는 일: AI 모델 확률을 한 줄로 보여 준다. 60% 이상만 숫자, 아래는 "구별하기 어려워요" (A 10/29 결정, 링크 검사 화면과 같은 기준)
+    // 이유: 신청서의 머신러닝 약속. 의미 없는 작은 차이를 숫자로 보여 주지 않으려고
+    // 참고: 링크 카드에만 값이 있고 메일 카드는 null이라 이 줄이 나오지 않는다. 위험 점수에는 더하지 않는다
+    if (typeof a.model_probability === "number") html += a.model_probability >= 0.6
+      ? `<p class="score-line">AI 판단: 주소 모양이 피싱과 비슷해요 (${Math.round(a.model_probability * 100)}%)</p>`
+      : `<p class="score-line">AI 판단: 주소 모양만으로는 구별하기 어려워요</p>`;
     // 하는 일: 문자 본문에서 찾은 압박 문구를 점수와 따로 보여 준다 (A 10/29)
     // 이유: 링크 엔진은 주소만 보므로, 심리 압박(C 유형) 단서를 엔진 분석에서도 짚어 주려고
     // 참고: 이메일 엔진과 같은 단어 목록. 링크 점수에는 더하지 않는다
