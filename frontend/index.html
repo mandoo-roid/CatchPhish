@@ -147,6 +147,8 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+const AI_THRESHOLD = 0.6;  // AI 판단 숫자를 보여 주는 기준 (url_model.json threshold)
+
 // 점수 구간 (임시, 팀 논의로 조정)
 function verdict(score) {
   if (score >= 60) return { cls: 'danger', word: '위험해요', tip: '링크를 누르지 말고, 공식 앱이나 대표번호로 직접 확인하세요.' };
@@ -166,8 +168,13 @@ function render(r) {
       r.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join('') +
       '</ul>';
   }
-  if (r.model_probability !== null && r.model_probability !== undefined) {
-    html += `<p class="note">AI 모델이 판단한 피싱 확률: ${Math.round(r.model_probability * 100)}%</p>`;
+  // 하는 일: AI 모델 확률을 한 줄로 보여 준다. 60% 이상일 때만 숫자, 아래는 숫자 없이 "구별하기 어려워요"
+  // 이유: 39%와 34%처럼 의미 없는 차이를 숫자로 보여 주지 않으려고 (A 10/29 결정, 정상 오의심 100개 중 1.2개 기준)
+  // 참고: 기준 0.6은 url_model.json의 threshold와 같다. 위험 점수(규칙)와는 따로 보여 주는 보조 정보
+  if (typeof r.model_probability === 'number') {
+    html += r.model_probability >= AI_THRESHOLD
+      ? `<p class="note">AI 판단: 주소 모양이 피싱과 비슷해요 (${Math.round(r.model_probability * 100)}%)</p>`
+      : `<p class="note">AI 판단: 주소 모양만으로는 구별하기 어려워요</p>`;
   }
   if (r.unavailable.length) {
     html += `<p class="note">${r.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(', ')}. 이 항목이 빠져서 실제 위험보다 점수가 낮게 나올 수 있어요.</p>`;
