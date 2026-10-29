@@ -4,7 +4,12 @@
 # 링크에 접속하지 않는다. 주소 모양과 도메인 등록 정보만 본다.
 
 import datetime
+import json
+import math
+import os
+import re
 import socket
+from urllib.parse import urlparse
 
 import Levenshtein
 import tldextract
@@ -38,6 +43,59 @@ ORG_WORDS = ["gov", "minwon", "nhis", "health", "police", "tax"]
 KEYWORDS = ["verify", "login", "signin", "account", "secure", "update", "confirm", "check"]
 
 MAX_URL_LENGTH = 2000  # 너무 긴 입력은 받지 않음 (서버 보호)
+
+# ───────── AI 모델 (URL 피싱 확률) ─────────
+# 하는 일: Colab(url_model.ipynb)에서 학습한 로지스틱 회귀의 숫자(url_model.json)를 읽는다
+# 이유: 서버에는 scikit-learn을 올릴 수 없어서(Vercel 크기 제한), 학습 결과 숫자만 가져와 같은 계산을 한다
+# 참고: 파일을 못 읽으면 model_probability는 None(null)이 되고, 위험 점수와 나머지 분석은 그대로 돌아간다
+try:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "url_model.json"), encoding="utf-8") as f:
+        MODEL = json.load(f)
+except Exception as e:  # noqa: BLE001
+    print("AI 모델 파일 불러오기 실패:", type(e).__name__)
+    MODEL = None
+
+# 노트북 셀 5와 같은 목록 (바꾸면 노트북에서 다시 학습해야 한다)
+MODEL_FREE_HOSTS = ["ipfs", "firebaseapp", "web.app", "github.io", "000webhost", "weebly", "wix", "glitch.me", "pages.dev", "netlify"]
+MODEL_WORDS = ["login", "signin", "verify", "secure", "account", "update", "bank", "confirm", "password", "auth"]
+
+
+def model_features(url):
+    # 하는 일: 주소 하나를 숫자 9개로 바꾼다. 노트북 셀 6의 features()와 똑같은 계산
+    # 이유: 학습 때와 다르게 계산하면 확률이 틀어진다
+    # 참고: 주소 글자만 쓰고 접속하지 않는다. .example 연습 주소는 .com처럼 계산한다
+    u = url if "://" in url else "http://" + url
+    host = (urlparse(u).hostname or "").lower()
+    if host.endswith(".example"):
+        host = host[: -len(".example")] + ".com"
+    e = _extract(host)
+    name = e.domain
+    sub = ".".join(x for x in e.subdomain.split(".") if x and x != "www")
+    return [
+        len(name),                                         # 1 등록 이름 길이
+        name.count("-"),                                   # 2 등록 이름 하이픈
+        sum(c.isdigit() for c in name),                    # 3 등록 이름 숫자
+        sub.count("-"),                                    # 4 앞 이름 하이픈
+        sum(c.isdigit() for c in sub),                     # 5 앞 이름 숫자
+        1 if re.fullmatch(r"[\d.]+", host) else 0,        # 6 숫자 주소(IP)
+        1 if "@" in urlparse(u).netloc else 0,             # 7 @ 기호
+        sum(w in name for w in MODEL_WORDS),               # 8 유도 단어 (등록 이름에서만)
+        1 if any(h in host for h in MODEL_FREE_HOSTS) else 0,  # 9 무료 호스팅
+    ]
+
+
+def model_probability(url):
+    # 하는 일: 피싱 확률(0~1)을 계산한다. 노트북 셀 10의 prob()와 같은 식
+    # 참고: 계산에 실패하면 None. 위험 점수(score)에는 더하지 않는다 (판정이 아니라 보조 정보)
+    if not MODEL:
+        return None
+    try:
+        z = MODEL["intercept"] + sum(c * (v - m) / s for v, m, s, c in
+                                     zip(model_features(url), MODEL["mean"], MODEL["scale"], MODEL["coef"]))
+        return round(1 / (1 + math.exp(-z)), 3)
+    except Exception:  # noqa: BLE001
+        return None
+
 
 
 def _is_real_gov(ext):
@@ -138,7 +196,7 @@ def analyze_url(url, use_whois=True):
         "type": "url",
         "input": url,
         "score": sum(r["points"] for r in reasons),  # README 약속 1번: 이유 점수의 합
-        "model_probability": None,  # AI 모델은 다음 단계에서 연결
+        "model_probability": model_probability(url),  # AI 모델 피싱 확률 (보조 정보, 점수와 별도)
         "reasons": reasons,
         "unavailable": unavailable,
     }
