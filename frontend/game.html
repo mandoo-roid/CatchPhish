@@ -475,7 +475,15 @@ function renderExplain(r) {
   let cls, head;
   if (r.is_phishing) [cls, head] = r.is_correct ? ["safe", "잘 막았어요"] : ["danger", "속았어요"];
   else [cls, head] = r.over_suspicion ? ["caution", "안전하지만 확인이 조금 지나쳤어요 (과잉 의심)"] : ["safe", "정상 메시지였어요. 괜찮아요"];
-  let html = `<div class="banner ${cls}">${head}<small>이 메시지는 ${r.is_phishing ? "피싱" : "정상"}입니다</small></div>
+  let sub = `이 메시지는 ${r.is_phishing ? "피싱" : "정상"}입니다`;
+  // 하는 일: 연쇄형 카드에서 2·3단계에 멈췄으면 빨간 "속았어요" 대신 노란 "중간에 멈췄어요" 배너를 보여 준다 (B 10/29)
+  // 이유: 멈춘 행동을 인정해 "단계마다 멈춰라"를 가르치려고. 빨간 "속았어요"와 "3단계에서 멈췄어요"가 함께 나오면 헷갈린다
+  // 참고: 화면 글자만 바뀐다. 채점(is_correct)과 장부 기록은 그대로다 (1단계 공식 확인만 정답, 결과 화면의 속은 횟수에도 들어감)
+  if (r.is_phishing && !r.is_correct && (r.stopped_step === 2 || r.stopped_step === 3)) {
+    [cls, head] = ["caution", "중간에 멈췄어요"];
+    sub = "이 메시지는 피싱입니다. 첫 문자에서 멈춰야 가장 안전해요";
+  }
+  let html = `<div class="banner ${cls}">${head}<small>${sub}</small></div>
     <h2>해설</h2><p>${esc(r.explanation)}</p>
     <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
     <ul class="list">${r.clues.map(c => `<li><div><span class="factor">${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>`;
