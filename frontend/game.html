@@ -179,6 +179,12 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
 .error { color: var(--danger); }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+/* 연쇄형 단계 화면 (A 10/29): 문자 다음에 이어지는 가짜 페이지·앱 화면 */
+.chain-page { padding: 1rem .9rem 1.4rem; min-height: 18rem; }
+.chain-url { font-size: .75rem; color: var(--muted); background: var(--field); border-radius: 999px; padding: .25rem .8rem; margin-bottom: .9rem; overflow-wrap: anywhere; }
+.chain-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 .6rem; }
+.chain-body { font-size: .93rem; word-break: keep-all; overflow-wrap: anywhere; margin: 0; }
+.chain-steps { font-size: .85rem; color: var(--muted); margin: .75rem 0 0; }
 </style>
 </head>
 <body>
@@ -229,6 +235,23 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
   </div>
 </section>
 
+<!-- 화면 3-1-2. 연쇄형 단계 (A 10/29): 연쇄형 카드에서 링크를 열면 이어지는 화면. 문장은 B 확정(설계 B 2-1) -->
+<section id="s-chain" hidden>
+  <div class="progress" id="chain-progress"></div>
+  <div class="bar"><i id="chain-bar"></i></div>
+  <div class="game-grid">
+    <div class="screen-col"><div id="chain-card"></div></div>
+    <div class="answer-col">
+      <p class="question">다음 화면이 나왔어요. 어떻게 하시겠어요?</p>
+      <div class="choices">
+        <button class="choice" data-action="continue" id="chain-continue"></button>
+        <button class="choice" data-action="stop" id="chain-stop"></button>
+      </div>
+      <p class="error" id="chain-error" role="alert"></p>
+    </div>
+  </div>
+</section>
+
 <!-- 화면 3-2. 게임: 해설 (B 10/26: 왼쪽에 방금 본 메시지, 오른쪽에 해설) -->
 <section id="s-explain" hidden>
   <div class="progress" id="explain-progress"></div>
@@ -264,14 +287,14 @@ const SURVEY = [
 ];
 const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
 
-const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [] };
+const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function show(id) {
-  ["s-start", "s-survey", "s-game", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
+  ["s-start", "s-survey", "s-game", "s-chain", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
   // 하는 일: 문제 화면과 해설 화면일 때만 넓은 배치를 쓴다 / 이유: 왼쪽 메시지 화면과 오른쪽 버튼·해설을 나란히 두려고
-  document.querySelector("main").classList.toggle("wide", id === "s-game" || id === "s-explain");
+  document.querySelector("main").classList.toggle("wide", id === "s-game" || id === "s-chain" || id === "s-explain");
   window.scrollTo(0, 0);
 }
 async function post(url, body) {
@@ -392,12 +415,60 @@ document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = asyn
   document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = true);
   try {
     
-    const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice, job: state.job, self_check: state.survey });
+    // 참고: chain: true는 "연쇄형 단계 화면을 보여 줄 수 있다"는 표시. 연쇄형 카드에서 링크를 열면 서버가 해설 대신 2단계 화면을 보낸다 (A 10/29)
+    const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice, job: state.job, self_check: state.survey, chain: true });
     state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
+    if (r.chain_step) { renderChain(r.chain_step); show("s-chain"); return; }
+    if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call" };
     renderExplain(r); show("s-explain");
   } catch (err) { $("game-error").textContent = err.message; }
   finally { document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = false); }
 });
+
+// 화면 3-1-2. 연쇄형 단계 (A 10/29)
+// 하는 일: 서버가 보낸 단계 화면(제목·본문·버튼 문구)을 휴대폰 화면에 그리고, 계속/멈춤 버튼을 단다
+// 이유: 연쇄형(D)은 한 번 누르면 다음 함정으로 이어진다는 걸 직접 겪게 하려고 (사례조사 사례 5)
+// 참고: 문장은 B가 확정한 scenarios.json의 chain 칸 그대로. 해설은 서버가 체험이 끝날 때만 보낸다
+function renderChain(st) {
+  state.chain = st;
+  const c = state.cards[state.i], n = state.cards.length;
+  $("chain-progress").textContent = `문제 ${state.i + 1}/${n} · 연쇄형 ${st.step}단계`;
+  $("chain-bar").style.width = `${(state.i + 1) / n * 100}%`;
+  const url = st.step === 2 && c.link ? `<div class="chain-url" aria-hidden="true">${esc(c.link)}</div>` : "";
+  $("chain-card").innerHTML = `<div class="phone" role="group" aria-label="연쇄형 ${st.step}단계 화면">${statusBar(TIMES[state.i % TIMES.length])}
+    <div class="chain-page">${url}<p class="chain-title">${esc(st.title)}</p><p class="chain-body">${esc(st.body)}</p></div>
+  </div><p class="screen-note">연습용 화면이라 실제로 설치되거나 열리지 않아요</p>`;
+  $("chain-continue").textContent = st.continue_label;
+  $("chain-stop").textContent = st.stop_label;
+  $("chain-error").textContent = "";
+  // 하는 일: 새 단계 화면이 뜬 뒤 0.8초 동안 버튼을 잠근다
+  // 이유: 앞 화면의 '링크 열기' 버튼과 같은 자리에 '계속' 버튼이 있어서, 빠르게 두 번 누르면 읽지도 않고 다음 단계로 넘어갈 수 있다
+  const btns = document.querySelectorAll("#s-chain [data-action]");
+  btns.forEach(x => x.disabled = true);
+  setTimeout(() => btns.forEach(x => x.disabled = false), 800);
+}
+document.querySelectorAll("#s-chain [data-action]").forEach(b => b.onclick = async () => {
+  const st = state.chain;
+  document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = true);
+  try {
+    const r = await post("/api/chain", { anon_id: state.anon, scenario_id: st.scenario_id, step: st.step, action: b.dataset.action, job: state.job, self_check: state.survey });
+    if (r.chain_step) { renderChain(r.chain_step); return; }   // renderChain이 0.8초 뒤에 버튼을 다시 켠다
+    state.chainResult = { step: r.stopped_step, call: false };
+    renderExplain(r); show("s-explain");
+    document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = false);
+  } catch (err) {
+    $("chain-error").textContent = err.message;
+    document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = false);
+  }
+});
+
+// 하는 일: 연쇄형에서 몇 단계에서 멈췄는지를 한 줄로 만든다 (해설·결과 화면에서 같이 씀)
+function chainLine(cr) {
+  if (!cr) return "";
+  if (cr.step === 1) return "1단계(문자)에서 멈췄어요. 가장 안전한 선택이에요.";
+  if (cr.step === 0) return cr.call ? "1단계에서 문자에 적힌 번호로 전화해 멈추지 못했어요." : "3단계까지 모두 진행해 멈추지 못했어요.";
+  return `${cr.step}단계에서 멈췄어요. 첫 문자에서 멈추면 더 안전해요.`;
+}
 
 // 화면 3-2 (배너 문구는 B 설계 그대로)
 function renderExplain(r) {
@@ -408,6 +479,8 @@ function renderExplain(r) {
     <h2>해설</h2><p>${esc(r.explanation)}</p>
     <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
     <ul class="list">${r.clues.map(c => `<li><div><span class="factor">${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>`;
+  // 하는 일: 연쇄형 카드면 해설 위에 "몇 단계에서 멈췄는지"를 보여 준다 (A 10/29)
+  if (r.stopped_step !== undefined) html = html.replace("<h2>해설</h2>", `<p class="chain-steps"><b>연쇄형 체험</b> · 문자 → 가짜 앱 설치 페이지 → 가짜 PDF 뷰어<br>${esc(chainLine(state.chainResult))}</p><h2>해설</h2>`);
   const a = r.analysis;
   html += `<h2>탐지 엔진 분석</h2>`;
   if (a) {
@@ -459,11 +532,13 @@ function renderResult(r) {
     html += `<h2>많이 속은 유형</h2><p>${r.weak_types.map(esc).join(", ")}</p>`;
     html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
   }
+  // 하는 일: 연쇄형 결과를 결과 화면에도 한 줄로 남긴다 (A 10/29)
+  if (state.chainResult) html += `<h2>연쇄형 체험</h2><p>${esc(chainLine(state.chainResult))}</p>`;
   html += `<p class="note">익명 번호 ${esc(state.anon)}</p>`;
   $("result").innerHTML = html;
 }
 $("btn-restart").onclick = () => {
-  Object.assign(state, { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [] });
+  Object.assign(state, { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null });
   $("jobs").querySelectorAll("[data-job]").forEach(x => x.setAttribute("aria-pressed", "false"));
   $("btn-start").disabled = true; show("s-start");
 };
