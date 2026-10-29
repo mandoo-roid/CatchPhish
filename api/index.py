@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(ROOT, "backend", "url_analyzer"))
 sys.path.insert(0, os.path.join(ROOT, "backend", "email_analyzer"))
 
 from url_analyzer import analyze_url  # noqa: E402
-from email_analyzer import analyze_email, build_raw  # noqa: E402
+from email_analyzer import analyze_email, build_raw, URGENT_WORDS  # noqa: E402
 
 # 장부(DB) 저장 코드 (C의 ledger.py, hashchain.py)
 # 하는 일: db_logs 폴더의 장부 코드를 불러온다
@@ -170,6 +170,10 @@ def answer():
     ok, over = grade(card, data["choice"])
     analysis = analyze_card(card)
     logged = save_to_ledger(data, card, data["choice"], ok, over, analysis)
+    # 하는 일: 문자 카드면 본문에서 압박 문구를 찾아 따로 돌려준다 (A 10/29)
+    # 이유: 링크 엔진은 주소만 보므로, 심리 압박(C 유형) 단서를 해설의 엔진 분석에서도 짚어 주려고
+    # 참고: 이메일 엔진과 같은 단어 목록(URGENT_WORDS). 점수·결과지 6칸·장부에는 넣지 않는다
+    text_clues = [w for w in URGENT_WORDS if w in (card.get("body") or "")] if card.get("channel") == "sms" else []
     return jsonify({
         "is_correct": ok,
         "over_suspicion": over,
@@ -178,6 +182,7 @@ def answer():
         "clues": card["clues"],
         "explanation": card["explanation"],
         "logged": logged,  # 장부에 저장됐는지 (확인용)
+        "text_clues": text_clues,  # 문자 본문에서 찾은 압박 문구 (점수와 별도)
     })
 
 
