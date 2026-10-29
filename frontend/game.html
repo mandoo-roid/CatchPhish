@@ -415,6 +415,10 @@ function renderExplain(r) {
     if (a.reasons.length) html += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
     else html += `<p class="muted">링크에서 위험 신호를 찾지 못했어요.</p>`;
     if (a.unavailable.length) html += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+    // 하는 일: 문자 본문에서 찾은 압박 문구를 점수와 따로 보여 준다 (A 10/29)
+    // 이유: 링크 엔진은 주소만 보므로, 심리 압박(C 유형) 단서를 엔진 분석에서도 짚어 주려고
+    // 참고: 이메일 엔진과 같은 단어 목록. 링크 점수에는 더하지 않는다
+    if (r.text_clues && r.text_clues.length) html += `<p class="score-line">문자 본문에서 찾은 압박 문구: <b>${r.text_clues.map(w => "'" + esc(w) + "'").join(", ")}</b></p><p class="note">위 링크 점수에는 들어가지 않아요. 서두르게 만드는 말이 보이면 잠깐 멈추고 공식 경로로 확인하세요.</p>`;    
     if (r.is_phishing && a.score < 30) html += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
   } else {
     html += `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
