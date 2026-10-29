@@ -3,6 +3,7 @@
 #   1 /api/start   2 /api/answer   3 /api/result   4 /api/check-url
 # 5(관리자 통계)는 겉모양과 주소만 먼저 만들어 둠. 통계 계산은 C의 stats.py가 오면 채운다.
 # 6(기록 검사): C의 hashchain.verify_chain으로 장부 전체를 다시 계산해 위변조를 검사한다 (A 10/28 연결).
+# 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger.append_record로 장부에 한 줄 저장한다 (A 10/28).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -93,7 +94,7 @@ ANON_ID = re.compile(r"^U[0-9A-F]{6}$")  # /api/start가 만드는 익명 번호
 SURVEY_KEYS = ("Q1", "Q2", "Q3", "Q4")
 
 
-def save_to_ledger(data, card, choice, ok, over, analysis):
+def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
     # 하는 일: 장부 한 줄(10칸, 설계 A "장부 한 줄에 넣을 것")을 만들어 C의 append_record로 저장한다
     # 이유: 서버 약속 7번. 관리자 통계와 기록 검사가 이 장부를 쓴다
     # 참고: 화면이 직군·문진표를 안 보내면(옛 화면) 저장하지 않고 넘어간다. 저장이 실패해도 게임은 계속하고 서버 로그에만 남긴다
@@ -110,6 +111,10 @@ def save_to_ledger(data, card, choice, ok, over, analysis):
         "is_phishing": card["is_phishing"], "choice": choice,
         "is_correct": ok, "over_suspicion": over, "analysis": analysis,
     }
+    # 하는 일: 연쇄형 카드면 몇 단계에서 멈췄는지(stopped_step)를 함께 남긴다 (A 10/29 결정)
+    # 참고: 연쇄형이 아닌 카드 기록에는 이 칸을 넣지 않는다. 값 1·2·3 = 그 단계에서 멈춤, 0 = 멈추지 못함 (choice로 click·call 구분)
+    if stopped_step is not None:
+        record["stopped_step"] = stopped_step
     try:
         append_record(record)
         return True
@@ -121,6 +126,34 @@ def save_to_ledger(data, card, choice, ok, over, analysis):
 
 def bad(msg):
     return jsonify({"error": msg}), 400
+
+
+CHAIN_PUBLIC = ["title", "body", "continue_label", "stop_label"]  # 단계 화면에 보여 줄 칸 (해설은 끝날 때만)
+
+
+def chain_step(card, step):
+    # 하는 일: 연쇄형 카드의 step단계(2부터) 화면 내용을 해설 없이 돌려준다
+    # 이유: 정답·해설은 미리 보내지 않는다는 보안 원칙. 단계 해설은 체험이 끝날 때 서버가 보낸다
+    info = card["chain"][step - 2]
+    return {"scenario_id": card["scenario_id"], "step": step, **{k: info.get(k) for k in CHAIN_PUBLIC}}
+
+
+def final_answer(card, ok, over, analysis, explanation, logged, stopped_step=None):
+    # 하는 일: 해설 화면에 필요한 답을 한 모양으로 만든다 (2번 answer와 연쇄형 chain이 함께 씀)
+    text_clues = [w for w in URGENT_WORDS if w in (card.get("body") or "")] if card.get("channel") == "sms" else []
+    out = {
+        "is_correct": ok,
+        "over_suspicion": over,
+        "is_phishing": card["is_phishing"],
+        "analysis": analysis,
+        "clues": card["clues"],
+        "explanation": explanation,
+        "logged": logged,  # 장부에 저장됐는지 (확인용)
+        "text_clues": text_clues,  # 문자 본문에서 찾은 압박 문구 (점수와 별도)
+    }
+    if stopped_step is not None:
+        out["stopped_step"] = stopped_step
+    return out
 
 
 @app.get("/")
@@ -169,21 +202,49 @@ def answer():
         return bad("행동은 click, call, official 중 하나여야 합니다.")
     ok, over = grade(card, data["choice"])
     analysis = analyze_card(card)
-    logged = save_to_ledger(data, card, data["choice"], ok, over, analysis)
-    # 하는 일: 문자 카드면 본문에서 압박 문구를 찾아 따로 돌려준다 (A 10/29)
-    # 이유: 링크 엔진은 주소만 보므로, 심리 압박(C 유형) 단서를 해설의 엔진 분석에서도 짚어 주려고
-    # 참고: 이메일 엔진과 같은 단어 목록(URGENT_WORDS). 점수·결과지 6칸·장부에는 넣지 않는다
-    text_clues = [w for w in URGENT_WORDS if w in (card.get("body") or "")] if card.get("channel") == "sms" else []
-    return jsonify({
-        "is_correct": ok,
-        "over_suspicion": over,
-        "is_phishing": card["is_phishing"],
-        "analysis": analysis,
-        "clues": card["clues"],
-        "explanation": card["explanation"],
-        "logged": logged,  # 장부에 저장됐는지 (확인용)
-        "text_clues": text_clues,  # 문자 본문에서 찾은 압박 문구 (점수와 별도)
-    })
+    # 하는 일: 연쇄형 체험을 아는 새 화면(chain: true)이 연쇄형 카드에서 '링크 열기'를 고르면, 해설 대신 2단계 화면을 돌려준다
+    # 이유: 연쇄형(D)은 단계를 직접 겪으며 배우게 하려고 (10/28 제안, B 문장 확정 10/29)
+    # 참고: 장부에는 체험이 끝난 뒤 /api/chain에서 한 줄만 저장한다. 옛 화면은 chain을 안 보내서 지금처럼 동작한다
+    is_chain = bool(data.get("chain")) and bool(card.get("chain"))
+    if is_chain and data["choice"] == "click":
+        return jsonify({"chain_step": chain_step(card, 2)})
+    stopped = ({"official": 1, "call": 0}.get(data["choice"]) if is_chain else None)
+    logged = save_to_ledger(data, card, data["choice"], ok, over, analysis, stopped)
+    # 문자 카드의 본문 압박 문구(text_clues)는 final_answer에서 함께 만든다 (A 10/29, 점수·결과지·장부와 별도)
+    return jsonify(final_answer(card, ok, over, analysis, card["explanation"], logged, stopped))
+
+
+@app.post("/api/chain")
+def chain():
+    # 서버 약속 8번(새로 추가): 연쇄형 카드의 2·3단계에서 고른 행동을 받아 다음 단계나 마지막 해설을 돌려준다
+    # 하는 일: action이 stop이면 그 단계에서 멈춤, continue면 다음 단계로. 마지막 단계에서 continue면 끝까지 진행(0)
+    # 이유: 연쇄형(D) 체험. 채점은 지금 규칙 그대로라 2단계 이후는 모두 오답(1단계 공식 확인만 정답)
+    # 참고: 서버는 기억하지 않는다. 화면이 보낸 단계 번호를 믿는다 (결과 3번과 같은 방식)
+    data = request.get_json(silent=True) or {}
+    card = SCENARIOS.get(data.get("scenario_id"))
+    if card is None or not card.get("chain"):
+        return bad("연쇄형 카드가 아닙니다.")
+    last = len(card["chain"]) + 1  # 마지막 단계 번호 (1단계 + 추가 단계 수)
+    step, action = data.get("step"), data.get("action")
+    if not isinstance(step, int) or not 2 <= step <= last or action not in ("continue", "stop"):
+        return bad("단계 번호나 행동이 맞지 않습니다.")
+    if action == "continue" and step < last:
+        return jsonify({"chain_step": chain_step(card, step + 1)})
+    info = card["chain"][step - 2]
+    if action == "stop":
+        stopped, explanation = step, info.get("stop_explanation") or card["explanation"]
+    else:
+        stopped, explanation = 0, info.get("end_explanation") or card["explanation"]
+    ok, over = grade(card, "click")
+    analysis = analyze_card(card)
+    logged = save_to_ledger(data, card, "click", ok, over, analysis, stopped)
+    return jsonify(final_answer(card, ok, over, analysis, explanation, logged, stopped))
+
+
+@app.get("/favicon.ico")
+def favicon():
+    # 하는 일: 사이트 아이콘 요청에 '내용 없음'으로 답한다 / 이유: 브라우저 개발자 도구의 빨간 오류(404)를 없애려고
+    return "", 204
 
 
 @app.post("/api/result")
