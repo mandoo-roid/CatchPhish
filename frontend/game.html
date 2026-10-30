@@ -555,7 +555,7 @@ $("btn-next").onclick = async () => {
   if (state.i < state.cards.length - 1) { state.i++; renderCard(); show("s-game"); return; }
   $("btn-next").disabled = true;
   try {
-    const r = await post("/api/result", { anon_id: state.anon, self_check: state.survey, answers: state.answers });
+    const r = await post("/api/result", { anon_id: state.anon, job: state.job, self_check: state.survey, answers: state.answers });
     renderResult(r); show("s-result");
   } catch (err) { $("explain").insertAdjacentHTML("beforeend", `<p class="error">${esc(err.message)}</p>`); }
   finally { $("btn-next").disabled = false; }
@@ -571,6 +571,11 @@ function renderResult(r) {
     <p class="gap">${esc(r.gap_message)}</p>
     <p class="muted">자신감 ${r.confidence}점 / 정답률 ${r.accuracy}%</p>
     <p class="muted">제한 시간(문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초) 안에 고른 문제 ${state.cards.length - state.late}/${state.cards.length}</p>`;
+  // 하는 일: 장부에 쌓인 같은 직군 사람들의 평균 오답률과 내 오답률을 한 줄로 보여 준다 (A 10/30)
+  // 이유: 신청서 ⑤ "집계 결과 기반 개인별 맞춤 피드백". 서버가 같은 직군 3명 이상일 때만 job_compare를 보낸다
+  const jc = r.job_compare;
+  if (jc && typeof jc.avg === "number" && typeof jc.mine === "number")
+    html += `<p class="muted">같은 직군 평균 오답률 ${Math.round(jc.avg * 100)}% · 내 오답률 ${Math.round(jc.mine * 100)}%</p>`;
        // 하는 일: 진짜 업무 메시지까지 의심한 횟수를 "업무 지연"으로 보여 준다 (과잉 의심 반영, A 10/28)
      // 이유: 시작 안내문에서 "모두 의심하면 업무가 늦어진 것으로 기록돼요"라고 약속했기 때문. 다 의심하는 것도 대가가 있다는 걸 보여 준다
      // 참고: 색은 해설 화면의 "과잉 의심" 배너와 같은 노란색. 숫자는 서버가 다시 채점한 over_suspicion 그대로      
