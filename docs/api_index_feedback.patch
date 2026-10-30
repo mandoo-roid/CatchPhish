@@ -1,0 +1,45 @@
+diff --git a/api/index.py b/api/index.py
+index c88aa51..d7c7bbf 100644
+--- a/api/index.py
++++ b/api/index.py
+@@ -37,6 +37,14 @@ except Exception as e:  # noqa: BLE001
+     print("장부 코드 불러오기 실패:", type(e).__name__)
+     LEDGER_READY = False
+ 
++# 맞춤 피드백 코드 (C의 feedback.py)
++# 하는 일: 결과 화면 "이렇게 해 보세요" 문장을 고른다. 불러오기에 실패하면 아래 CASE_TIPS(임시)로 그대로 동작한다
++try:
++    from feedback import make_tips  # noqa: E402
++except Exception as e:  # noqa: BLE001
++    print("feedback 불러오기 실패:", type(e).__name__)
++    make_tips = None
++
+ # 관리자 통계 계산 코드 (C의 stats.py)
+ # 하는 일: 장부 기록 목록을 관리자 화면용 숫자로 바꾸는 compute_stats를 불러온다
+ # 이유: 서버 약속 5번 (/api/admin/stats)
+@@ -266,7 +274,7 @@ def result():
+     q1 = (data.get("self_check") or {}).get("Q1")
+     if not isinstance(answers, list) or not answers or not isinstance(q1, int) or not 1 <= q1 <= 5:
+         return bad("결과를 계산할 정보가 부족합니다.")
+-    wrong, over, missed = 0, 0, {}
++    wrong, over, missed, wrong_choices = 0, 0, {}, {}
+     for a in answers:
+         card = SCENARIOS.get(a.get("scenario_id")) if isinstance(a, dict) else None
+         if card is None or a.get("choice") not in CHOICES:
+@@ -275,6 +283,7 @@ def result():
+         over += o
+         if not ok:
+             wrong += 1
++            wrong_choices[a["choice"]] = wrong_choices.get(a["choice"], 0) + 1
+             for t in (card.get("case_type") or "").split("+"):
+                 if t:
+                     missed[t] = missed.get(t, 0) + 1
+@@ -298,7 +307,7 @@ def result():
+         "accuracy": round(correct / played * 100),
+         "gap_message": gap,
+         "weak_types": [CASE_NAMES[t] for t in weak if t in CASE_NAMES],
+-        "tips": [CASE_TIPS[t] for t in weak if t in CASE_TIPS][:2],
++        "tips": make_tips(missed, wrong_choices) if make_tips else [CASE_TIPS[t] for t in weak if t in CASE_TIPS][:2],
+     })
+ 
+ 
