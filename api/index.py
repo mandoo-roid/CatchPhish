@@ -266,6 +266,25 @@ def favicon():
     return "", 204
 
 
+def job_compare(job, anon, wrong, played):
+    # 하는 일: 장부에 쌓인 같은 직군 사람들의 평균 오답률과 내 오답률을 함께 돌려준다 (A 10/30)
+    # 이유: 신청서 ⑤ "집계 결과 기반 개인별 맞춤 피드백". 내 결과를 전체 집계와 비교해 보여 주려고
+    # 참고: 평균에는 내 기록을 넣지 않는다. 계산은 관리자 통계와 같은 C의 compute_stats를 쓰므로,
+    #       같은 직군이 3명 미만이면 평균이 없어 None(화면에 안 나옴). 장부를 못 읽어도 결과 화면은 그대로 나온다
+    if job not in JOBS or not (LEDGER_READY and STATS_READY) or not played:
+        return None
+    try:
+        others = [e for e in load_entries()
+                  if not (isinstance(e.get("record"), dict) and e["record"].get("anon_id") == anon)]
+        avg = compute_stats(others)["wrong_rate_by_job"].get(job)
+    except Exception as e:  # noqa: BLE001
+        print("직군 비교 계산 실패:", type(e).__name__)
+        return None
+    if avg is None:
+        return None
+    return {"avg": avg, "mine": round(wrong / played, 3)}
+
+
 @app.post("/api/result")
 def result():
     # 서버 약속 3번: DB 연결 전이라 화면이 보낸 선택 목록으로 다시 채점해 결과를 만든다
@@ -299,6 +318,7 @@ def result():
         gap = f"{played}문제 중 {wrong}번 속으셨어요."
     weak = sorted(missed, key=lambda t: -missed[t])
     return jsonify({
+        "job_compare": job_compare(data.get("job"), data.get("anon_id"), wrong, played),
         "played": played,
         "correct": correct,
         "wrong": wrong,
