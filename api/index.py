@@ -2,9 +2,9 @@
 # 서버 약속 (docs/설계_A_흐름과_서버약속.md):
 #   1 /api/start   2 /api/answer   3 /api/result   4 /api/check-url
 # 5(관리자 통계)는 겉모양과 주소만 먼저 만들어 둠. 통계 계산은 C의 stats.py가 오면 채운다.
-# 6(기록 검사): C의 hashchain.verify_chain으로 장부 전체를 다시 계산해 위변조를 검사한다 (A 10/28 연결).
+# 6(기록 검사): C의 ledger_v2.verify_ledger로 장부 전체와 마지막 기록 표시(head)를 검사한다 (A 10/28 연결, 10/30 v2).
 # 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
-# 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger.append_record로 장부에 한 줄 저장한다 (A 10/28).
+# 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
 import hmac
@@ -24,14 +24,14 @@ sys.path.insert(0, os.path.join(ROOT, "backend", "email_analyzer"))
 from url_analyzer import analyze_url  # noqa: E402
 from email_analyzer import analyze_email, build_raw, URGENT_WORDS  # noqa: E402
 
-# 장부(DB) 저장 코드 (C의 ledger.py, hashchain.py)
+# 장부(DB) 저장 코드 (C의 ledger_v2.py, hashchain_v2.py, 10/30 바꿔 끼움)
 # 하는 일: db_logs 폴더의 장부 코드를 불러온다
-# 이유: 게임 기록을 해시체인 장부에 남기려고 (서버 약속 7번)
-# 참고: 불러오기에 실패해도 게임은 그대로 돌아가게 try로 감쌌다 (팀 결정: 장부 저장이 실패해도 게임은 계속)
+# 이유: 게임 기록을 해시체인 장부에 남기려고 (서버 약속 7번). v2는 비밀 열쇠(HMAC, 환경 변수 HASH_SECRET)와 끝 기록 삭제 감지(ledger_head 표)를 더했다
+# 참고: 불러오기에 실패해도 게임은 그대로 돌아가게 try로 감쌌다 (팀 결정: 장부 저장이 실패해도 게임은 계속).
+#       v2가 실패해도 예전 ledger.py로 돌아가지 않는다. 지문 계산 방식이 달라 장부가 섞이기 때문
 sys.path.insert(0, os.path.join(ROOT, "backend", "db_logs"))
 try:
-    from ledger import append_record, load_entries  # noqa: E402
-    from hashchain import verify_chain  # noqa: E402
+    from ledger_v2 import append_record, load_entries, verify_ledger  # noqa: E402
     LEDGER_READY = True
 except Exception as e:  # noqa: BLE001
     print("장부 코드 불러오기 실패:", type(e).__name__)
@@ -399,7 +399,7 @@ def admin_stats():
 
 @app.post("/api/admin/verify")
 def admin_verify():
-    # 서버 약속 6번: 장부 전체를 불러와 C의 verify_chain으로 검사한 결과를 그대로 돌려준다
+    # 서버 약속 6번: C의 verify_ledger로 장부 전체와 마지막 기록 표시(head)를 검사한 결과를 그대로 돌려준다
     # 하는 일: 이상 없으면 {"ok": true, "count": 개수}, 문제가 있으면 {"ok": false, "broken_seq": 번호, "reason": 이유}
     # 이유: 기록이 몰래 바뀌거나 중간에 지워졌는지 관리자가 직접 확인하게 하려고 (증적 로그)
     # 참고: 관리자 화면(admin.html)은 이 모양을 이미 보여 줄 수 있다. 회사 코드가 맞아야 검사한다
@@ -410,7 +410,7 @@ def admin_verify():
     if not LEDGER_READY:
         return jsonify({"connected": False, "message": "장부 코드를 불러오지 못해 검사할 수 없습니다."})
     try:
-        return jsonify(verify_chain(load_entries()))
+        return jsonify(verify_ledger())   # head(마지막 기록 표시)를 먼저 읽고 장부 전체를 검사 (C의 ledger_v2)
     except Exception as e:  # noqa: BLE001
         print("기록 검사 실패:", type(e).__name__, str(e)[:120])
         return jsonify({"error": "기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."}), 500
