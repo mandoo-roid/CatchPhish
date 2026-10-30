@@ -576,10 +576,10 @@ function renderResult(r) {
      // 참고: 색은 해설 화면의 "과잉 의심" 배너와 같은 노란색. 숫자는 서버가 다시 채점한 over_suspicion 그대로      
     
   if (r.over_suspicion > 0) html += `<div class="banner caution" style="margin-top:1rem">확인하느라 업무가 ${r.over_suspicion}번 늦어졌어요<small>진짜 업무 메시지까지 의심해서 따로 확인했어요. 모든 메시지를 의심하면 일이 늦어져요.</small></div>`;
-  if (r.weak_types.length) {
-    html += `<h2>많이 속은 유형</h2><p>${r.weak_types.map(esc).join(", ")}</p>`;
-    html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
-  }
+  if (r.weak_types.length) html += `<h2>많이 속은 유형</h2><p>${r.weak_types.map(esc).join(", ")}</p>`;
+  // 하는 일: 맞춤 피드백(C의 feedback.py)을 보여 준다. 다 맞힌 판에는 칭찬 한 줄이 온다 (A 10/30)
+  // 이유: 전에는 속은 유형이 없으면 이 칸도 그리지 않아서, 다 맞힌 사람에게 칭찬 문구가 보이지 않았다
+  if ((r.tips || []).length) html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
   // 하는 일: 연쇄형 결과를 결과 화면에도 한 줄로 남긴다 (A 10/29)
   if (state.chainResult) html += `<h2>연쇄형 체험</h2><p>${esc(chainLine(state.chainResult))}</p>`;
   html += `<p class="note">익명 번호 ${esc(state.anon)}</p>`;
