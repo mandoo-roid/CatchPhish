@@ -156,6 +156,12 @@ main.wide { max-width: 78rem; }
 }
 .choice:disabled { cursor: wait; opacity: .6; }
 .question { font-weight: 500; margin: 1.5rem 0 0; }
+/* 제한 시간 (A 10/30): 남은 시간 막대와 글자. 시간이 지나면 노란색으로 바뀐다 */
+.timer { margin: .6rem 0 0; font-size: .85rem; color: var(--muted); }
+.timer .tbar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: .3rem; }
+.timer .tbar i { display: block; height: 100%; background: var(--muted); width: 100%; transition: width 1s linear; }
+.timer.over { color: var(--caution); font-weight: 500; }
+.timer.over .tbar i { background: var(--caution); }
 /* 해설 */
 .banner { border-radius: 14px; padding: 1.1rem 1.25rem; font-weight: 700; font-size: 1.2rem; }
 .banner.danger { background: var(--danger-soft); color: var(--danger); }
@@ -225,6 +231,7 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
     <div class="screen-col"><div id="card"></div></div>
     <div class="answer-col">
       <p class="question">이 메시지를 받았다면 어떻게 하시겠어요?</p>
+      <div class="timer" id="game-timer"><span id="timer-text" role="status"></span><div class="tbar" aria-hidden="true"><i id="timer-bar"></i></div></div>
       <div class="choices">
         <button class="choice" data-choice="click">링크·첨부를 열어 본다</button>
         <button class="choice" data-choice="call">적힌 번호로 전화해 본다</button>
@@ -287,7 +294,7 @@ const SURVEY = [
 ];
 const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
 
-const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null };
+const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null, late: 0 };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -342,7 +349,7 @@ $("survey-next").onclick = async () => {
   $("survey-next").disabled = true; $("start-error").textContent = "";
   try {
     const d = await post("/api/start", { job: state.job, self_check: state.survey });
-    Object.assign(state, { anon: d.anon_id, cards: d.scenarios, i: 0, answers: [] });
+    Object.assign(state, { anon: d.anon_id, cards: d.scenarios, i: 0, answers: [], late: 0 });
     renderCard(); show("s-game");
   } catch (err) { $("start-error").textContent = err.message; $("survey-next").disabled = false; }
 };
@@ -403,16 +410,42 @@ function cardHTML(c, i) {
   </div>${note}`;
 }
 
+// 제한 시간 (A 10/30)
+// 하는 일: 문제가 뜨면 문자 15초, 메일 25초를 센다. 시간이 지나도 답은 고를 수 있고, 시간 안에 못 고른 문제 수만 결과 화면에 따로 보여 준다
+// 이유: 실제 업무 중에는 메시지 하나를 오래 들여다볼 시간이 없다. 바쁜 상황에서도 판단할 수 있는지 스스로 보게 하려고
+// 참고: 화면에서만 세는 숫자라 채점(정답·오답)과 장부 기록, 관리자 통계에는 들어가지 않는다. 연쇄형은 첫 문자(1단계)에만 적용
+const LIMIT = { sms: 15, email: 25 };
+const timer = { id: null, left: 0, over: false };
+function startTimer(c) {
+  clearInterval(timer.id);
+  const total = c.channel === "email" ? LIMIT.email : LIMIT.sms;
+  Object.assign(timer, { left: total, over: false });
+  $("game-timer").classList.remove("over");
+  const draw = () => {
+    $("timer-bar").style.width = `${Math.max(timer.left, 0) / total * 100}%`;
+    if (timer.left > 0) { $("timer-text").textContent = `남은 시간 ${timer.left}초`; return; }
+    timer.over = true; clearInterval(timer.id);
+    $("game-timer").classList.add("over");
+    $("timer-text").textContent = "시간이 지났어요. 그래도 답을 골라 주세요";
+  };
+  draw();
+  timer.id = setInterval(() => { timer.left--; draw(); }, 1000);
+}
+
 function renderCard() {
   const c = state.cards[state.i], n = state.cards.length;
   $("game-progress").textContent = `문제 ${state.i + 1}/${n}`;
   $("game-bar").style.width = `${(state.i + 1) / n * 100}%`;
   $("card").innerHTML = cardHTML(c, state.i);
   $("game-error").textContent = "";
+  startTimer(c);
 }
 document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = async () => {
   const c = state.cards[state.i];
   document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = true);
+  clearInterval(timer.id);
+  // 참고: 서버 오류로 다시 누를 때 두 번 세지 않도록 문제마다 한 번만 센다
+  if (timer.over && c.lateCounted !== true) { state.late++; c.lateCounted = true; }
   try {
     
     // 참고: chain: true는 "연쇄형 단계 화면을 보여 줄 수 있다"는 표시. 연쇄형 카드에서 링크를 열면 서버가 해설 대신 2단계 화면을 보낸다 (A 10/29)
@@ -536,7 +569,8 @@ function renderResult(r) {
       <div class="stat"><b>${r.over_suspicion}</b><span>과잉 의심</span></div>
     </div>
     <p class="gap">${esc(r.gap_message)}</p>
-    <p class="muted">자신감 ${r.confidence}점 / 정답률 ${r.accuracy}%</p>`;
+    <p class="muted">자신감 ${r.confidence}점 / 정답률 ${r.accuracy}%</p>
+    <p class="muted">제한 시간(문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초) 안에 고른 문제 ${state.cards.length - state.late}/${state.cards.length}</p>`;
        // 하는 일: 진짜 업무 메시지까지 의심한 횟수를 "업무 지연"으로 보여 준다 (과잉 의심 반영, A 10/28)
      // 이유: 시작 안내문에서 "모두 의심하면 업무가 늦어진 것으로 기록돼요"라고 약속했기 때문. 다 의심하는 것도 대가가 있다는 걸 보여 준다
      // 참고: 색은 해설 화면의 "과잉 의심" 배너와 같은 노란색. 숫자는 서버가 다시 채점한 over_suspicion 그대로      
@@ -552,7 +586,8 @@ function renderResult(r) {
   $("result").innerHTML = html;
 }
 $("btn-restart").onclick = () => {
-  Object.assign(state, { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null });
+  clearInterval(timer.id);
+  Object.assign(state, { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null, late: 0 });
   $("jobs").querySelectorAll("[data-job]").forEach(x => x.setAttribute("aria-pressed", "false"));
   $("btn-start").disabled = true; show("s-start");
 };
