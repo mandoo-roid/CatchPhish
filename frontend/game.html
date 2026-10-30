@@ -155,6 +155,8 @@ main.wide { max-width: 78rem; }
   .choice:not(:disabled):hover { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); background: var(--field); }
 }
 .choice:disabled { cursor: wait; opacity: .6; }
+/* 이 메시지에서 할 수 없는 행동 (A 10/30): 링크·첨부가 없거나 적힌 번호가 없을 때 흐리게 */
+.choice.na, .choice.na:disabled { opacity: .3; cursor: not-allowed; }
 .question { font-weight: 500; margin: 1.5rem 0 0; }
 /* 제한 시간 (A 10/30): 남은 시간 막대와 글자. 시간이 지나면 노란색으로 바뀐다 */
 .timer { margin: .6rem 0 0; font-size: .85rem; color: var(--muted); }
@@ -433,12 +435,25 @@ function startTimer(c) {
   timer.id = setInterval(() => { timer.left--; draw(); }, 1000);
 }
 
+// 하는 일: 이 메시지에서 할 수 없는 행동 버튼을 흐리게 하고 누를 수 없게 한다 (A 10/30)
+// 이유: 링크·첨부가 없는 메일에 "링크·첨부를 열어", 번호가 없는 메일에 "적힌 번호로 전화"가 나오면 어색하다
+// 참고: 화면에 보이는 글자(링크, 첨부, 보낸 사람, 본문)만 보고 정한다. 채점은 서버가 그대로 한다
+const PHONE = /\d{2,3}-\d{3,4}-\d{4}/;
+function setChoices(c, busy) {
+  const na = { click: !c.link && !c.attachment, call: !PHONE.test(`${c.sender || ""} ${c.body || ""}`), official: false };
+  document.querySelectorAll("#s-game [data-choice]").forEach(x => {
+    x.classList.toggle("na", na[x.dataset.choice]);
+    x.disabled = busy || na[x.dataset.choice];
+  });
+}
+
 function renderCard() {
   const c = state.cards[state.i], n = state.cards.length;
   $("game-progress").textContent = `문제 ${state.i + 1}/${n}`;
   $("game-bar").style.width = `${(state.i + 1) / n * 100}%`;
   $("card").innerHTML = cardHTML(c, state.i);
   $("game-error").textContent = "";
+  setChoices(c, false);
   startTimer(c);
 }
 document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = async () => {
@@ -456,7 +471,7 @@ document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = asyn
     if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call" };
     renderExplain(r); show("s-explain");
   } catch (err) { $("game-error").textContent = err.message; }
-  finally { document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = false); }
+  finally { setChoices(c, false); }
 });
 
 // 화면 3-1-2. 연쇄형 단계 (A 10/29)
