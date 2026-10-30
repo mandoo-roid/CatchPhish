@@ -294,12 +294,17 @@ def result():
     if not isinstance(answers, list) or not answers or not isinstance(q1, int) or not 1 <= q1 <= 5:
         return bad("결과를 계산할 정보가 부족합니다.")
     wrong, over, missed, wrong_choices = 0, 0, {}, {}
+    phishing, normal = 0, 0   # 피싱 카드 수, 정상 카드 수 (두 점수의 분모, A 10/30)
     for a in answers:
         card = SCENARIOS.get(a.get("scenario_id")) if isinstance(a, dict) else None
         if card is None or a.get("choice") not in CHOICES:
             return bad("선택 목록이 올바르지 않습니다.")
         ok, o = grade(card, a["choice"])
         over += o
+        if card.get("is_phishing"):
+            phishing += 1
+        else:
+            normal += 1
         if not ok:
             wrong += 1
             wrong_choices[a["choice"]] = wrong_choices.get(a["choice"], 0) + 1
@@ -319,6 +324,13 @@ def result():
     weak = sorted(missed, key=lambda t: -missed[t])
     return jsonify({
         "job_compare": job_compare(data.get("job"), data.get("anon_id"), wrong, played),
+        # 하는 일: 결과 화면의 두 점수 (A 10/30). 막은 피싱 = 피싱 카드에서 맞힌 수, 처리한 업무 = 정상 카드에서 확인 없이 바로 처리한 수
+        # 이유: "모두 공식 확인"만 눌러도 만점이 되던 구조를 보완. 근거 없이 전부 의심하면 처리한 업무가 0이 된다
+        # 참고: 채점(정답·오답)과 장부·관리자 통계는 그대로. 피싱에서 확인한 것은 업무 지연으로 세지 않는다
+        "phishing_total": phishing,
+        "phishing_blocked": phishing - wrong,
+        "normal_total": normal,
+        "normal_handled": normal - over,
         "played": played,
         "correct": correct,
         "wrong": wrong,
@@ -327,7 +339,9 @@ def result():
         "accuracy": round(correct / played * 100),
         "gap_message": gap,
         "weak_types": [CASE_NAMES[t] for t in weak if t in CASE_NAMES],
-        "tips": make_tips(missed, wrong_choices) if make_tips else [CASE_TIPS[t] for t in weak if t in CASE_TIPS][:2],
+        # 참고: 하나도 안 속었지만 진짜 업무까지 확인한 판(과잉 의심)에는 팁을 보내지 않는다 (A 10/30).
+        #       결과 화면의 노란 상자가 그 설명을 하고, 칭찬 문장과 반대 말이 되지 않게 하려고
+        "tips": [] if (wrong == 0 and over > 0) else (make_tips(missed, wrong_choices) if make_tips else [CASE_TIPS[t] for t in weak if t in CASE_TIPS][:2]),
     })
 
 
