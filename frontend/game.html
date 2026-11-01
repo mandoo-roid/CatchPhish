@@ -205,6 +205,7 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
   <p><b>평소 업무 중이라고 생각해 주세요.</b></p>
   <p>회사에서 받은 것 같은 메일과 문자가 차례로 나와요. 진짜 업무 메시지도 섞여 있어요.</p>
   <p>평소에 하던 대로 골라 주세요. 모든 메시지를 의심하면, 확인하느라 업무가 늦어진 것으로 기록돼요.</p>
+  <p id="limit-note">문제마다 제한 시간이 있어요 (문자 15초, 메일 25초). 시간이 지나도 고를 수 있어요.</p>
   <p class="muted">이 체험은 평가가 아니며 결과는 익명으로 모입니다.</p>
   <h2>내 직군</h2>
   <div class="choices" id="jobs"></div>
@@ -418,6 +419,10 @@ function cardHTML(c, i) {
 // 이유: 실제 업무 중에는 메시지 하나를 오래 들여다볼 시간이 없다. 바쁜 상황에서도 판단할 수 있는지 스스로 보게 하려고
 // 참고: 화면에서만 세는 숫자라 채점(정답·오답)과 장부 기록, 관리자 통계에는 들어가지 않는다. 연쇄형은 첫 문자(1단계)에만 적용
 const LIMIT = { sms: 15, email: 25 };
+// 하는 일: 시작 안내문의 제한 시간 숫자를 위 LIMIT에서 가져와 채운다 (B 11/02)
+// 이유: 시간을 바꿀 때 LIMIT 한 곳만 고치면 안내문도 저절로 맞게 하려고
+// 참고: 안내문에는 같은 문장이 미리 적혀 있어서, 이 줄이 실행되지 않아도 문장은 보인다
+$("limit-note").textContent = `문제마다 제한 시간이 있어요 (문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초). 시간이 지나도 고를 수 있어요.`;
 const timer = { id: null, left: 0, over: false };
 function startTimer(c) {
   clearInterval(timer.id);
