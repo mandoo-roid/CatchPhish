@@ -112,6 +112,22 @@ function renderStats(d) {
     h += `<h2>많이 속은 유형</h2><div class="table-wrap"><table><thead><tr><th>유형</th><th>속은 횟수</th></tr></thead><tbody>` +
       d.weak_types.map(t => `<tr><td>${esc(t.type)}</td><td>${esc(t.count)}</td></tr>`).join("") + `</tbody></table></div>`;
   }
+  // 하는 일: 다시 도전 효과. 1회차와 2회차(처음 보는 문제)를 모두 한 사람의 회차별 비율을 나란히 보여 준다 (A 11/02)
+  // 이유: 교육을 받은 뒤 실제로 나아지는지 회사가 확인하게 하려고 (교수님 피드백 "교육 효과가 보이게")
+  // 참고: 위 통계(참여 인원, 직군별 오답률 등)는 1회차 기록만으로 계산한다. 비율은 0~1, 계산할 수 없으면 null
+  const re = d.retry_effect;
+  h += `<h2>다시 도전 효과</h2>`;
+  if (re && re.people) {
+    const row = (label, a, b) => `<tr><td>${label}</td><td>${pct(a)}</td><td>${pct(b)}</td><td>${typeof a === "number" && typeof b === "number" ? (b > a ? "▲ " : b < a ? "▼ " : "") + Math.abs(Math.round((b - a) * 100)) + "%p" : "-"}</td></tr>`;
+    h += `<p class="muted" style="font-size:.9rem">1회차를 마치고 처음 보는 문제로 다시 도전한 ${esc(re.people)}명의 결과예요.</p>
+      <div class="table-wrap"><table><thead><tr><th></th><th>1회차</th><th>2회차 (새 문제)</th><th>변화</th></tr></thead><tbody>` +
+      row("피싱을 막은 비율", re.round1.phishing_blocked, re.round2.phishing_blocked) +
+      row("정상 업무를 처리한 비율", re.round1.normal_handled, re.round2.normal_handled) +
+      `</tbody></table></div>
+      <p class="muted" style="font-size:.9rem">피싱을 막은 비율이 나아진 사람 ${esc(re.improved)}명 · 같은 사람 ${esc(re.same)}명 · 낮아진 사람 ${esc(re.worse)}명</p>`;
+  } else {
+    h += `<p class="muted" style="font-size:.9rem">아직 다시 도전한 사람이 없어요. 결과 화면에서 [새 문제로 다시 도전]을 하면 여기에 나타나요.</p>`;
+  }
   $("stats").innerHTML = h;
 }
 
