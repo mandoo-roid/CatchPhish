@@ -64,6 +64,21 @@ details.more > summary:focus-visible { outline: 3px solid var(--focus); outline-
 .intro-steps li { margin-bottom: .4rem; }
 .done-head { text-align: center; padding: 1rem 0 .5rem; }
 .done-head .done { font-size: 2rem; font-weight: 700; margin: 0; }
+/* A 11/02: 해설 화면에서 방금 본 메시지 위에 놓친 단서를 번호로 표시 */
+mark.clue { background: #FFE58A; color: inherit; border-radius: 3px; padding: 0 .15em; box-shadow: 0 0 0 2px #FFE58A; }
+.clue-wrap { outline: 2px solid #E0B400; outline-offset: 3px; border-radius: 6px; }
+.pin { display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; border-radius: 50%;
+  background: var(--danger); color: #FFFFFF; font: 700 .72rem var(--sans); vertical-align: super; margin-left: .15rem; line-height: 1; }
+.pin.safe { background: var(--safe); }
+.list .pin { vertical-align: middle; margin: 0 .4rem 0 0; }
+/* 참고: 첨부 파일 상자처럼 안쪽 span에 따로 모양이 있는 곳에서도 번호가 보이게 한다 */
+.clue-wrap > span.pin { display: inline-flex !important; color: #FFFFFF !important; font: 700 .72rem var(--sans) !important; width: 1.25rem !important; height: 1.25rem !important; margin-left: auto; align-self: center; }
+@media (prefers-color-scheme: dark) { mark.clue { background: #6B5A12; box-shadow: 0 0 0 2px #6B5A12; } .clue-wrap { outline-color: #C9A227; } }
+.harm-now { background: var(--danger-soft); color: var(--danger); border-radius: 10px; padding: .7rem .9rem; margin: .75rem 0 0; font-size: .95rem; }
+.harm { background: var(--danger-soft); color: var(--danger); border-radius: 12px; padding: 1rem 1.1rem; margin: 1rem 0; }
+.harm b { display: block; font-size: 1.05rem; margin-bottom: .35rem; }
+.harm ul { margin: 0; padding-left: 1.1rem; }
+.mylog .harm-line { color: var(--danger); }
 .cmp { margin: .5rem 0 1rem; }
 .cmp-row { display: grid; grid-template-columns: 7.5rem 1fr 3rem; align-items: center; gap: .6rem; margin: .35rem 0; font-size: .9rem; }
 .cmp-row .track { height: 12px; background: var(--field); border-radius: 6px; overflow: hidden; }
@@ -532,8 +547,9 @@ document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = asyn
     state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
     if (r.chain_step) { renderChain(r.chain_step); show("s-chain"); return; }
     if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call" };
-    addLog(r, choiceLabel(c, b.dataset.choice));
-    renderExplain(r); show("s-explain");
+    const harm = fullyFooled(r) ? harmOf(c, b.dataset.choice, r) : null;
+    addLog(r, choiceLabel(c, b.dataset.choice), harm);
+    afterAnswer(r, harm);
   } catch (err) { $("game-error").textContent = err.message; }
   finally { setChoices(c, false); }
 });
@@ -567,8 +583,9 @@ document.querySelectorAll("#s-chain [data-action]").forEach(b => b.onclick = asy
     const r = await post("/api/chain", { anon_id: state.anon, scenario_id: st.scenario_id, step: st.step, action: b.dataset.action, job: state.job, self_check: state.survey });
     if (r.chain_step) { renderChain(r.chain_step); return; }   // renderChain이 0.8초 뒤에 버튼을 다시 켠다
     state.chainResult = { step: r.stopped_step, call: false };
-    addLog(r, `링크를 열고 ${r.stopped_step ? r.stopped_step + "단계에서 멈춤" : "끝까지 진행"}`);
-    renderExplain(r); show("s-explain");
+    const harm = fullyFooled(r) ? harmOf(state.cards[state.i], "click", r) : null;
+    addLog(r, `링크를 열고 ${r.stopped_step ? r.stopped_step + "단계에서 멈춤" : "끝까지 진행"}`, harm);
+    afterAnswer(r, harm);
     document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = false);
   } catch (err) {
     $("chain-error").textContent = err.message;
@@ -586,17 +603,72 @@ function chainLine(cr) {
   return cr.call ? "문자에 적힌 번호로 전화했어요. 그 번호는 사기범에게 연결돼요." : "가짜 앱 설치부터 정보 입력까지 끝까지 진행했어요. 실제였다면 휴대폰 정보가 빠져나갔을 거예요.";
 }
 
+// 하는 일: 피싱에 속었을 때 "실제였다면 일어났을 피해"를 정한다 (A 11/02)
+// 이유: 참여자 의견 "내가 무슨 짓을 한 거지?". 숫자보다 무슨 일이 일어났을지가 기억에 남는다. 고른 행동과 메시지에 있던 것(첨부·링크·번호)으로 피해를 고른다
+// 참고: 시나리오에 consequence {title, detail}가 있으면 그 문구가 먼저다. 연쇄형 2·3단계에서 멈춘 경우와 정상 메시지는 여기 오지 않는다
+function harmOf(c, choice, r) {
+  if (r.consequence && r.consequence.title) return r.consequence;
+  if (choice === "call") return { title: "사기범과 통화가 연결됐어요", detail: "상대는 기관이나 회사 직원처럼 말하며 개인정보, 인증번호, 송금을 요구해요." };
+  if (r.stopped_step === 0) return { title: "휴대폰 정보가 빠져나가고 있어요", detail: "설치한 가짜 앱이 문자, 화면, 저장된 정보를 몰래 보내요." };
+  if (c.attachment) return { title: "회사 PC에서 악성 프로그램이 실행됐어요", detail: `문서처럼 보인 '${c.attachment}'은 실제로는 프로그램이었어요. 사내 네트워크로 퍼질 수 있어요.` };
+  if (c.channel === "email") return { title: "사내 계정 비밀번호가 넘어갔어요", detail: "가짜 로그인 화면에 입력한 아이디와 비밀번호가 공격자에게 전송돼요. 회사 메일과 문서가 모두 열려요." };
+  return { title: "개인정보가 넘어갔어요", detail: "가짜 사이트에 입력한 이름, 전화번호, 인증번호가 공격자에게 전송돼요." };
+}
+const fullyFooled = r => r.is_phishing && !r.is_correct && !(r.stopped_step === 2 || r.stopped_step === 3);
+// 하는 일: 답한 뒤 해설 화면을 보여 준다. 속었으면 해설 맨 위에 "실제였다면" 한 줄이 함께 나온다 (A 11/02)
+// 참고: 처음에는 화면 전체를 덮는 경고를 만들었지만, 회사 교육에서 놀라게 하는 방식은 맞지 않아 차분한 한 줄로 바꿨다 (A 11/02 결정)
+function afterAnswer(r, harm) { renderExplain(r, harm); show("s-explain"); }
+
 // 하는 일: 완료 화면의 "내가 한 일" 목록에 이번 문제를 한 줄 남긴다 (A 11/02)
 // 참고: 같은 문제를 서버 오류로 다시 눌러도 한 번만 남도록 문제 번호로 덮어쓴다
-function addLog(r, did) {
+function addLog(r, did, harm) {
   const c = state.cards[state.i];
   const what = c.channel === "email" ? (c.subject || "메일") : `${(c.sender || "").split(" / ")[0]} 문자`;
   const kind = r.is_correct ? (r.over_suspicion ? "slow" : "ok") : "bad";
-  state.log[state.i] = { what, did, kind, phishing: r.is_phishing };
+  state.log[state.i] = { what, did, kind, phishing: r.is_phishing, harm: harm ? harm.title : "" };
+}
+
+// 하는 일: 해설 화면 왼쪽의 메시지 위에 단서 위치를 형광펜과 번호로 표시한다 (A 11/02)
+// 이유: 참여자 의견 "내가 무슨 짓을 한 거지?". 놀라게 하는 대신, 방금 보고도 놓친 단서를 눈앞에서 보여 줘 "아, 여기였구나"를 느끼게 하려고.
+//       우리 목표(보낸 곳과 요구하는 행동을 보고 판단하기)를 그대로 연습시킨다
+// 참고: 단서 이름(factor)과 내용(text)으로 표시할 곳을 고른다. 시나리오를 고치지 않아도 되고, 표시할 곳을 못 찾은 단서는 목록에만 나온다
+function annotate(root, clues, phishing) {
+  const pin = n => { const p = document.createElement("span"); p.className = "pin" + (phishing ? "" : " safe"); p.textContent = n; p.setAttribute("aria-hidden", "true"); return p; };
+  const box = (el, n) => { if (!el) return false; el.classList.add("clue-wrap"); el.appendChild(pin(n)); return true; };   // 같은 곳에 단서가 둘이면 번호를 나란히 단다
+  const body = root.querySelector(".wm-text, .bubble");
+  // 하는 일: 본문 글자 안에서 낱말을 찾아 형광펜(mark)으로 감싼다. 링크 글자는 건드리지 않는다
+  const markWord = (word, n) => {
+    if (!body || !word) return false;
+    const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, { acceptNode: t => t.parentElement.closest(".fake-link, mark") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let t;
+    while ((t = walk.nextNode())) {
+      const i = t.data.indexOf(word); if (i < 0) continue;
+      const m = document.createElement("mark"); m.className = "clue";
+      const rest = t.splitText(i); rest.splitText(word.length);
+      rest.parentNode.replaceChild(m, rest); m.textContent = word; m.after(pin(n));
+      return true;
+    }
+    return false;
+  };
+  const words = text => (text.match(/"([^"]+)"/g) || []).map(w => w.slice(1, -1));
+  (clues || []).forEach((c, k) => {
+    const n = k + 1, f = c.factor || "", tx = c.text || "";
+    const ws = words(tx);
+    if (ws.length) {   // 따옴표로 적힌 낱말 ("오늘 중", "불이익")은 본문에서 찾아 표시
+      let done = false;
+      ws.forEach(w => { if (markWord(w, n)) done = true; else if (!done) { const last = w.split(" ").pop(); if (last.length >= 2) done = markWord(last, n); } });
+      if (done) return;
+    }
+    if (/확장자|첨부/.test(f)) { box(root.querySelector(".wm-file"), n); return; }
+    if (/답장/.test(f)) return;   // 답장 주소는 화면에 보이지 않아 목록에만 둔다
+    if (/발신|보낸 주소|기관 사칭|회사 번호|주소만으로/.test(f)) { box(root.querySelector(".wm-from .addr") || root.querySelector(".sms-head b"), n); return; }
+    if (/전화/.test(f) && body) { const m = (body.textContent.match(/\d{2,3}-\d{3,4}-\d{4}/) || [])[0]; if (m && markWord(m, n)) return; }
+    if (/주소|도메인|링크|로그인|설치|경로/.test(f)) { box(root.querySelector(".fake-link"), n); return; }
+  });
 }
 
 // 화면 3-2 (배너 문구는 B 설계 그대로)
-function renderExplain(r) {
+function renderExplain(r, harm) {
   let cls, head;
   if (r.is_phishing) [cls, head] = r.is_correct ? ["safe", "잘 막았어요"] : ["danger", "속았어요"];
   else [cls, head] = r.over_suspicion ? ["caution", "안전하지만 확인이 조금 지나쳤어요 (과잉 의심)"] : ["safe", "정상 메시지였어요. 괜찮아요"];
@@ -612,11 +684,13 @@ function renderExplain(r) {
   // 이유: 참여자 의견 "해설 글이 많고 어렵다". 체험자가 꼭 알아야 할 것만 먼저 읽게 하려고
   // 참고: 요점 한 줄(explanation_short)은 B가 scenarios.json에 쓴다. 없으면 서버가 해설 첫 문장을 보낸다
   let html = `<div class="banner ${cls}">${head}<small>${sub}</small></div>`;
+  if (harm) html += `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>`;
   // 하는 일: 연쇄형 카드면 맨 위에 "몇 단계에서 멈췄는지"를 보여 준다 (A 10/29)
   if (r.stopped_step !== undefined) html += `<p class="chain-steps"><b>연쇄형 체험</b> · 문자 → 가짜 앱 설치 페이지 → 가짜 PDF 뷰어<br>${esc(chainLine(state.chainResult))}</p>`;
   html += `<p class="lead">${esc(r.explanation_short || r.explanation)}</p>
     <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
-    <ul class="list">${r.clues.map(c => `<li><div><span class="factor">${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>
+    <p class="muted" style="margin:0 0 .25rem">${r.is_phishing ? "왼쪽 메시지에 번호로 표시했어요. 어디를 봤으면 막을 수 있었는지 확인해 보세요." : "왼쪽 메시지에 번호로 표시했어요."}</p>
+    <ul class="list">${r.clues.map((c, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>
     <details class="more"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>
     <h2>해설</h2><p>${esc(r.explanation)}</p>`;
   const a = r.analysis;
@@ -646,6 +720,7 @@ function renderExplain(r) {
   // 이유: 해설의 수상한 점을 메시지와 나란히 보며 확인하게 하려고
   // 참고: 문제 화면과 같은 cardHTML을 써서 글자와 모양이 똑같다
   $("explain-card").innerHTML = cardHTML(state.cards[state.i], state.i);
+  annotate($("explain-card"), r.clues, r.is_phishing);
   $("explain-progress").textContent = `문제 ${state.i + 1}/${state.cards.length}`;
   $("btn-next").textContent = state.i === state.cards.length - 1 ? "결과 보기" : "다음 문제";
 }
@@ -685,13 +760,17 @@ function renderResult(r) {
       <div class="stat"><b>${r.normal_handled}/${r.normal_total}</b><span>처리한 업무</span></div>`
          : `<div class="stat"><b>${r.correct}/${r.played}</b><span>맞힌 문제</span></div>`) +
     `<div class="stat"><b>${r.wrong}</b><span>속은 횟수</span></div></div>`;
+  // 하는 일: 속은 문제가 있으면 "실제였다면 일어났을 피해"를 모아 두 점수 바로 아래 크게 보여 준다 (A 11/02)
+  // 이유: 결과 화면에서 다시 한 번 "헉" 하게. 몇 번 틀렸다는 숫자보다 무슨 일이 일어났을지가 더 오래 남는다
+  const harms = state.log.filter(l => l && l.harm).map(l => l.harm);
+  if (harms.length) html += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
   // 하는 일: 진짜 업무 메시지까지 의심한 횟수를 "업무 지연"으로 보여 준다 (과잉 의심 반영, A 10/28)
   if (r.over_suspicion > 0) html += `<div class="banner caution" style="margin-top:1rem">확인하느라 업무가 ${r.over_suspicion}번 늦어졌어요<small>보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</small></div>`;
   // 하는 일: 문제마다 내가 고른 행동과 결과를 한 줄씩 보여 준다 (A 11/02, 참여자 의견 "문제별로 내가 고른 것과 정답 비교")
   const log = state.log.filter(Boolean);
   if (log.length) html += `<h2>내가 한 일</h2><ul class="mylog">${log.map(l => {
     const [m, t] = l.kind === "ok" ? ["✓", l.phishing ? "막았어요" : "바로 처리했어요"] : l.kind === "slow" ? ["△", "정상인데 멈춰서 업무가 늦어졌어요"] : ["✕", "속았어요"];
-    return `<li><span class="mark ${l.kind}" aria-hidden="true">${m}</span><div>${esc(l.what)}<small>내 선택: ${esc(l.did)} · ${t}</small></div></li>`;
+    return `<li><span class="mark ${l.kind}" aria-hidden="true">${m}</span><div>${esc(l.what)}<small>내 선택: ${esc(l.did)} · ${t}</small>${l.harm ? `<small class="harm-line">→ ${esc(l.harm)}</small>` : ""}</div></li>`;
   }).join("")}</ul>`;
   // 하는 일: 같은 직군 평균 오답률과 내 오답률을 막대 두 개로 비교한다 (A 11/02, 참여자 의견 "그래프에서 내가 어느 위치인지")
   // 참고: 서버가 같은 직군 3명 이상일 때만 job_compare를 보낸다 (A 10/30). 없으면 그래프를 그리지 않는다
