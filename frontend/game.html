@@ -309,6 +309,9 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
 #s-result .nav .primary:not(:disabled):hover { background: #3B42C4; }
 #s-result .nav .secondary:not(:disabled):hover { border-color: #2A3A66; box-shadow: 0 0 0 1px #2A3A66; }
 #s-result .nav .secondary:disabled { opacity: .45; cursor: not-allowed; }
+/* 하는 일: 다시 도전 안내 (A 11/03). 만점이 아니면 빨간 글씨로 다시 도전을 부드럽게 권한다 */
+#s-result .retry-note { color: #C5221F; font-size: .95rem; line-height: 1.6; margin: 1.25rem 0 0; }
+@media (prefers-color-scheme: dark) { #s-result .retry-note { color: #FF8A80; } }
 </style>
 </head>
 <body>
@@ -443,7 +446,8 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
     <input id="copy-in" type="text" autocomplete="off" autocorrect="off" spellcheck="false" aria-labelledby="copy-src" placeholder="여기에 입력">
     <p class="copy-msg" id="copy-msg" role="status"></p>
   </div>
-  <p class="muted" id="retry-note" hidden style="font-size:.9rem;margin:1rem 0 0">따라 쓰기를 마치면 <b>처음 보는 문제</b>로 한 번 더 해 볼 수 있어요.</p>
+  <!-- 수정 (A 11/03): 만점이 아니면 [체험 완료]는 잠그고 다시 도전만 열어 둔다 (1회차와 비교해 교육 효과를 보려고) -->
+  <p class="retry-note" id="retry-note" hidden>아쉬운 문제가 조금 있었어요! 방금 배운 내용을 내 것으로 만들 수 있게, 따라 쓰기를 마친 뒤 <b>처음 보는 새 문제</b>로 한 번만 더 도전해 주세요. 지난번보다 얼마나 나아졌는지 바로 보여 드릴게요.</p>
   <div class="nav">
     <button class="secondary" id="btn-retry" hidden disabled>새 문제로 다시 도전</button>
     <button class="primary" id="btn-done" disabled>체험 완료, 메인 화면으로</button>
@@ -946,6 +950,10 @@ function renderResult(r) {
   // 수정 (A 11/02): 다시 도전은 1회차에만, 따라 쓰기를 마쳐야 켜진다 (1·2회차 사이에 매뉴얼 문장을 읽게 하려고)
   const canRetry = state.round === 1 && (r.wrong > 0 || r.over_suspicion > 0);
   $("btn-retry").hidden = !canRetry; $("btn-retry").disabled = true; $("retry-note").hidden = !canRetry;
+  // 수정 (A 11/03): 만점이 아니면 [체험 완료]를 잠그고 다시 도전을 주 버튼(보라색)으로 바꾼다
+  state.mustRetry = canRetry;
+  $("btn-retry").className = canRetry ? "primary" : "secondary";
+  $("btn-done").className = canRetry ? "secondary" : "primary";
 }
 
 // 하는 일: 지난번과 비교한 한 줄 (A 11/02). 피싱과 업무가 서로 다른 쪽으로 바뀌면 둘 다 말해 준다
@@ -983,8 +991,8 @@ function checkCopy() {
   const ok = bare($("copy-in").value) === bare($("copy-src").textContent);
   $("copy-in").classList.toggle("ok", ok);
   $("copy-msg").classList.toggle("ok", ok);
-  $("copy-msg").textContent = ok ? "잘 입력했어요. 체험을 마무리해 주세요." : "";
-  $("btn-done").disabled = !ok;
+  $("copy-msg").textContent = ok ? (state.mustRetry ? "잘 입력했어요. 이제 새 문제로 다시 도전해 주세요." : "잘 입력했어요. 체험을 마무리해 주세요.") : "";
+  $("btn-done").disabled = !ok || state.mustRetry;
   $("btn-retry").disabled = !ok;
 }
 $("copy-in").addEventListener("input", checkCopy);
@@ -1000,7 +1008,10 @@ $("btn-retry").onclick = async () => {
     const d = await post("/api/start", { job: state.job, self_check: state.survey, retry: { anon_id: state.anon, answers: state.answers } });
     Object.assign(state, { prev: state.last, round: d.round || 2, anon: d.anon_id, cards: d.scenarios, i: 0, answers: [], chain: null, chainResult: null, late: 0, log: [] });
     renderCard(); show("s-game");
-  } catch (err) { $("copy-msg").textContent = err.message; }
+  } catch (err) {
+    // 수정 (A 11/03): 서버 오류로 다시 도전을 못 하면 갇히지 않게 [체험 완료]를 연다
+    $("copy-msg").textContent = err.message; state.mustRetry = false; $("btn-done").disabled = false;
+  }
   finally { $("btn-retry").disabled = false; }
 };
 </script>
