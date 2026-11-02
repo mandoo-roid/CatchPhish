@@ -180,6 +180,9 @@ def final_answer(card, ok, over, analysis, explanation, logged, stopped_step=Non
         "clues": card["clues"],
         "explanation": explanation,
         "explanation_short": short_line(card, explanation),
+        # 참고: consequence는 "실제였다면 일어났을 피해" 문구 (선택, B가 시나리오마다 쓸 수 있음, A 11/02).
+        #       정답을 알려 주는 셈이라 문제를 낼 때는 보내지 않고 답한 뒤에만 보낸다. 없으면 화면이 행동에 맞는 기본 문구를 쓴다
+        "consequence": card.get("consequence"),
         "logged": logged,  # 장부에 저장됐는지 (확인용)
         "text_clues": text_clues,  # 문자 본문에서 찾은 압박 문구 (점수와 별도)
     }
