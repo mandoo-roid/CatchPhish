@@ -265,6 +265,50 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
 .chain-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 .6rem; }
 .chain-body { font-size: .93rem; word-break: keep-all; overflow-wrap: anywhere; margin: 0; }
 .chain-steps { font-size: .85rem; color: var(--muted); margin: .75rem 0 0; }
+/* 결과(완료) 화면 디자인 (B 11/03)
+   하는 일: A가 만든 결과 화면 구조(판정, 두 점수, 피해, 내가 한 일, 비교, 팁, 따라 쓰기, 버튼)에 모양만 입힌다
+   이유: 첫 화면과 같은 색(남색 제목, 보라 #4B53D6, 남색 #2A3A66)으로 맞추고, 끝났을 때 두 점수와 "내가 한 일"이 한눈에 들어오게 하려고
+   참고: 스크립트와 id는 A 담당이라 건드리지 않고, #s-result 안에서만 모양을 덮어쓴다 */
+#s-result { word-break: keep-all; }
+#s-result .done-head { padding: 1.5rem 0 .25rem; }
+#s-result .done-head .done { color: #16224A; font-size: 2.4rem; letter-spacing: -0.02em; }
+#s-result #result > h2:first-of-type { text-align: center; color: #16224A; font-size: 1.35rem; line-height: 1.45; margin: .75rem 0 .25rem; }
+#s-result #result > h2:first-of-type + p.muted { text-align: center; }
+#s-result .stats { gap: .6rem; }
+#s-result .stat { border-radius: 14px; padding: 1.1rem .9rem; text-align: center; background: var(--field); border: 1px solid var(--line); }
+#s-result .stat b { font-size: 2rem; letter-spacing: -0.02em; }
+#s-result .stat span { font-size: .85rem; }
+#s-result .stat:nth-child(1) { background: #4B53D6; border-color: #4B53D6; }
+#s-result .stat:nth-child(2) { background: #2A3A66; border-color: #2A3A66; }
+#s-result .stat:nth-child(1) b, #s-result .stat:nth-child(2) b { color: #FFFFFF; }
+#s-result .stat:nth-child(1) span { color: #E6E8FF; }
+#s-result .stat:nth-child(2) span { color: #D9DEF0; }
+#s-result .harm { border-left: 4px solid var(--danger); border-radius: 4px 12px 12px 4px; }
+#s-result .again { border: 1px solid var(--line); }
+#s-result #result h2 { color: #16224A; }
+@media (prefers-color-scheme: dark) {
+  #s-result .done-head .done, #s-result #result > h2:first-of-type, #s-result #result h2 { color: var(--ink); }
+}
+/* 하는 일: "내가 한 일"을 한 줄씩 카드로, 표시(✓ △ ✕)를 색 동그라미로 */
+#s-result .mylog { display: grid; gap: .5rem; }
+#s-result .mylog li { border: 1px solid var(--line); border-radius: 12px; padding: .75rem .9rem; align-items: flex-start; }
+#s-result .mylog .mark { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-size: .85rem; color: #FFFFFF; margin-top: .05rem; }
+#s-result .mylog .mark.ok { background: var(--safe); } #s-result .mylog .mark.bad { background: var(--danger); } #s-result .mylog .mark.slow { background: var(--caution); }
+@media (prefers-color-scheme: dark) { #s-result .mylog .mark { color: var(--paper); } }
+#s-result .mylog small { margin-top: .15rem; }
+/* 하는 일: 직군 비교 막대에서 "나"를 보라색으로 */
+#s-result .cmp-row.me .fill { background: #4B53D6; }
+#s-result .cmp-row .track { height: 14px; }
+/* 하는 일: 따라 쓰기를 "마지막 단계" 상자로 구분 */
+#s-result .copy { border: 1px solid #B9BEF5; border-top: 4px solid #4B53D6; border-radius: 14px; padding: .75rem 1.1rem 1.1rem; margin-top: 1.75rem; background: var(--paper); }
+#s-result .copy h2 { color: #4B53D6; font-size: 1.1rem; }
+#s-result .copy-src { border-left: 4px solid #4B53D6; border-radius: 4px 10px 10px 4px; }
+@media (prefers-color-scheme: dark) { #s-result .copy { border-color: #3A3F7A; border-top-color: #8E96FF; } #s-result .copy h2 { color: #A8AEFF; } #s-result .copy-src { border-left-color: #8E96FF; } }
+/* 하는 일: 마지막 버튼. 체험 완료는 첫 화면 체험 상자와 같은 보라색, 다시 도전은 테두리 버튼 */
+#s-result .nav .primary { background: #4B53D6; color: #FFFFFF; }
+#s-result .nav .primary:not(:disabled):hover { background: #3B42C4; }
+#s-result .nav .secondary:not(:disabled):hover { border-color: #2A3A66; box-shadow: 0 0 0 1px #2A3A66; }
+#s-result .nav .secondary:disabled { opacity: .45; cursor: not-allowed; }
 </style>
 </head>
 <body>
