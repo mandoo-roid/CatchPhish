@@ -89,6 +89,33 @@ def pick_scenarios(job):
     return cards
 
 
+def pick_retry(first_answers):
+    # 하는 일: 다시 도전(2회차) 문제를 고른다. 1회차에 안 본 피싱 3개(1회차에 속은 유형부터) + 정상 2개 (A 11/02)
+    # 이유: 같은 문제를 다시 내면 외워서 맞힐 수 있다. 처음 보는 문제에서도 막아야 "판단하는 법을 배웠다"고 말할 수 있다.
+    #       약한 유형을 다시 연습하게 하려고 1회차에 속은 유형을 먼저 낸다
+    # 참고: 1회차 답은 화면이 보낸 목록을 서버가 다시 채점해 속은 유형을 찾는다 (결과 3번과 같은 방식). 정상 카드는 2개뿐이라 다시 나온다
+    seen, missed = set(), set()
+    for a in first_answers:
+        card = SCENARIOS.get(a.get("scenario_id")) if isinstance(a, dict) else None
+        if card is None or a.get("choice") not in CHOICES:
+            continue
+        seen.add(card["scenario_id"])
+        if not grade(card, a["choice"])[0]:
+            missed.update(t for t in (card.get("case_type") or "").split("+") if t)
+    pool = [s for s in SCENARIOS.values() if s.get("is_phishing") and s["scenario_id"] not in seen]
+    random.shuffle(pool)
+    pool.sort(key=lambda s: 0 if missed & set((s.get("case_type") or "").split("+")) else 1)
+    phish = pool[:3]
+    if len(phish) < 3:   # 안 본 피싱이 모자라면 본 피싱으로 채운다 (시나리오 9개 기준으로는 생기지 않음)
+        rest = [s for s in SCENARIOS.values() if s.get("is_phishing") and s not in phish]
+        random.shuffle(rest)
+        phish += rest[:3 - len(phish)]
+    normal = [s for s in SCENARIOS.values() if not s.get("is_phishing")][:2]
+    cards = phish + normal
+    random.shuffle(cards)
+    return cards
+
+
 def grade(card, choice):
     # 채점 규칙 (팀 결정): 피싱이면 official만 정답, 정상이면 모두 정답이고 official은 과잉 의심
     if card["is_phishing"]:
@@ -136,6 +163,10 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
     # 참고: 연쇄형이 아닌 카드 기록에는 이 칸을 넣지 않는다. 값 1·2·3 = 그 단계에서 멈춤, 0 = 멈추지 못함 (choice로 click·call 구분)
     if stopped_step is not None:
         record["stopped_step"] = stopped_step
+    # 하는 일: 다시 도전(2회차) 기록이면 round: 2를 남긴다. 1회차 기록은 지금 모양 그대로 (A 11/02)
+    # 이유: 관리자 화면에서 같은 사람의 1회차와 2회차를 비교하고, 기존 통계는 1회차만으로 계산하려고
+    if data.get("round") == 2:
+        record["round"] = 2
     try:
         append_record(record)
         return True
@@ -241,8 +272,15 @@ def start():
         return bad("직군을 골라 주세요.")
     if not isinstance(data.get("self_check"), dict):
         return bad("문진표 답이 없습니다.")
+    # 하는 일: 다시 도전이면 같은 익명 번호를 쓰고, 1회차에 안 본 문제로 2회차를 낸다 (A 11/02)
+    # 참고: 다시 도전은 화면에서 한 번만 열린다. 익명 번호 모양이 맞지 않으면 처음 체험처럼 새 번호를 준다
+    retry = data.get("retry")
+    if isinstance(retry, dict) and isinstance(retry.get("anon_id"), str) and ANON_ID.match(retry["anon_id"]) \
+            and isinstance(retry.get("answers"), list):
+        cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in pick_retry(retry["answers"])]
+        return jsonify({"anon_id": retry["anon_id"], "scenarios": cards, "round": 2})
     cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in pick_scenarios(data["job"])]
-    return jsonify({"anon_id": "U" + secrets.token_hex(3).upper(), "scenarios": cards})
+    return jsonify({"anon_id": "U" + secrets.token_hex(3).upper(), "scenarios": cards, "round": 1})
 
 
 @app.post("/api/answer")
@@ -301,6 +339,43 @@ def favicon():
     return "", 204
 
 
+def first_round(entries):
+    # 하는 일: 장부에서 1회차 기록만 남긴다 (round 칸이 없거나 1인 기록) (A 11/02)
+    # 이유: 기존 통계(참여 인원, 직군별 오답률 등)는 1회차만으로 계산해 시범 운영 숫자와 같은 기준으로 비교하려고
+    return [e for e in entries if not (isinstance(e.get("record"), dict) and e["record"].get("round", 1) != 1)]
+
+
+def retry_effect(entries):
+    # 하는 일: 1회차와 2회차(처음 보는 문제)를 모두 한 사람만 모아, 피싱을 막은 비율과 정상 업무를 처리한 비율을 회차별로 비교한다 (A 11/02)
+    # 이유: 교수님 피드백 "플레이한 뒤 결과가 달라져 교육 효과가 있다는 것을 보여 주기". 회사가 교육 효과를 확인하는 숫자
+    # 참고: 비율은 그 사람들의 답을 모두 합쳐 계산한다. 사람마다 1회차보다 피싱을 더 막았으면 나아짐, 덜 막았으면 나빠짐으로 센다
+    people = {}
+    for e in entries:
+        r = e.get("record") if isinstance(e, dict) else None
+        if not isinstance(r, dict) or not isinstance(r.get("anon_id"), str):
+            continue
+        rd = 2 if r.get("round") == 2 else 1
+        p = people.setdefault(r["anon_id"], {1: [0, 0, 0, 0], 2: [0, 0, 0, 0]})   # 피싱 수, 막은 수, 정상 수, 처리한 수
+        if r.get("is_phishing"):
+            p[rd][0] += 1; p[rd][1] += 1 if r.get("is_correct") else 0
+        else:
+            p[rd][2] += 1; p[rd][3] += 0 if r.get("over_suspicion") else 1
+    both = [p for p in people.values() if p[1][0] + p[1][2] and p[2][0] + p[2][2]]
+    if not both:
+        return {"people": 0}
+    rate = lambda a, b: round(a / b, 3) if b else None
+    tot = {rd: [sum(p[rd][i] for p in both) for i in range(4)] for rd in (1, 2)}
+    pr = lambda p, rd: p[rd][1] / p[rd][0] if p[rd][0] else 0
+    return {
+        "people": len(both),
+        "round1": {"phishing_blocked": rate(tot[1][1], tot[1][0]), "normal_handled": rate(tot[1][3], tot[1][2])},
+        "round2": {"phishing_blocked": rate(tot[2][1], tot[2][0]), "normal_handled": rate(tot[2][3], tot[2][2])},
+        "improved": sum(1 for p in both if pr(p, 2) > pr(p, 1)),
+        "same": sum(1 for p in both if pr(p, 2) == pr(p, 1)),
+        "worse": sum(1 for p in both if pr(p, 2) < pr(p, 1)),
+    }
+
+
 def job_compare(job, anon, wrong, played):
     # 하는 일: 장부에 쌓인 같은 직군 사람들의 평균 오답률과 내 오답률을 함께 돌려준다 (A 10/30)
     # 이유: 신청서 ⑤ "집계 결과 기반 개인별 맞춤 피드백". 내 결과를 전체 집계와 비교해 보여 주려고
@@ -309,7 +384,7 @@ def job_compare(job, anon, wrong, played):
     if job not in JOBS or not (LEDGER_READY and STATS_READY) or not played:
         return None
     try:
-        others = [e for e in load_entries()
+        others = [e for e in first_round(load_entries())
                   if not (isinstance(e.get("record"), dict) and e["record"].get("anon_id") == anon)]
         avg = compute_stats(others)["wrong_rate_by_job"].get(job)
     except Exception as e:  # noqa: BLE001
@@ -425,7 +500,11 @@ def admin_stats():
     if not (LEDGER_READY and STATS_READY):
         return jsonify({"connected": False, "message": "장부나 통계 코드를 불러오지 못해 통계를 보여 줄 수 없습니다."})
     try:
-        return jsonify(compute_stats(load_entries()))
+        # 수정 (A 11/02): 기존 통계는 1회차 기록만으로 계산하고, 다시 도전 효과(retry_effect)를 함께 보낸다
+        entries = load_entries()
+        out = compute_stats(first_round(entries))
+        out["retry_effect"] = retry_effect(entries)
+        return jsonify(out)
     except Exception as e:  # noqa: BLE001
         # 참고: DB 주소가 로그에 남지 않게 오류 종류와 앞부분만 적는다
         print("통계 계산 실패:", type(e).__name__, str(e)[:120])
