@@ -8,38 +8,107 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* 메인 화면 (B 11/02)
+   하는 일: 어두운 첫 화면에 큰 질문 제목을 두고, 오른쪽에 반투명 상자 3개(체험, 링크 검사, 대응 매뉴얼)를 둔다
+   이유: 첫눈에 "내가 받은 메일도 가짜일 수 있다"는 질문을 던지고, 바로 할 수 있는 일 3가지를 고르게 하려고
+   참고: 배경은 사진이 아니라 코드로 그린 흐린 받은편지함 줄이다 (사진 저작권 걱정 없음). 메인 화면에는 사이드 바를 넣지 않는다 */
 :root {
-  color-scheme: light;
-  --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3; --focus: #2457C5;
+  color-scheme: dark;
+  --night: #0E1730; --deep: #16224A; --on: #EEF1FA; --soft: #A5B0CC; --accent: #8E96FF; --focus: #B9BEFF;
   --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root { color-scheme: dark; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46; --focus: #8DB2FF; }
-}
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
-  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
-main { max-width: 34rem; margin: 0 auto; padding: 3rem 1.25rem; min-height: 100vh; display: flex; flex-direction: column; }
-.brand { font-size: .9rem; font-weight: 700; letter-spacing: .02em; color: var(--muted); margin: 0 0 2.5rem; }
-h1 { font-size: 2rem; line-height: 1.3; margin: 0 0 .75rem; letter-spacing: -0.01em; }
-.lead { color: var(--muted); margin: 0 0 2.5rem; }
-.go { display: block; text-decoration: none; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: .75rem; }
-.go.main { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.go b { display: block; font-size: 1.1rem; }
-.go span { font-size: .9rem; opacity: .8; }
-.go:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-footer { margin-top: auto; padding-top: 3rem; font-size: .8rem; color: var(--muted); }
+html, body { height: 100%; }
+body { margin: 0; color: var(--on); font-family: var(--sans); font-size: 16px; line-height: 1.6; background: #FFFFFF; }
+/* 하는 일: 페이지 바탕은 흰색, 제목·상자가 있는 부분만 둥근 남색 판으로 둔다 (B 11/02 수정)
+   이유: 바탕을 흰색으로 바꾸면서도 글씨·버튼 색은 그대로 두려고. 글씨가 밝은색이라 남색 판 위에 있어야 읽힌다 */
+.panel { position: relative; overflow: hidden; border-radius: 24px; flex: 1; display: flex; flex-direction: column;
+  padding: 1.75rem clamp(1.25rem, 4vw, 3.5rem);
+  background: radial-gradient(70rem 40rem at 85% 10%, rgba(142,150,255,.22), transparent 60%),
+              radial-gradient(50rem 30rem at 0% 100%, rgba(80,170,200,.12), transparent 65%),
+              linear-gradient(165deg, var(--deep), var(--night) 55%);
+  background-color: var(--night); }
+/* 하는 일: 뒤쪽에 흐린 받은편지함 줄을 깐다 (보낸 사람 칸 + 제목 칸 모양) / 이유: "오늘 받은 메일"이라는 제목과 이어지게 */
+.inbox { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: .5;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 75%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 30%, #000 75%, transparent); }
+.inbox i { display: flex; gap: 1.2rem; align-items: center; height: 3.4rem; border-bottom: 1px solid rgba(255,255,255,.05); padding-left: 8vw; }
+.inbox i::before { content: ""; width: 7rem; height: .55rem; border-radius: 4px; background: rgba(255,255,255,.09); }
+.inbox i::after { content: ""; width: var(--w, 40%); height: .55rem; border-radius: 4px; background: rgba(255,255,255,.05); }
+.inbox i:nth-child(3n) { --w: 28%; } .inbox i:nth-child(4n) { --w: 52%; } .inbox i:nth-child(5n+1) { --w: 36%; }
+.inbox i:nth-child(7) { background: rgba(142,150,255,.06); }
+.inbox i:nth-child(7)::before { background: rgba(142,150,255,.35); }
+main { min-height: 100%; max-width: 84rem; margin: 0 auto; display: flex; flex-direction: column;
+  padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px)); }
+.panel > *:not(.inbox) { position: relative; z-index: 1; }
+.brand { display: flex; align-items: center; gap: .55rem; font-weight: 700; font-size: 1.05rem; margin: 0; min-height: 2rem; }
+.brand img { height: 2rem; width: auto; }
+.hero { flex: 1; display: grid; gap: 2.5rem; align-content: center; padding: 3rem 0; }
+h1 span { white-space: nowrap; }
+.kicker { color: var(--soft); font-size: .95rem; margin: 0 0 1rem; }
+h1 { font-size: clamp(2.1rem, 4.3vw, 3.9rem); line-height: 1.18; letter-spacing: -0.025em; margin: 0 0 1.4rem; font-weight: 700; word-break: keep-all; }
+.lead { color: var(--soft); font-size: 1.1rem; max-width: 32rem; margin: 0 0 1.4rem; word-break: keep-all; }
+.facts { color: var(--soft); font-size: .9rem; margin: 0; }
+.go { display: grid; gap: .9rem; }
+.go a { display: flex; flex-direction: column; gap: .5rem; text-decoration: none; color: var(--on); min-height: 9.5rem;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 16px; padding: 1.25rem 1.2rem 1.1rem;
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); transition: background .15s, border-color .15s; }
+.go a:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.28); }
+.go a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.go a.main { background: rgba(142,150,255,.22); border-color: rgba(142,150,255,.6); }
+.go a.main:hover { background: rgba(142,150,255,.32); }
+.go svg { flex: none; }
+.go b { font-size: 1.15rem; line-height: 1.35; word-break: keep-all; }
+.go span { color: var(--soft); font-size: .88rem; line-height: 1.5; word-break: keep-all; }
+.go a.main span { color: #D5D9FF; }
+footer { font-size: .8rem; color: #5B6B7D; padding: 1rem .25rem 0; }
+@media (min-width: 72rem) {
+  .hero { grid-template-columns: minmax(0, 1fr) 38rem; align-items: center; gap: 3rem; }
+  .go { grid-template-columns: repeat(3, 1fr); }
+  .go a { min-height: 12.5rem; }
+}
+@media (min-width: 40rem) and (max-width: 71.99rem) { .go { grid-template-columns: repeat(3, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .go a { transition: none; } }
 </style>
 </head>
 <body>
 <main>
-  <p class="brand">캐치피싱 CatchPhish</p>
-  <h1>오늘 받은 그 메일,<br>진짜였을까요?</h1>
-  <p class="lead">회사로 오는 피싱 메일·문자를 직접 겪어 보고, 왜 위험한지 AI 탐지 엔진의 해설로 확인하는 보안 교육 체험이에요.</p>
+<div class="panel">
+<div class="inbox" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <p class="brand">
+    <!-- 로고 자리 (B 11/02): 확정 로고를 frontend/img/에 올리면 바로 아래 줄의 주석 표시(앞뒤 기호)를 지우고 파일 이름을 맞춰요 -->
+    <!-- <img src="/img/logo.svg" alt=""> -->
+    캐치피싱
+  </p>
 
-  <a class="go main" href="/game"><b>피싱 대응 체험 시작</b><span>메일·문자 5개, 약 5분</span></a>
-  <a class="go" href="/check"><b>의심 링크 바로 검사</b><span>받은 링크를 붙여 넣으면 위험한 점을 알려 드려요</span></a>
+  <section class="hero">
+    <div>
+      <p class="kicker">회사 메일·문자로 배우는 피싱 대응 교육</p>
+      <h1><span>오늘 받은 그 메일,</span><br><span>진짜였을까요?</span></h1>
+      <p class="lead">회사로 오는 피싱 메일과 문자를 직접 겪어 보고, 왜 위험했는지 탐지 엔진의 해설로 확인해요.</p>
+      <p class="facts">체험은 메일·문자 5개, 약 5분이에요. 기록은 익명 번호로만 남아요.</p>
+    </div>
 
+    <nav class="go" aria-label="시작하기">
+      <a class="main" href="/game">
+        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="15" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2"/><path d="M4 9l10 7 10-7" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/></svg>
+        <b>피싱 대응 체험 시작</b>
+        <span>평소 업무처럼 메일·문자를 처리해 보고 내 대응 습관을 확인해요</span>
+      </a>
+      <a href="/check">
+        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12.5" cy="12.5" r="7.5" fill="none" stroke="#A5B0CC" stroke-width="2"/><path d="M18 18l6 6" stroke="#A5B0CC" stroke-width="2" stroke-linecap="round"/></svg>
+        <b>의심 링크 검사해 보기</b>
+        <span>받은 링크를 붙여 넣으면 위험한 점을 알려 드려요. 링크에 접속하지 않아요</span>
+      </a>
+      <a href="/manual">
+        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4h12l6 6v14H5z" fill="none" stroke="#A5B0CC" stroke-width="2" stroke-linejoin="round"/><path d="M9 13h10M9 17.5h10" stroke="#A5B0CC" stroke-width="2" stroke-linecap="round"/></svg>
+        <b>피싱 대응 매뉴얼 알아보기</b>
+        <span>어떤 메시지에서 무엇을 보고, 어떻게 확인하면 되는지 정리했어요</span>
+      </a>
+    </nav>
+  </section>
+
+</div>
   <footer>배화여자대학교 소프트웨어공학과 Phish&amp;Chips 캡스톤디자인</footer>
 </main>
 </body>
