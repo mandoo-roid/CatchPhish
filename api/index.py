@@ -102,7 +102,15 @@ def pick_retry(first_answers):
         seen.add(card["scenario_id"])
         if not grade(card, a["choice"])[0]:
             missed.update(t for t in (card.get("case_type") or "").split("+") if t)
-    pool = [s for s in SCENARIOS.values() if s.get("is_phishing") and s["scenario_id"] not in seen]
+    # 수정 (A 11/03): 2회차 전용 카드(job_group "retry", B 11/03 S10~S12)가 3개 이상이면 그것만 쓴다.
+    #   1회차(공통 2 + 직군 1)와 유형이 짝이 되게 만든 카드라 공정하게 비교된다. 모자라면 예전처럼 안 본 피싱에서 고른다
+    retry_cards = [s for s in SCENARIOS.values() if s.get("job_group") == "retry" and s.get("is_phishing")]
+    if len(retry_cards) >= 3:
+        normal = [s for s in SCENARIOS.values() if not s.get("is_phishing") and s.get("job_group") != "retry"][:2]
+        cards = retry_cards[:3] + normal
+        random.shuffle(cards)
+        return cards
+    pool = [s for s in SCENARIOS.values() if s.get("is_phishing") and s["scenario_id"] not in seen and s.get("job_group") != "retry"]
     random.shuffle(pool)
     pool.sort(key=lambda s: 0 if missed & set((s.get("case_type") or "").split("+")) else 1)
     phish = pool[:3]
@@ -211,6 +219,8 @@ def final_answer(card, ok, over, analysis, explanation, logged, stopped_step=Non
         "clues": card["clues"],
         "explanation": explanation,
         "explanation_short": short_line(card, explanation),
+        # 참고: 연쇄형이면 단계 화면 제목들 (해설·결과에 "문자 → 단계1 → 단계2"로 보여 줌, A 11/03). 답한 뒤라 보내도 된다
+        "chain_titles": [c.get("title") for c in card.get("chain") or []],
         # 참고: consequence는 "실제였다면 일어났을 피해" 문구 (선택, B가 시나리오마다 쓸 수 있음, A 11/02).
         #       정답을 알려 주는 셈이라 문제를 낼 때는 보내지 않고 답한 뒤에만 보낸다. 없으면 화면이 행동에 맞는 기본 문구를 쓴다
         "consequence": card.get("consequence"),
