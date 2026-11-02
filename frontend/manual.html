@@ -11,7 +11,8 @@
 /* 피싱 대응 매뉴얼 (B 11/02 초안, 내용은 시나리오 해설·사례조사 4유형·맞춤 팁 문장에서 가져옴)
    하는 일: 체험에서 배운 판단 기준(보낸 곳, 요구하는 행동)과 유형 4가지별 확인 방법을 한 화면에 정리한다
    이유: 체험을 마친 뒤나 실제로 애매한 메시지를 받았을 때 다시 찾아볼 곳이 있어야 해서
-   참고: 역할 분담상 매뉴얼 내용은 C 담당. 이 파일은 사이드 바·화면 틀과 내용 초안이라 C가 고쳐 확정한다 */
+   참고: 역할 분담상 매뉴얼 내용은 C 담당. 이 파일은 사이드 바·화면 틀과 내용 초안이라 C가 고쳐 확정한다
+   11/02 B: 맨 아래에 "경찰청 피싱 대응 매뉴얼" 상자를 따로 추가 (위 내용은 그대로) */
 :root {
   color-scheme: light;
   --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3; --accent: #4B53D6; --focus: #2457C5;
@@ -47,6 +48,25 @@ p { margin: 0 0 .75rem; }
 .next a { text-decoration: none; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: .8rem 1.1rem; font-weight: 500; }
 .next a.main { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .next a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+/* 경찰청 피싱 대응 매뉴얼 (B 11/02 추가)
+   하는 일: 공공기관 자료를 우리 초안과 섞이지 않게 남색 머리줄이 있는 별도 상자로 보여 준다
+   이유: 출처가 다른 내용이라, 어디까지가 공식 안내인지 한눈에 구분되게 하려고
+   참고: 문장은 원본 그림을 그대로 옮기지 않고 뜻을 살려 다시 썼고, 상자 아래에 출처를 적었다 */
+.official { margin-top: 3.25rem; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.official > header { background: #1F4E8C; color: #FFFFFF; padding: 1.2rem 1.4rem; }
+.official > header h2 { margin: 0 0 .3rem; font-size: 1.25rem; color: #FFFFFF; }
+.official > header p { margin: 0; font-size: .9rem; color: #DCE7F7; }
+.official .grp { padding: 1.2rem 1.4rem; border-top: 1px solid var(--line); }
+.official .grp:first-of-type { border-top: 0; }
+.official h3 { font-size: 1rem; margin: 0 0 .2rem; }
+.official .where { font-size: .85rem; color: var(--muted); margin: 0 0 .7rem; }
+.official ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
+.official li { display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); gap: .5rem; align-items: start; }
+.official li svg { margin-top: .2rem; }
+.official li svg * { stroke: #1F4E8C; }
+@media (prefers-color-scheme: dark) { .official li svg * { stroke: #8DB2FF; } }
+.official li small { display: block; color: var(--muted); font-size: .85rem; }
+.official .src { margin: 0; padding: .9rem 1.4rem; background: var(--field); font-size: .8rem; color: var(--muted); }
 /* 사이드 바 (B 11/02): 링크 검사·대응 매뉴얼 화면 왼쪽 메뉴
    하는 일: 메인 화면, 링크 검사, 대응 매뉴얼로 바로 갈 수 있는 세로 메뉴를 왼쪽에 고정한다
    이유: 체험이 아닌 화면끼리 오갈 때 매번 첫 화면으로 돌아가지 않게 하려고 (메인 화면에는 넣지 않음)
@@ -159,6 +179,39 @@ p { margin: 0 0 .75rem; }
 
   <h2>이미 눌렀거나 설치했다면</h2>
   <p>더 진행하지 말고 보안 담당자에게 알리세요. 설치한 앱을 지우고 휴대폰을 점검받아요.</p>
+
+  <!-- 경찰청 피싱 대응 매뉴얼 (B 11/02 추가). 위 내용(우리 시나리오·사례조사 바탕)과 섞지 않고 따로 둔다 -->
+  <section class="official" aria-labelledby="official-title">
+    <header>
+      <h2 id="official-title">경찰청 피싱 대응 매뉴얼</h2>
+      <p>경찰청이 안내하는 피해 예방 체크리스트예요. 피싱 메시지를 받기 전에 미리 해 두면 피해를 줄일 수 있어요.</p>
+    </header>
+    <div class="grp">
+      <h3>휴대폰에서 바로 할 수 있어요</h3>
+      <ul>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>휴대폰에 신분증 사진, 계좌 비밀번호 같은 개인정보를 저장하지 않아요</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>모바일 백신 앱(예: 알약M, V3)을 설치하고 주기적으로 검사해요</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>휴대폰 명의도용 방지 서비스(엠세이퍼)에 가입해요</span></li>
+      </ul>
+    </div>
+    <div class="grp">
+      <h3>통신사에 신청해요</h3>
+      <p class="where">SKT, KT, LG U+ 고객은 국번 없이 114로 신청할 수 있어요</p>
+      <ul>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>휴대폰 소액결제 차단</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>콘텐츠 자동결제 차단</span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>번호도용 차단 서비스</span></li>
+      </ul>
+    </div>
+    <div class="grp">
+      <h3>은행 앱이나 은행 창구에서 신청해요</h3>
+      <ul>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>여신거래 안심 차단 서비스<small>내 이름으로 신용대출, 카드론, 신용카드 발급을 하지 못하게 막아요</small></span></li>
+        <li><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="1" y="1" width="16" height="16" rx="3" fill="none" stroke="#1F4E8C" stroke-width="1.6"/><path d="M4.5 9.5l3 3 6-7" fill="none" stroke="#1F4E8C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>비대면 계좌개설 차단 서비스<small>내 이름으로 비대면 새 계좌를 열지 못하게 막아요</small></span></li>
+      </ul>
+    </div>
+    <p class="src">출처: 경찰청·전기통신금융사기 통합대응단 「피해 예방 체크리스트」. 서비스 이름과 신청 방법은 바뀔 수 있으니 신청 전에 통신사·은행에서 확인하세요.</p>
+  </section>
 
   <div class="next">
     <a class="main" href="/game">피싱 대응 체험 시작</a>
