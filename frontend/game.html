@@ -62,6 +62,29 @@ details.more[open] > summary::before { transform: rotate(90deg); }
 details.more > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .intro-steps { padding-left: 1.2rem; margin: 0 0 1.5rem; }
 .intro-steps li { margin-bottom: .4rem; }
+/* 체험 시작 안내의 예시 그림 (B 11/03)
+   하는 일: 문제 화면이 어떻게 생겼는지 작게 그려 보여 주고, ① 메시지 ② 남은 시간 ③ 선택지 위치에 번호를 붙인다
+   이유: 처음 하는 사람이 화면 쓰는 법을 미리 알면 당황하지 않는다
+   참고: 화면 사용법만 알려 준다. "무엇을 보고 판단하라"는 말은 넣지 않는다 ([A 결정 11/02] 3번, 평소 모습을 재려고).
+         예시 메시지는 실제 문제와 겹치지 않는 가짜이고 채점하지 않는다. 그림 안 버튼은 눌러도 아무 일이 없다 */
+#intro-screen { word-break: keep-all; }
+.ex-box { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin: 0 0 1rem; background: var(--paper); }
+.ex-tag { display: inline-block; font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .05rem .55rem; margin-bottom: .75rem; }
+.ex-grid { display: grid; gap: .9rem; }
+@media (min-width: 30rem) { .ex-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
+.ex-part { position: relative; }
+.ex-num { position: absolute; top: -.55rem; left: -.55rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #4B53D6; color: #FFFFFF;
+  display: grid; place-items: center; font-size: .8rem; font-weight: 700; z-index: 1; }
+.ex-msg { background: var(--field); border-radius: 12px; padding: .7rem .75rem; }
+.ex-msg .ex-from { font-size: .75rem; color: var(--muted); margin: 0 0 .35rem; }
+.ex-msg .ex-bubble { background: var(--bubble); border-radius: 12px; padding: .55rem .65rem; font-size: .82rem; line-height: 1.5; }
+.ex-time { font-size: .75rem; color: var(--muted); margin-bottom: .9rem; padding-left: 1.3rem; }
+.ex-time .tbar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: .25rem; }
+.ex-time .tbar i { display: block; height: 100%; width: 60%; background: var(--muted); }
+.ex-choice { font-size: .8rem; border: 1px solid var(--line); border-radius: 8px; padding: .45rem .6rem; margin-bottom: .35rem; color: var(--muted); background: var(--paper); }
+.ex-legend { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .45rem; font-size: .9rem; }
+.ex-legend li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: .5rem; align-items: start; }
+.ex-legend b { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #4B53D6; color: #FFFFFF; display: grid; place-items: center; font-size: .75rem; margin-top: .1rem; }
 .done-head { text-align: center; padding: 1rem 0 .5rem; }
 .done-head .done { font-size: 2rem; font-weight: 700; margin: 0; }
 /* A 11/02: 해설 화면에서 방금 본 메시지 위에 놓친 단서를 번호로 표시 */
@@ -284,7 +307,36 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
     <li>행동을 고르면 바로 해설이 나와요.</li>
     <li id="limit-note">문자 15초, 메일 25초 제한이 있어요. 시간이 지나도 고를 수 있어요.</li>
   </ul>
-  <div id="intro-example"></div>
+  <!-- 예시 그림 (B 11/03). 그림 부분은 화면 낭독기에 설명 한 줄로 읽히고, 번호 설명은 아래 목록으로 읽힌다 -->
+  <div id="intro-example">
+    <div class="ex-box">
+      <span class="ex-tag">화면 예시 (실제 문제가 아니에요)</span>
+      <div class="ex-grid" role="img" aria-label="문제 화면 예시: 왼쪽에 받은 문자, 오른쪽에 남은 시간 막대와 선택지 세 개">
+        <div class="ex-part">
+          <span class="ex-num" aria-hidden="true">1</span>
+          <div class="ex-msg" aria-hidden="true">
+            <p class="ex-from">예시 문자</p>
+            <div class="ex-bubble">[예시] 오늘 오후 3시 2층 회의실 예약이 확정되었습니다.</div>
+          </div>
+        </div>
+        <div class="ex-part" aria-hidden="true">
+          <span class="ex-num">2</span>
+          <div class="ex-time">남은 시간<div class="tbar"><i></i></div></div>
+          <div class="ex-part">
+            <span class="ex-num" style="top:-.45rem">3</span>
+            <div class="ex-choice">선택지 하나</div>
+            <div class="ex-choice">선택지 둘</div>
+            <div class="ex-choice">선택지 셋</div>
+          </div>
+        </div>
+      </div>
+      <ol class="ex-legend">
+        <li><b aria-hidden="true">1</b><span>받은 메일이나 문자가 실제 화면처럼 나와요.</span></li>
+        <li><b aria-hidden="true">2</b><span>남은 시간이 줄어들어요. 시간이 지나도 고를 수 있어요.</span></li>
+        <li><b aria-hidden="true">3</b><span>실제로 할 행동을 하나 골라요. 고르면 바로 해설이 나와요.</span></li>
+      </ol>
+    </div>
+  </div>
   <div class="nav"><button class="primary" id="intro-go">체험 시작</button></div>
 </section>
 
