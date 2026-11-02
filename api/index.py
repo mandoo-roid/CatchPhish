@@ -56,6 +56,7 @@ except Exception as e:  # noqa: BLE001
     print("통계 코드 불러오기 실패:", type(e).__name__)
     STATS_READY = False
 
+
 app = Flask(__name__)
 FRONTEND = os.path.join(ROOT, "frontend")
 
@@ -75,7 +76,8 @@ CASE_TIPS = {
 with open(os.path.join(ROOT, "scenarios", "scenarios.json"), encoding="utf-8") as f:
     SCENARIOS = {s["scenario_id"]: s for s in json.load(f)["scenarios"]}
 
-PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", "attachment"]
+# 참고: choice_labels는 시나리오마다 다른 선택지 문구 (B가 scenarios.json에 추가, A 11/02). 채점 키(click·call·official)는 그대로
+PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", "attachment", "choice_labels"]
 
 
 def pick_scenarios(job):
@@ -157,6 +159,16 @@ def chain_step(card, step):
     return {"scenario_id": card["scenario_id"], "step": step, **{k: info.get(k) for k in CHAIN_PUBLIC}}
 
 
+def short_line(card, explanation):
+    # 하는 일: 해설 화면 맨 위에 보일 요점 한 줄을 고른다 (A 11/02)
+    # 이유: 참여자 의견 "해설 글이 많다". 요점을 먼저 보여 주고 긴 해설은 [자세히 보기] 안에 넣으려고
+    # 참고: B가 쓴 explanation_short를 쓴다. 없거나, 연쇄형처럼 해설이 단계마다 바뀌면 해설의 첫 문장을 쓴다
+    if card.get("explanation_short") and explanation == card.get("explanation"):
+        return card["explanation_short"]
+    m = re.match(r"(.+?[.!?])(\s|$)", explanation or "")
+    return m.group(1) if m else (explanation or "")
+
+
 def final_answer(card, ok, over, analysis, explanation, logged, stopped_step=None):
     # 하는 일: 해설 화면에 필요한 답을 한 모양으로 만든다 (2번 answer와 연쇄형 chain이 함께 씀)
     text_clues = [w for w in URGENT_WORDS if w in (card.get("body") or "")] if card.get("channel") == "sms" else []
@@ -167,6 +179,7 @@ def final_answer(card, ok, over, analysis, explanation, logged, stopped_step=Non
         "analysis": analysis,
         "clues": card["clues"],
         "explanation": explanation,
+        "explanation_short": short_line(card, explanation),
         "logged": logged,  # 장부에 저장됐는지 (확인용)
         "text_clues": text_clues,  # 문자 본문에서 찾은 압박 문구 (점수와 별도)
     }
@@ -196,6 +209,25 @@ def game():
 def admin_page():
     # 회사 담당자용 관리자 화면 (회사 코드로 입장)
     return send_from_directory(FRONTEND, "admin.html")
+
+
+@app.get("/manual")
+def manual_page():
+    # 보안 매뉴얼 화면 (C가 만드는 manual.html, A 11/02 주소 연결)
+    # 참고: 파일이 아직 없으면 "준비 중" 안내를 보여 준다 (사이드 바 링크가 깨진 화면이 되지 않게)
+    if os.path.exists(os.path.join(FRONTEND, "manual.html")):
+        return send_from_directory(FRONTEND, "manual.html")
+    return ('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+            '<title>보안 매뉴얼</title><body style="font-family:system-ui,sans-serif;max-width:34rem;margin:3rem auto;padding:0 1.25rem">'
+            '<h1>보안 매뉴얼</h1><p>준비 중이에요.</p><p><a href="/">처음으로</a></p></body></html>'), 200
+
+
+
+
+@app.get("/img/<path:name>")
+def img_file(name):
+    # 하는 일: 로고·아이콘(B가 올리는 frontend/img/)을 보내 준다 (A 11/02)
+    return send_from_directory(os.path.join(FRONTEND, "img"), name)
 
 
 @app.post("/api/start")
