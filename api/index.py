@@ -106,7 +106,10 @@ def pick_retry(first_answers):
     #   1회차(공통 2 + 직군 1)와 유형이 짝이 되게 만든 카드라 공정하게 비교된다. 모자라면 예전처럼 안 본 피싱에서 고른다
     retry_cards = [s for s in SCENARIOS.values() if s.get("job_group") == "retry" and s.get("is_phishing")]
     if len(retry_cards) >= 3:
-        normal = [s for s in SCENARIOS.values() if not s.get("is_phishing") and s.get("job_group") != "retry"][:2]
+        # 수정 (A 11/03): 정상도 2회차 전용(S13·S14)이 있으면 그것을 쓴다. 1회차 정상(S05·S08)은 해설로 답을 봐서 비교가 공정하지 않기 때문
+        normal = [s for s in SCENARIOS.values() if not s.get("is_phishing") and s.get("job_group") == "retry"][:2]
+        if len(normal) < 2:
+            normal = [s for s in SCENARIOS.values() if not s.get("is_phishing") and s.get("job_group") != "retry"][:2]
         cards = retry_cards[:3] + normal
         random.shuffle(cards)
         return cards
