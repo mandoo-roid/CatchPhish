@@ -672,7 +672,7 @@ document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = asyn
     const r = await post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice, job: state.job, self_check: state.survey, chain: true, round: state.round });
     state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
     if (r.chain_step) { renderChain(r.chain_step); show("s-chain"); return; }
-    if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call" };
+    if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call", titles: r.chain_titles };
     const harm = fullyFooled(r) ? harmOf(c, b.dataset.choice, r) : null;
     addLog(r, choiceLabel(c, b.dataset.choice), harm);
     afterAnswer(r, harm);
@@ -708,7 +708,7 @@ document.querySelectorAll("#s-chain [data-action]").forEach(b => b.onclick = asy
   try {
     const r = await post("/api/chain", { anon_id: state.anon, scenario_id: st.scenario_id, step: st.step, action: b.dataset.action, job: state.job, self_check: state.survey, round: state.round });
     if (r.chain_step) { renderChain(r.chain_step); return; }   // renderChain이 0.8초 뒤에 버튼을 다시 켠다
-    state.chainResult = { step: r.stopped_step, call: false };
+    state.chainResult = { step: r.stopped_step, call: false, titles: r.chain_titles };
     const harm = fullyFooled(r) ? harmOf(state.cards[state.i], "click", r) : null;
     addLog(r, `링크를 열고 ${r.stopped_step ? r.stopped_step + "단계에서 멈춤" : "끝까지 진행"}`, harm);
     afterAnswer(r, harm);
@@ -722,11 +722,12 @@ document.querySelectorAll("#s-chain [data-action]").forEach(b => b.onclick = asy
 // 하는 일: 연쇄형에서 몇 단계에서 멈췄는지를 한 줄로 만든다 (해설·결과 화면에서 같이 씀)
 // 수정 (A 11/02): 참여자 의견 "'1단계(문자)에서 멈췄어요'가 무슨 말인지 모르겠다". 단계 번호 대신 어느 화면에서 무엇을 했는지로 쓴다
 function chainLine(cr) {
+  // 수정 (A 11/03): 연쇄형이 S06 하나가 아니게 되어(B 11/03 S11 택배), 단계 이름을 카드의 단계 제목(chain_titles)에서 가져온다
   if (!cr) return "";
-  if (cr.step === 1) return "첫 문자에서 링크를 열지 않고 멈췄어요. 그래서 가짜 앱 설치로 이어지지 않았어요. 가장 안전한 선택이에요.";
-  if (cr.step === 2) return "링크는 열었지만, 가짜 앱 설치 화면에서 멈췄어요. 첫 문자에서 멈추면 더 안전해요.";
-  if (cr.step === 3) return "가짜 앱까지 설치했지만, 가짜 문서 화면에서 멈췄어요. 이미 앱이 깔린 상태라 위험해요. 첫 문자에서 멈추세요.";
-  return cr.call ? "문자에 적힌 번호로 전화했어요. 그 번호는 사기범에게 연결돼요." : "가짜 앱 설치부터 정보 입력까지 끝까지 진행했어요. 실제였다면 휴대폰 정보가 빠져나갔을 거예요.";
+  const t = cr.titles || [];
+  if (cr.step === 1) return "첫 문자에서 링크를 열지 않고 멈췄어요. 다음 함정으로 이어지지 않았어요. 가장 안전한 선택이에요.";
+  if (cr.step >= 2) return `링크는 열었지만, '${t[cr.step - 2] || cr.step + "단계"}' 화면에서 멈췄어요. 첫 문자에서 멈추면 더 안전해요.`;
+  return cr.call ? "문자에 적힌 번호로 전화했어요. 그 번호는 사기범에게 연결돼요." : "링크를 열고 마지막 화면까지 진행했어요. 실제였다면 입력한 정보가 공격자에게 넘어갔을 거예요.";
 }
 
 // 하는 일: 피싱에 속었을 때 "실제였다면 일어났을 피해"를 정한다 (A 11/02)
@@ -821,7 +822,7 @@ function renderExplain(r, harm) {
   let html = `<div class="banner ${cls}">${head}<small>${sub}</small></div>`;
   if (harm) html += `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>`;
   // 하는 일: 연쇄형 카드면 맨 위에 "몇 단계에서 멈췄는지"를 보여 준다 (A 10/29)
-  if (r.stopped_step !== undefined) html += `<p class="chain-steps"><b>연쇄형 체험</b> · 문자 → 가짜 앱 설치 페이지 → 가짜 PDF 뷰어<br>${esc(chainLine(state.chainResult))}</p>`;
+  if (r.stopped_step !== undefined) html += `<p class="chain-steps"><b>연쇄형 체험</b> · ${esc(["문자", ...(r.chain_titles || [])].join(" → "))}<br>${esc(chainLine(state.chainResult))}</p>`;
   html += `<p class="lead">${esc(r.explanation_short || r.explanation)}</p>
     <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
     <p class="muted" style="margin:0 0 .25rem">${r.is_phishing ? "왼쪽 메시지에 번호로 표시했어요. 어디를 봤으면 막을 수 있었는지 확인해 보세요." : "왼쪽 메시지에 번호로 표시했어요."}</p>
