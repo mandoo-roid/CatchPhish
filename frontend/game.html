@@ -242,10 +242,8 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
 <section id="s-start">
   <p style="margin:0 0 1.5rem"><a href="/" style="color:inherit;font-size:.9rem">← 처음으로</a></p>
   <h1>캐치피싱</h1>
-  <p><b>평소 업무 중이라고 생각해 주세요.</b></p>
-  <p>회사에서 받은 것 같은 메일과 문자가 차례로 나와요. 진짜 업무 메시지도 섞여 있어요.</p>
-  <p>평소에 하던 대로 골라 주세요. 모든 메시지를 의심하면, 확인하느라 업무가 늦어진 것으로 기록돼요.</p>
-  <p id="limit-note">문제마다 제한 시간이 있어요 (문자 15초, 메일 25초). 시간이 지나도 고를 수 있어요.</p>
+  <!-- 수정 (A 11/02): 체험 안내문은 문진표 다음 "체험 시작 안내" 화면으로 옮겼다. 문진표를 지나면 잊혀서, 문제 직전에 읽게 하려고 -->
+  <p>회사 메일·문자로 피싱 대응을 체험해요.</p>
   <p class="muted">이 체험은 평가가 아니며 결과는 익명으로 모입니다.</p>
   <h2>내 직군</h2>
   <div class="choices" id="jobs"></div>
@@ -270,12 +268,13 @@ ul.list li:last-child { border-bottom: 1px solid var(--line); }
      참고: id(intro-screen, intro-go)는 A의 스크립트가 쓰니 바꾸지 말아 주세요 -->
 <section id="intro-screen" hidden>
   <h1>이제부터 체험을 시작합니다</h1>
-  <p>평소 업무 중이라고 생각하고, 메일·문자를 받았을 때 실제로 할 행동을 골라 주세요.</p>
-  <ol class="intro-steps">
-    <li>업무 메일이나 문자 화면이 나와요. <b>보낸 곳</b>과 <b>요구하는 행동</b>을 보세요.</li>
-    <li>실제로 할 행동을 하나 골라요.</li>
-    <li>고르면 바로 해설이 나와요.</li>
-  </ol>
+  <!-- 문장은 B의 시작 안내문(10/23 확정)을 줄인 것 (A 11/02). "보낸 곳과 요구하는 행동을 보세요"는 정답 힌트라 넣지 않는다 (평소 모습을 재려고) -->
+  <ul class="intro-steps">
+    <li>평소 업무 중이라고 생각하고, 실제로 할 행동을 골라 주세요.</li>
+    <li>진짜 업무 메시지도 섞여 있어요. 모든 메시지를 의심하면 업무가 늦어진 것으로 기록돼요.</li>
+    <li>행동을 고르면 바로 해설이 나와요.</li>
+    <li id="limit-note">문자 15초, 메일 25초 제한이 있어요. 시간이 지나도 고를 수 있어요.</li>
+  </ul>
   <div id="intro-example"></div>
   <div class="nav"><button class="primary" id="intro-go">체험 시작</button></div>
 </section>
@@ -482,7 +481,8 @@ const LIMIT = { sms: 15, email: 25 };
 // 하는 일: 시작 안내문의 제한 시간 숫자를 위 LIMIT에서 가져와 채운다 (B 11/02)
 // 이유: 시간을 바꿀 때 LIMIT 한 곳만 고치면 안내문도 저절로 맞게 하려고
 // 참고: 안내문에는 같은 문장이 미리 적혀 있어서, 이 줄이 실행되지 않아도 문장은 보인다
-$("limit-note").textContent = `문제마다 제한 시간이 있어요 (문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초). 시간이 지나도 고를 수 있어요.`;
+// 수정 (A 11/02): 안내문이 "체험 시작 안내" 화면으로 옮겨 가면서 문장을 줄였다. id는 그대로
+$("limit-note").textContent = `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`;
 const timer = { id: null, left: 0, over: false };
 function startTimer(c) {
   clearInterval(timer.id);
