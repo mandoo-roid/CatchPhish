@@ -55,20 +55,23 @@ footer { font-size: .8rem; color: var(--muted); }
 }
 @media (min-width: 40rem) and (max-width: 71.99rem) { .go { grid-template-columns: repeat(3, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .go a { transition: none; } }
-/* 낚시꾼 애니메이션 (B 11/03 피드백, 11/04 수정)
-   하는 일: 제목 왼쪽 위에서 배에 앉은 낚시꾼이 떠올라 오른쪽으로 이동한 뒤, 낚싯대를 젖혔다가 부드럽게 던지고, 바늘이 "피싱 대응 체험 시작" 상자에 걸린 채로 계속 머문다
-   이유: 첫 화면에서 "피싱(낚시)"이라는 주제를 한눈에 보여 주고, 눈길을 체험 시작 상자로 이끌려고
-   참고: 특정 회사 로고의 그림(인물·달 등)은 따라 하지 않고, 던지는 동작의 부드러움만 참고했다.
-         그림은 화면 위에 겹친 SVG라 클릭을 막지 않는다. 움직임 줄이기 설정이면 걸린 장면만 멈춰서 보여 준다 */
-.hero { position: relative; }
-.fisher-room { height: 170px; margin: 0 0 .25rem; }
+/* 마스코트 (B 11/12): 낚시꾼 애니메이션을 지우고, 그 자리에 편지봉투 마스코트를 둔다
+   하는 일: 처음 열 때 마스코트가 제목 뒤에서 위로 톡 튀어 올라와(살짝 넘어갔다 내려앉음) 그대로 머문다. 반복하지 않는다
+   이유: 포스터와 같은 캐릭터로 작품의 얼굴을 통일하고, 첫 화면에 가볍게 눈길을 주려고
+   참고: 아래쪽만 잘라서(clip-path) 제목 뒤에서 올라오는 것처럼 보인다. 움직임 줄이기 설정이면 처음부터 제자리에 있다 */
 .brand-sub { margin: .1rem 0 0; }
-.fisher { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
-.fisher .ink { fill: var(--navy); stroke: none; }
-.fisher .limb { fill: none; stroke: var(--navy); stroke-linecap: round; stroke-linejoin: round; }
-.fisher .wave { fill: none; stroke: #FFFFFF; stroke-linecap: round; stroke-linejoin: round; }
-.go a.main.hooked { box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--navy); }
-@media (max-width: 40rem) { .fisher-room { height: 140px; } }
+.mascot-room { height: 150px; display: flex; justify-content: flex-end; align-items: flex-end; margin: 0 0 .1rem; clip-path: inset(-60% -20% 0 -20%); }
+.mascot { width: 165px; height: auto; transform: translateY(105%); animation: mascotPop .95s cubic-bezier(.2,.8,.3,1) .35s forwards; }
+.mascot-note { font-size: .7rem; color: var(--muted); text-align: right; margin: -.1rem 0 .4rem; }
+@keyframes mascotPop {
+  0%   { transform: translateY(105%) rotate(0deg); }
+  55%  { transform: translateY(-14%) rotate(-3deg); }
+  75%  { transform: translateY(4%) rotate(1.5deg); }
+  90%  { transform: translateY(-2%) rotate(0deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@media (max-width: 40rem) { .mascot-room { height: 118px; } .mascot { width: 128px; } }
+@media (prefers-reduced-motion: reduce) { .mascot { animation: none; transform: none; } }
 </style>
 </head>
 <body>
@@ -81,28 +84,31 @@ footer { font-size: .8rem; color: var(--muted); }
   <!-- 수정 (B 11/04): 안내 한 줄을 "캐치피싱" 바로 아래로 -->
   <p class="kicker brand-sub">회사 메일·문자로 배우는 피싱 대응 교육</p>
 
-  <section class="hero" id="hero">
-    <!-- 낚시꾼 (B 11/04). 모양은 아래 스크립트가 매 장면 그린다. 제목 윗선 아래는 잘라서 제목 뒤에서 떠오르는 것처럼 보인다 -->
-    <svg class="fisher" id="fisher" aria-hidden="true">
-      <defs><clipPath id="f-clip"><rect id="f-cliprect" x="-9999" y="-9999" width="99999" height="0"/></clipPath></defs>
-      <g id="f-man" clip-path="url(#f-clip)">
-        <g id="f-boat-g">
-          <path id="f-torso" class="ink"/>
-          <circle id="f-head" class="ink"/>
-          <path id="f-arm" class="limb"/>
-          <path id="f-boat" class="ink"/>
-          <path id="f-wave1" class="wave"/>
-          <path id="f-wave2" class="limb"/>
-        </g>
-        <path id="f-rod" class="limb"/>
-      </g>
-      <path id="f-line" class="limb"/>
-      <path id="f-hook" class="limb"/>
-    </svg>
+  <section class="hero">
     <div>
-      <!-- 낚시꾼이 지나가는 자리 (B 11/04). 안내 한 줄은 맨 위 "캐치피싱" 바로 아래로 옮겼다 -->
-      <div class="fisher-room" id="fisher-room"></div>
-      <h1 id="hero-title"><span>오늘 받은 그 메일,</span><br><span>진짜였을까요?</span></h1>
+      <!-- 마스코트 자리 (B 11/12). 포스터와 같은 편지봉투 마스코트, 제목 뒤에서 한 번 튀어 올라와 머문다 -->
+      <div class="mascot-room">
+<svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">
+  <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">
+      <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>
+  <g transform="rotate(-9 100 108)">
+    <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>
+    <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>
+    <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>
+    <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>
+    <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>
+    <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>
+  <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>
+      </div>
+      <p class="mascot-note">AI 생성 이미지</p>
+      <h1><span>오늘 받은 그 메일,</span><br><span>진짜였을까요?</span></h1>
       <p class="lead">회사로 오는 피싱 메일과 문자를 직접 겪어 보고, 왜 위험했는지 탐지 엔진의 해설로 확인해요.</p>
       <p class="facts">체험은 메일·문자 5개, 10~20분 정도 걸려요. 기록은 익명 번호로만 남아요.</p>
     </div>
@@ -128,110 +134,5 @@ footer { font-size: .8rem; color: var(--muted); }
 
   <footer>배화여자대학교 소프트웨어공학과 Phish&amp;Chips 캡스톤디자인</footer>
 </main>
-<script>
-// 낚시꾼 애니메이션 (B 11/04 수정: 배에 앉은 낚시꾼, 한 번 등장한 뒤 계속 머묾)
-// 장면: 0~1초 제목 왼쪽 위에서 배와 낚시꾼이 떠오름 → 1~2.8초 제목 위를 따라 오른쪽(체험 시작 상자 쪽)으로 노 저어 가듯 이동 →
-//       2.8~3.8초 낚싯대를 뒤로 크게 젖힘(조금 더 당기는 준비 동작) → 3.8~4.5초 앞으로 부드럽게 던짐 →
-//       4.1~6.2초 줄이 흘러가며 바늘이 날아감 → 6.2초부터 바늘이 체험 시작 상자에 걸린 채로 계속 머묾
-//       (배는 물결 위에서 살짝 흔들리고, 5초마다 줄을 가볍게 당긴다. 사라지거나 처음부터 다시 하지 않는다)
-// 모양: 둥근 머리, 앉은 몸통, 앞으로 뻗은 팔, 뱃머리가 올라간 배, 배 아래 물결, 위로 휘어진 낚싯대 (우리가 직접 그린 단색 픽토그램)
-// 참고: 낚시꾼은 제목 줄 오른쪽 끝(체험 시작 상자 쪽)에 둔다. 장면마다 제목·상자 위치를 다시 재서 그려서 화면 크기가 바뀌어도 바늘이 상자에 걸린다
-(function () {
-  const $ = id => document.getElementById(id);
-  const hero = $("hero"), room = $("fisher-room"), title = $("hero-title"), box = document.querySelector(".go a.main");
-  if (!hero || !room || !title || !box) return;
-  const T = { rise: 1000, sail: 2800, wind: 3500, hold: 3800, cast: 4500, flyFrom: 4100, fly: 6200 };
-  const clamp = x => Math.max(0, Math.min(1, x));
-  const sine = x => -(Math.cos(Math.PI * clamp(x)) - 1) / 2;
-  const outBack = x => { x = clamp(x); const c = 1.4; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
-  const rad = d => d * Math.PI / 180;
-  const at = (o, len, deg) => [o[0] + len * Math.cos(rad(deg)), o[1] + len * Math.sin(rad(deg))];
-  const q = (a, c, b, t) => [(1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * c[0] + t * t * b[0], (1 - t) * (1 - t) * a[1] + 2 * (1 - t) * t * c[1] + t * t * b[1]];
-  const f = n => n.toFixed(1);
-  const attr = (id, a) => { const el = $(id); for (const k in a) el.setAttribute(k, a[k]); };
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  // 낚싯대 각도(도). -90 = 위, 0 = 앞(오른쪽). 쉴 때는 앞쪽 위로 비스듬히
-  function rodAngle(ms) {
-    if (ms < T.sail) return -58;
-    if (ms < T.wind) return -58 + (-120 + 58) * sine((ms - T.sail) / (T.wind - T.sail));
-    if (ms < T.hold) return -120 + (-130 + 120) * sine((ms - T.wind) / (T.hold - T.wind));
-    if (ms < T.cast) return -130 + (-40 + 130) * outBack((ms - T.hold) / (T.cast - T.hold));
-    return -40;
-  }
-  function frame(ms) {
-    const H = hero.getBoundingClientRect(), R = room.getBoundingClientRect(), Tt = title.getBoundingClientRect(), B = box.getBoundingClientRect();
-    const small = H.width < 640, S = small ? 0.72 : 1;
-    const titleTop = Tt.top - H.top;
-    attr("f-cliprect", { y: -9999, height: 9999 + titleTop + 2 });   // 제목 윗선 아래는 잘라서 제목 뒤에서 떠오르게
-    const rise = sine(ms / T.rise);
-    // 하는 일: 배 위치. 제목 왼쪽 위에서 떠올라 제목 줄 오른쪽 끝(체험 시작 상자 쪽)까지 이동하고, 물결 위에서 살짝 흔들린다
-    const rowLeft = R.left - H.left, rowRight = Math.min(R.right, Tt.right + 40) - H.left;
-    const xStart = rowLeft + 70 * S, xEnd = Math.max(xStart, rowRight - 110 * S);
-    const sail = ms < T.rise ? 0 : sine((ms - T.rise) / (T.sail - T.rise));
-    const moving = ms >= T.rise && ms < T.sail;
-    const bob = Math.sin(ms / (moving ? 260 : 420)) * (moving ? 3 : 2) * S, tilt = Math.sin(ms / (moving ? 300 : 520)) * (moving ? 3 : 1.5);
-    const o = [xStart + (xEnd - xStart) * sail, titleTop - 32 * S + (1 - rise) * 150 * S + bob];   // 배 갑판 가운데
-    $("f-boat-g").setAttribute("transform", `rotate(${f(tilt)} ${f(o[0])} ${f(o[1])})`);
-    const P = (x, y) => [o[0] + x * S, o[1] + y * S];
-    const pth = (...pts) => pts.map((p, i) => (i ? "L" : "M") + f(p[0]) + "," + f(p[1])).join(" ");
-    // 낚시꾼: 머리, 앉은 몸통(위가 둥근 사각형), 앞으로 뻗은 팔
-    const hd = P(-30, -92);
-    attr("f-head", { cx: f(hd[0]), cy: f(hd[1]), r: f(18 * S) });
-    const t0 = P(-50, -60), t1 = P(-50, -2), t2 = P(-8, -2), t3 = P(-8, -60);
-    const r1 = P(-50, -74), r2 = P(-8, -74);
-    attr("f-torso", { d: `M${f(t1[0])},${f(t1[1])} L${f(t0[0])},${f(t0[1])} Q${f(r1[0])},${f(r1[1])} ${f(P(-36, -74)[0])},${f(P(-36, -74)[1])} L${f(P(-22, -74)[0])},${f(P(-22, -74)[1])} Q${f(r2[0])},${f(r2[1])} ${f(t3[0])},${f(t3[1])} L${f(t2[0])},${f(t2[1])} Z` });
-    // 배: 고물(왼쪽)은 낮고 뱃머리(오른쪽)는 위로 올라간 모양
-    attr("f-boat", { d: `M${f(P(-64, -8)[0])},${f(P(-64, -8)[1])} L${f(P(30, -8)[0])},${f(P(30, -8)[1])} Q${f(P(52, -12)[0])},${f(P(52, -12)[1])} ${f(P(66, -30)[0])},${f(P(66, -30)[1])} Q${f(P(66, 10)[0])},${f(P(66, 10)[1])} ${f(P(40, 22)[0])},${f(P(40, 22)[1])} L${f(P(-64, 22)[0])},${f(P(-64, 22)[1])} Z` });
-    // 물결: 배 아랫부분에 흰 물결, 배 앞쪽 바깥으로 이어지는 남색 물결
-    const wv = (x0, x1, y, n) => { let d = `M${f(P(x0, y)[0])},${f(P(x0, y)[1])}`; const step = (x1 - x0) / n;
-      for (let i = 0; i < n; i++) { const a = P(x0 + step * (i + .5), y - 7), b = P(x0 + step * (i + 1), y); d += ` Q${f(a[0])},${f(a[1])} ${f(b[0])},${f(b[1])}`; } return d; };
-    attr("f-wave1", { d: wv(-58, 34, 16, 4), "stroke-width": f(4 * S) });
-    attr("f-wave2", { d: wv(40, 104, 18, 3), "stroke-width": f(4.5 * S) });
-    // 낚싯대와 팔: 팔은 앞으로 뻗어 낚싯대를 잡고, 낚싯대는 위로 휘어진다
-    const ang = rodAngle(ms);
-    const sh = P(-14, -58);
-    const hand = at(sh, 40 * S, ang * 0.35 + 18);
-    const butt = at(hand, -14 * S, ang), tip = at(hand, 150 * S, ang);
-    const v = rodAngle(ms + 16) - rodAngle(ms);
-    // 걸린 뒤: 처음 1.5초는 두 번 크게 당기고, 그 뒤로는 5초마다 한 번 가볍게 당긴다
-    const hooked = ms >= T.fly;
-    let tug = 0;
-    if (hooked) {
-      const e = ms - T.fly;
-      if (e < 1500) { const u = e / 1500; tug = Math.sin(u * Math.PI * 4) * Math.exp(-1.6 * u); }
-      else { const k = ((e - 1500) % 5000) / 700; tug = k < 1 ? Math.sin(k * Math.PI * 2) * 0.6 : 0; }
-    }
-    // 휨: 기본으로 끝이 아래로 휘고(사진처럼 둥근 낚싯대), 빠르게 움직일수록 반대쪽으로, 걸리면 더 휜다
-    let bend = (16 + Math.max(-30, Math.min(30, -v * 9)) + (ms >= T.fly ? 10 + tug * 10 : 0)) * S;
-    const mid = [(butt[0] + tip[0]) / 2, (butt[1] + tip[1]) / 2], nrm = [Math.cos(rad(ang + 90)), Math.sin(rad(ang + 90))];
-    const rc = [mid[0] - nrm[0] * bend, mid[1] - nrm[1] * bend];
-    attr("f-rod", { d: `M${f(butt[0])},${f(butt[1])} Q${f(rc[0])},${f(rc[1])} ${f(tip[0])},${f(tip[1])}`, "stroke-width": f(5 * S) });
-    attr("f-arm", { d: pth(sh, hand), "stroke-width": f(16 * S) });
-
-    // 줄과 바늘: 바늘은 포물선으로 날아가고, 줄은 처음엔 위로 휘었다가 내려앉으며 살짝 처진다
-    const tgt = [B.left - H.left + B.width * 0.5, B.top - H.top + 7];
-    let line = "", hook = null, op = 1;
-    if (ms >= T.flyFrom) {
-      const t = sine((ms - T.flyFrom) / (T.fly - T.flyFrom));
-      const ctrl = [(tip[0] + tgt[0]) / 2, Math.min(tip[1], tgt[1]) - 200 * S];
-      hook = ms < T.fly ? q(tip, ctrl, tgt, t) : [tgt[0], tgt[1] + tug * 5];
-      const sag = ms < T.fly ? -60 * (1 - t) * S + 16 * t * S : 16 * S - tug * 10 * S;
-      const lc = [(tip[0] + hook[0]) / 2, (tip[1] + hook[1]) / 2 + sag];
-      line = `M${f(tip[0])},${f(tip[1])} Q${f(lc[0])},${f(lc[1])} ${f(hook[0])},${f(hook[1])}`;
-    }
-    attr("f-line", { d: line, "stroke-width": f(2 * S), opacity: line ? op : 0 });
-    attr("f-hook", { d: hook ? `M${f(hook[0])},${f(hook[1] - 10 * S)} L${f(hook[0])},${f(hook[1] + 4 * S)} A${f(6 * S)},${f(6 * S)} 0 0 1 ${f(hook[0] - 11 * S)},${f(hook[1] + 4 * S)}` : "", "stroke-width": f(2.8 * S), opacity: hook ? op : 0 });
-    box.classList.toggle("hooked", hooked);
-    box.style.transform = hooked ? `translateY(${f(tug * 4)}px)` : "";
-  }
-  if (reduce) {
-    const draw = () => { frame(T.fly + 1600); box.style.transform = ""; };
-    draw(); window.addEventListener("resize", draw); return;
-  }
-  const start = performance.now();
-  (function loop(now) { frame(now - start); requestAnimationFrame(loop); })(start);
-})();
-</script>
 </body>
 </html>
