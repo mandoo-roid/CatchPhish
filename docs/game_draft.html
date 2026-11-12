@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>생활 속 피싱 신호 익히기 (자유 훈련 게임 시안)</title>
+<style>
+:root{--page:#ffffff;--ink:#222222;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--page:#16181a;--ink:#e8e8e8;color-scheme:dark}}
+:root[data-theme="dark"]{--page:#16181a;--ink:#e8e8e8;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--page)}
+body{margin:0;padding:16px 8px;background:var(--page);color:var(--ink);font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.app{max-width:360px;margin:0 auto;background:#E6EDDA;border-radius:22px;padding:16px;color:#04342C;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden;min-height:600px}
+.hd{display:flex;align-items:center;gap:8px}.hd .nm{font-size:14px;font-weight:600;flex:1;line-height:1.3}
+.sc{text-align:right;line-height:1.1}.sc .n{font-size:22px;font-weight:600}.sc .l{font-size:11px;color:#0F6E56}
+.bar{height:6px;background:#F5F8EF;border-radius:3px;margin:12px 0 4px;overflow:hidden}.bar i{display:block;height:100%;width:100%;background:#1D9E75;border-radius:3px;transition:width 1s linear,background .3s}
+.sub{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#0F6E56;margin-bottom:10px;height:20px}
+.lv{display:flex;gap:3px}.lv i{width:8px;height:8px;border-radius:50%;background:#C9D4B8;display:inline-block}.lv i.on{background:#1D9E75}
+.cbadge{background:#FAC775;color:#633806;border-radius:999px;padding:1px 9px;font-weight:600;opacity:0;transition:opacity .2s}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.c{position:relative;min-height:78px;border:none;border-radius:14px;background:#fff;border-bottom:3px solid #C9D4B8;font-family:inherit;color:#04342C;padding:8px 10px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:3px;transition:transform .1s,background .15s;overflow:hidden}
+.c:active{transform:translateY(2px);border-bottom-width:1px}
+.c .f{font-size:11px;color:#5F5E5A;display:flex;align-items:center;gap:4px}
+.c .f::before{content:"";width:6px;height:6px;border-radius:50%;background:#1D9E75;display:inline-block}
+.c .m{font-size:12.5px;line-height:1.35}
+.c.ok{background:#1D9E75;color:#fff;border-bottom-color:#0F6E56}.c.ok .f{color:#E1F5EE}
+.c.ng{background:#FCEBEB;color:#A32D2D;border-bottom-color:#F09595;animation:shk .3s}
+.c.gone{opacity:0;transform:scale(.7);transition:all .18s}
+.c.in{animation:pin .25s}
+.c .why{position:absolute;inset:0;color:#fff;font-size:11.5px;line-height:1.4;padding:8px 10px;display:flex;align-items:center}
+.c .why.r{background:#A32D2D}.c .why.y{background:#BA7517}
+.c .bd{position:absolute;right:8px;top:8px;background:#FAC775;color:#633806;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;animation:pin .2s}
+@keyframes pin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.toast{position:absolute;left:50%;top:150px;transform:translateX(-50%);background:#04342C;color:#fff;font-size:13px;padding:8px 14px;border-radius:999px;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;z-index:3}
+.layer{position:absolute;inset:0;background:#E6EDDA;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:10px;z-index:4}
+.layer h3{font-size:17px;font-weight:600;margin:4px 0 0}
+.rule{background:#fff;border-radius:14px;padding:12px 14px;font-size:13px;text-align:left;line-height:1.75;width:100%;box-sizing:border-box}
+.go{background:#1D9E75;color:#fff;border:none;border-radius:999px;padding:11px 28px;font-size:14px;font-family:inherit;cursor:pointer;margin-top:4px}
+.res{position:absolute;inset:0;background:#E6EDDA;padding:16px;overflow:auto;display:none;z-index:4}
+.card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px}
+.big{display:flex;justify-content:space-around;text-align:center}.big .n{font-size:22px;font-weight:600}.big .l{font-size:11px;color:#5F5E5A}
+.learn{background:#1D9E75;color:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:12.5px;line-height:1.5}.learn .n{font-size:22px;font-weight:600}
+.tip{background:#FAEEDA;color:#633806;border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.6;margin-bottom:10px}
+.sec{font-size:13px;font-weight:600;margin:0 0 6px}
+.it{font-size:12px;padding:7px 0;border-top:1px solid #E6EDDA;line-height:1.5}.it b{font-weight:600}
+.mt{display:inline-block;font-size:11px;background:#FAEEDA;color:#633806;border-radius:999px;padding:1px 8px;margin:2px 4px 2px 0}
+.rk .r{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}.rk .me{color:#0F6E56;font-weight:600}
+.note{font-size:11px;color:#5F5E5A;text-align:center;margin:10px 0 0;line-height:1.5}
+</style></head><body>
+<div class="app">
+<div class="hd"><svg width="40" height="28" viewBox="252 28 172 116" aria-hidden="true"><g transform="rotate(-9 340 90)"><rect x="290" y="55" width="100" height="70" rx="10" fill="#1D9E75"/><path d="M296 61 L340 88 L384 61" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="322" cy="104" r="9" fill="#fff"/><circle cx="358" cy="104" r="9" fill="#fff"/><circle cx="326" cy="104" r="4.5" fill="#04342C"/><circle cx="362" cy="104" r="4.5" fill="#04342C"/><g transform="translate(0 9) rotate(18 393 96)"><line x1="391" y1="98" x2="382" y2="121" stroke="#04342C" stroke-width="6" stroke-linecap="round"/><circle cx="398" cy="82" r="15" fill="#E1F5EE" stroke="#04342C" stroke-width="6"/></g></g></svg><span class="nm">생활 속<br>피싱 신호 익히기</span><div class="sc"><div class="n" id="s">0</div><div class="l">점수</div></div></div>
+<div class="bar"><i id="bar"></i></div>
+<div class="sub"><span id="tt">60초</span><span class="lv" id="lv"><i class="on"></i><i></i><i></i></span><span class="cbadge" id="cb">2 콤보</span></div>
+<div class="grid" id="g"></div>
+<p class="note">시안 · 워드 크러시 사가 방식 참고 (C 제안, A 발전)<br>문구는 예시. 실제 데이터는 공식 자료로 확인 후 출처 표기 · 마스코트 AI 생성 이미지</p>
+<div class="toast" id="toast"></div>
+<div class="layer" id="st">
+<svg width="96" height="66" viewBox="252 28 172 116" aria-hidden="true"><path d="M275 52 L267 43" stroke="#04342C" stroke-width="3.5" stroke-linecap="round"/><path d="M285 46 L284 35" stroke="#04342C" stroke-width="3.5" stroke-linecap="round"/><path d="M269 62 L258 60" stroke="#04342C" stroke-width="3.5" stroke-linecap="round"/><g transform="rotate(-9 340 90)"><rect x="290" y="55" width="100" height="70" rx="10" fill="#1D9E75"/><path d="M296 61 L340 88 L384 61" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="322" cy="104" r="8" fill="#fff"/><circle cx="358" cy="104" r="8" fill="#fff"/><circle cx="326" cy="104" r="4" fill="#04342C"/><circle cx="362" cy="104" r="4" fill="#04342C"/><path d="M351 90 L367 85" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><g transform="translate(0 9) rotate(18 393 96)"><line x1="391" y1="98" x2="382" y2="121" stroke="#04342C" stroke-width="5" stroke-linecap="round"/><circle cx="398" cy="82" r="15" fill="#E1F5EE" stroke="#04342C" stroke-width="5"/></g></g></svg>
+<h3>생활 속 피싱 신호 익히기</h3>
+<div class="rule">📱 문자 알림이 계속 와요<br>👆 <b>피싱 문자만</b> 빠르게 누르기<br>🔍 보낸 곳이 같아도 <b>무엇을 하라는지</b>가 달라요<br>⏳ 피싱 문자를 그냥 두면 놓친 걸로 쳐요<br>🔁 틀린 문자는 나중에 다시 나와요</div>
+<button class="go" id="gobtn">시작하기</button>
+</div>
+<div class="res" id="res"></div>
+</div>
+<script>
+// [보낸 곳, 내용, 피싱(1)/정상(0), 난이도 1~3, 이유, 수법] — 예시 데이터 (출처 확인 전)
+const D=[
+["검찰청","계좌가 범죄에 연루, 이 번호로 연락",1,1,"수사기관은 문자로 계좌·돈을 요구하지 않아요","보이스피싱"],
+["엄마","폰 고장, 친구 폰이야. 상품권 좀 사 줘",1,1,"가족인 척 돈·상품권을 요구해요","메신저 피싱"],
+["고객센터","원격 지원 앱 설치해 주세요",1,1,"원격 앱으로 휴대폰을 조종해요","보이스피싱"],
+["엄마","저녁 먹고 들어와",0,1,"요구하는 행동이 없는 평범한 문자예요",""],
+["학과사무실","수업 장소가 302호로 바뀌었어요",0,1,"요구하는 행동이 없는 공지예요",""],
+["병원","내일 10시 진료 예약 알림",0,1,"요구하는 행동이 없는 알림이에요",""],
+["중고거래 판매자","안전결제 링크 보내 드릴게요",1,2,"가짜 안전결제 사이트로 유도해요","스미싱"],
+["구청","주차 위반, QR 찍고 과태료 납부",1,2,"QR로 가짜 사이트에 보내요","큐싱"],
+["택배사","주소 불일치, 링크에서 수정",1,2,"링크로 주소·개인정보를 입력하게 해요","스미싱"],
+["택배사","배송 완료, 문 앞에 두었어요",0,2,"링크도 요구도 없는 알림이에요",""],
+["중고거래 앱","판매자가 메시지를 보냈어요",0,2,"앱 안에서 온 알림이라 앱에서 확인하면 돼요",""],
+["[Web발신] 쇼핑몰","주문하신 상품이 출고되었어요",0,2,"[Web발신] 표시만으로는 판단 못 해요. 요구가 없어요",""],
+["카드사","해외 결제 승인, 문의는 이 번호로",1,3,"문자 속 번호로 전화하게 만들어요","스미싱"],
+["카드사","결제 완료, 자세한 건 카드 앱에서",0,3,"공식 앱에서 확인하라는 안내라 정상이에요",""],
+["OO은행","보안 강화, 앱 설치 링크",1,3,"설치 파일로 악성 앱을 깔게 해요","스미싱"],
+["OO은행","본인 인증은 은행 앱에서 해 주세요",0,3,"공식 앱 안에서 인증하라는 안내라 정상이에요",""],
+["국세청","환급금 있음, 링크에서 조회",1,3,"기관인 척 링크로 개인정보를 받아 가요","스미싱"],
+["국세청","환급 결과는 홈택스에서 확인",0,3,"공식 사이트에서 직접 확인하라는 안내예요",""],
+["친구","나 급해, 인증번호 좀 불러 줘",1,3,"인증번호는 누구에게도 알려 주면 안 돼요","메신저 피싱"],
+["인증 알림","요청하신 인증번호 482913",0,3,"내가 요청한 인증번호면 정상 (알려 주지만 않으면)",""]];
+const T=60,LIFE=8,$=id=>document.getElementById(id),g=$('g');
+let sc,cb,best,tm,run=false,iv,taps,okc,lvl,caught,wrong,lost,queue,retry;
+function pick(fr){if(!fr&&queue.length&&queue[0].at>=tm)return queue.shift().d;
+const pref=Math.random()<0.65?lvl:Math.ceil(Math.random()*lvl);const r=fr||Math.random()<0.45;
+let p=D.filter(d=>d[2]===(r?1:0)&&d[3]===pref);if(!p.length)p=D.filter(d=>d[2]===(r?1:0)&&d[3]<=lvl);
+const on=[...g.children].map(x=>x._d);const p2=p.filter(d=>!on.includes(d));p=p2.length?p2:p;return p[Math.floor(Math.random()*p.length)];}
+function mk(fr){const d=pick(fr),b=document.createElement('button');b.className='c in';b.innerHTML='<span class="f">'+d[0]+'</span><span class="m">'+d[1]+'</span>';b._d=d;b._t=tm;
+if(retry.find(x=>x.d===d&&x.st===0))b._re=1;b.onclick=()=>hit(b);return b;}
+function settle(b){if(b._re){const r=retry.find(x=>x.d===b._d&&x.st===0);if(r)r.st=1;}}
+function swap(b,n){if(b._d[2]===0)settle(b);b.replaceWith(n);}
+function ensure(){const ts=[...g.children];const rk=ts.filter(x=>x._d[2]===1&&!x._busy).length;if(rk<2){const dec=ts.filter(x=>x._d[2]===0&&!x._busy&&!x._re);for(let i=0;i<2-rk&&i<dec.length;i++)swap(dec[i],mk(true));}}
+function fill(){g.innerHTML='';for(let i=0;i<8;i++)g.appendChild(mk());ensure();}
+function upd(){$('s').textContent=sc;const c=$('cb');if(cb>1){c.textContent=cb+' 콤보';c.style.opacity=1}else c.style.opacity=0;}
+function hit(b){if(!run||b._busy)return;const d=b._d;taps++;b._busy=1;
+if(d[2]){cb++;okc++;best=Math.max(best,cb);sc+=10*d[3]+(cb>1?(cb-1)*2:0);caught.push(d);b.classList.add('ok');b.insertAdjacentHTML('beforeend','<span class="bd">'+d[5]+'!</span>');
+setTimeout(()=>b.classList.add('gone'),420);setTimeout(()=>{b.replaceWith(mk());ensure();},600);}
+else{cb=0;sc=Math.max(0,sc-5);if(b._re){const r=retry.find(x=>x.d===d&&x.st===0);if(r)r.st=-1;}
+else{wrong.push(d);if(!retry.find(x=>x.d===d)){retry.push({d:d,st:0});queue.push({d:d,at:tm-12});}}
+b.classList.add('ng');b.insertAdjacentHTML('beforeend','<span class="why r">정상 문자예요. '+d[4]+'</span>');
+setTimeout(()=>b.classList.add('gone'),1500);setTimeout(()=>{b.replaceWith(mk());ensure();},1680);}
+upd();}
+function expire(){[...g.children].forEach(b=>{if(b._d[2]===1&&!b._busy&&(b._t-tm)>=LIFE){b._busy=1;cb=0;lost.push(b._d);
+b.insertAdjacentHTML('beforeend','<span class="why y">놓쳤어요! '+b._d[5]+': '+b._d[4]+'</span>');
+setTimeout(()=>b.classList.add('gone'),1400);setTimeout(()=>{b.replaceWith(mk());ensure();},1580);}});upd();}
+function toast(m){const t=$('toast');t.textContent=m;t.style.opacity=1;setTimeout(()=>t.style.opacity=0,1400);}
+function setLv(n){lvl=n;[...$('lv').children].forEach((x,i)=>x.classList.toggle('on',i<n));}
+function refreshSome(){const dec=[...g.children].filter(x=>x._d[2]===0&&!x._busy&&(x._t-tm)>=5);if(dec.length)swap(dec[Math.floor(Math.random()*dec.length)],mk());ensure();}
+function start(){sc=0;cb=0;best=0;tm=T;taps=0;okc=0;caught=[];wrong=[];lost=[];queue=[];retry=[];run=true;setLv(1);$('st').style.display='none';$('res').style.display='none';fill();upd();$('tt').textContent=tm+'초';const bar=$('bar');bar.style.background='#1D9E75';bar.style.width='100%';
+iv=setInterval(()=>{tm--;$('tt').textContent=tm+'초';bar.style.width=(tm/T*100)+'%';
+if(tm===40){setLv(2);toast('2단계: 비슷한 문자가 섞여요!');}
+if(tm===20){setLv(3);toast('3단계: 보낸 곳이 같은 짝 주의!');bar.style.background='#EF9F27';}
+expire();if(tm%3===0)refreshSome();if(tm<=0)end();},1000);}
+function uniq(a){return [...new Map(a.map(d=>[d[0]+d[1],d])).values()];}
+function end(){run=false;clearInterval(iv);$('cb').style.opacity=0;[...g.children].forEach(b=>{if(b._d[2]===0&&!b._busy)settle(b);});
+const acc=taps?Math.round(okc/taps*100):0;const rd=retry.filter(x=>x.st!==0),rok=rd.filter(x=>x.st===1).length;
+const learn=rd.length?'<div class="learn">틀렸다가 다시 나온 문자<div class="n">'+rok+' / '+rd.length+' 맞힘</div>한 판 안에서 고쳐 배운 정도예요</div>':'';
+const top=uniq(wrong.concat(lost)).slice(0,3);
+const lessons=top.length?top.map(d=>'<div class="it"><b>'+d[0]+' · '+d[1]+'</b> ('+(d[2]?'피싱':'정상')+')<br>'+d[4]+'</div>').join(''):'<div class="it">헷갈린 문자가 없었어요!</div>';
+const by={};caught.forEach(d=>{by[d[5]]=(by[d[5]]||0)+1;});const tags=Object.keys(by).length?Object.entries(by).map(([k,v])=>'<span class="mt">'+k+' '+v+'</span>').join(''):'<span class="it">아직 없어요</span>';
+$('res').innerHTML='<div class="card"><div class="big"><div><div class="n">'+sc+'</div><div class="l">점수</div></div><div><div class="n">'+caught.length+'</div><div class="l">잡은 피싱</div></div><div><div class="n">'+lost.length+'</div><div class="l">놓친 피싱</div></div><div><div class="n">'+acc+'%</div><div class="l">정확도</div></div></div></div>'+learn+
+'<div class="tip">💡 보낸 곳이나 단어 하나로 판단하지 말고, <b>무엇을 하라고 하는지</b>와 <b>어디서 확인하라고 하는지</b>를 보세요</div>'+
+'<div class="card"><p class="sec">오늘 배운 것 (헷갈린 문자)</p>'+lessons+'</div>'+
+'<div class="card"><p class="sec">잡은 피싱 수법</p>'+tags+'</div>'+
+'<div class="card rk"><p class="sec">순위표 (예시)</p><div class="r"><span>1. 문자감별사</span><span>520</span></div><div class="r"><span>2. 링크안눌러</span><span>455</span></div><div class="r"><span>3. 택배조심</span><span>380</span></div><div class="r me"><span>나</span><span>'+sc+'</span></div></div>'+
+'<p class="note">측정값(정확도, 놓친 피싱, 다시 나온 문자 정답률, 많이 헷갈린 문자)은 게임 기록에만 익명으로 저장 · 체험 장부와 별도</p>'+
+'<div style="text-align:center;margin-top:8px"><button class="go" id="again">다시 하기</button></div>';
+$('res').style.display='block';$('again').onclick=start;}
+$('gobtn').onclick=start;queue=[];retry=[];lvl=1;tm=T;fill();
+</script></body></html>
