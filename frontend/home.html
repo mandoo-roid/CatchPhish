@@ -60,9 +60,8 @@ footer { font-size: .8rem; color: var(--muted); }
    이유: 포스터와 같은 캐릭터로 작품의 얼굴을 통일하고, 첫 화면에 가볍게 눈길을 주려고
    참고: 아래쪽만 잘라서(clip-path) 제목 뒤에서 올라오는 것처럼 보인다. 움직임 줄이기 설정이면 처음부터 제자리에 있다 */
 .brand-sub { margin: .1rem 0 0; }
-.mascot-room { height: 150px; display: flex; justify-content: flex-end; align-items: flex-end; margin: 0 0 .1rem; clip-path: inset(-60% -20% 0 -20%); }
+.mascot-room { height: 150px; display: flex; justify-content: flex-start; align-items: flex-end; margin: 0 0 .5rem; clip-path: inset(-60% -20% 0 -20%); }
 .mascot { width: 165px; height: auto; transform: translateY(105%); animation: mascotPop .95s cubic-bezier(.2,.8,.3,1) .35s forwards; }
-.mascot-note { font-size: .7rem; color: var(--muted); text-align: right; margin: -.1rem 0 .4rem; }
 @keyframes mascotPop {
   0%   { transform: translateY(105%) rotate(0deg); }
   55%  { transform: translateY(-14%) rotate(-3deg); }
@@ -86,7 +85,7 @@ footer { font-size: .8rem; color: var(--muted); }
 
   <section class="hero">
     <div>
-      <!-- 마스코트 자리 (B 11/12). 포스터와 같은 편지봉투 마스코트, 제목 뒤에서 한 번 튀어 올라와 머문다 -->
+      <!-- 마스코트 자리 (B 11/12). 포스터와 같은 편지봉투 마스코트, 제목 왼쪽 위에서 한 번 튀어 올라와 머문다 -->
       <div class="mascot-room">
 <svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">
   <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">
@@ -107,7 +106,6 @@ footer { font-size: .8rem; color: var(--muted); }
   <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
 </svg>
       </div>
-      <p class="mascot-note">AI 생성 이미지</p>
       <h1><span>오늘 받은 그 메일,</span><br><span>진짜였을까요?</span></h1>
       <p class="lead">회사로 오는 피싱 메일과 문자를 직접 겪어 보고, 왜 위험했는지 탐지 엔진의 해설로 확인해요.</p>
       <p class="facts">체험은 메일·문자 5개, 10~20분 정도 걸려요. 기록은 익명 번호로만 남아요.</p>
