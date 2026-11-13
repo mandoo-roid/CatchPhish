@@ -1,0 +1,381 @@
+[
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P01",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P02",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P03",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P04",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "P05",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "P06",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "P07",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "P08",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000A",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "S06",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false,
+   "practice": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 1,
+   "scenario_id": "P05",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 1,
+   "scenario_id": "P06",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 1,
+   "scenario_id": "P07",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 1,
+   "scenario_id": "P08",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 2,
+   "scenario_id": "P01",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 2,
+   "scenario_id": "P02",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 2,
+   "scenario_id": "P03",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000B",
+   "job": null,
+   "mode": "personal",
+   "target": "general",
+   "revisit": true,
+   "round": 2,
+   "scenario_id": "P04",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "S01",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "S02",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "S05",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "S08",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "S10",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "HR_B",
+   "is_phishing": true,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "S13",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000C",
+   "job": "hr",
+   "mode": "org",
+   "target": "worker",
+   "revisit": false,
+   "round": 2,
+   "scenario_id": "S14",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000D",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P01",
+   "is_phishing": true,
+   "is_correct": false,
+   "over_suspicion": false
+  }
+ },
+ {
+  "record": {
+   "anon_id": "U00000D",
+   "job": null,
+   "mode": "personal",
+   "target": "student",
+   "revisit": false,
+   "round": 1,
+   "scenario_id": "P03",
+   "is_phishing": false,
+   "is_correct": true,
+   "over_suspicion": true
+  }
+ }
+]
