@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>캐치피싱 체험 시범 화면 (시안)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   캐치피싱 체험 시범 화면 (A 11/14 시안, docs/experience_draft.html)
+   ★ 참고용: 동작(누르면 무슨 일이 일어나는지), 구조(화면 순서, 폰·PC 배치), 대략적인 테마(포스터 색)만 참고한다
+     글자 크기·간격·모서리·아이콘 같은 세부 디자인은 따라 하지 않아도 된다
+   하는 일: 개인용·기관용 흐름을 처음부터 결과까지 눌러 볼 수 있는 뼈대와, 실제 같은 문자·메일 화면 틀
+   이유: B가 11/18까지 문자·메일 화면과 게임 화면 디자인을 시작할 수 있게
+   참고: 서버에 연결하지 않는다. 카드는 아래 CARDS 데이터, 채점은 화면에서 흉내만 낸다 (실제는 서버가 채점)
+   ===================================================================== */
+
+/* ===== B가 고칠 곳 1: 색과 글자 (지금 game.html 색 그대로) ===== */
+:root {
+  color-scheme: light;
+  --navy: #16224A; --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
+  --accent: #4B53D6; --accent-soft: #EEF0FF; --focus: #2457C5;
+  --danger: #B3261E; --danger-soft: #FCEBEA; --caution: #8A5A00; --caution-soft: #FFF3D6;
+  --safe: #1F6B4A; --safe-soft: #E4F3EB; --link: #1F56C9;
+  --bubble: #E9EEF3; --unread: #4B53D6;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --radius-app: 18px;      /* 문자·메일 앱 테두리 */
+  --radius-btn: 12px;      /* 버튼 */
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --navy: #C9D3F5; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+    --accent: #9EA4FF; --accent-soft: #23264A; --focus: #8DB2FF;
+    --danger: #FF8A80; --danger-soft: #3A1D1B; --caution: #F2C14E; --caution-soft: #3A2E14;
+    --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --bubble: #232D38; --unread: #9EA4FF;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --navy: #C9D3F5; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+  --accent: #9EA4FF; --accent-soft: #23264A; --focus: #8DB2FF;
+  --danger: #FF8A80; --danger-soft: #3A1D1B; --caution: #F2C14E; --caution-soft: #3A2E14;
+  --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --bubble: #232D38; --unread: #9EA4FF;
+}
+
+/* ===== 기본 ===== */
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans);
+  font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ===== 배치: 폰 / 태블릿 / PC =====
+   기준 너비는 home.html과 같게 40rem, 72rem
+   - 링크 검사·대응 매뉴얼은 모든 화면에서 ☰ 메뉴 안에 (누르면 옆에서 나옴) */
+.site { min-height: 100vh; }
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .6rem;
+  padding: .55rem 1rem; padding-top: calc(.55rem + env(safe-area-inset-top, 0px));
+  background: var(--paper); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--paper); }
+.menu-btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
+.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; background: none; border: 0; padding: 0; }
+.draft-tag { margin-left: auto; font-size: .78rem; color: var(--caution); background: var(--caution-soft); border-radius: 999px; padding: .1rem .7rem; }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper);
+  border-right: 1px solid var(--line); padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem;
+  transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35); }
+.side a, .side button { display: block; text-align: left; padding: .7rem .8rem; border-radius: 10px; color: var(--ink);
+  text-decoration: none; border: 0; background: none; width: 100%; }
+.side a:hover, .side button:hover { background: var(--field); }
+.side .side-head { font-size: .85rem; color: var(--muted); padding: .2rem .8rem .5rem; }
+.main { padding: 1.2rem 1rem 2rem; max-width: 70rem; margin: 0 auto; }
+@media (min-width: 72rem) { .main { padding: 2rem 2.5rem 3rem; max-width: 78rem; } }
+
+/* ===== 공통 화면 요소 ===== */
+.step { font-size: .85rem; color: var(--muted); margin-bottom: .3rem; }
+.title { font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem); color: var(--navy); line-height: 1.35; margin-bottom: .5rem; }
+.lead { color: var(--muted); max-width: 36rem; margin-bottom: 1.2rem; }
+.btn { border: 0; border-radius: var(--radius-btn); padding: .85rem 1.4rem; background: var(--accent); color: #fff; font-weight: 500; }
+.btn.sub { background: var(--field); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; }
+.ghost { border: 2px dashed var(--line); border-radius: 14px; padding: 1rem; color: var(--muted); font-size: .9rem; background: var(--field); }
+.ghost b { color: var(--ink); }
+.note { font-size: .82rem; color: var(--muted); margin-top: .8rem; }
+.pick { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); max-width: 40rem; }
+.pick button { border: 1.5px solid var(--line); background: var(--paper); border-radius: var(--radius-btn); padding: .9rem; text-align: left; }
+.pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.q { margin: 1.3rem 0 .6rem; font-weight: 500; }
+.field { width: 100%; max-width: 24rem; padding: .8rem 1rem; border: 1.5px solid var(--line); border-radius: var(--radius-btn); background: var(--paper); }
+
+/* ===== 첫 화면: 큰 버튼 3개 (C 제안) ===== */
+.home-title { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.6rem); color: var(--navy); line-height: 1.3; margin: .5rem 0 .6rem; }
+.big3 { display: grid; gap: .8rem; margin-top: 1.6rem; }
+.big3 button { border: 0; border-radius: 20px; padding: 1.3rem 1.3rem 1.4rem; text-align: left; min-height: 7rem;
+  display: flex; flex-direction: column; justify-content: space-between; gap: .4rem; }
+.big3 b { font-size: 1.25rem; }
+.big3 span { font-size: .92rem; opacity: .85; }
+.big3 .p { background: var(--accent); color: var(--paper); }
+.big3 .o { background: var(--navy); color: var(--paper); }
+.big3 .f { background: var(--field); color: var(--ink); border: 1.5px solid var(--line); }
+@media (min-width: 40rem) { .big3 { grid-template-columns: repeat(3, 1fr); } .big3 button { min-height: 11rem; } }
+
+/* ===== 메시지 화면 배치 =====
+   폰: 메시지 → 아래 선택지 / 넓은 화면(56rem 이상): 메시지 | 오른쪽 선택지 */
+.stage { position: relative; display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .stage { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; } .choices { position: sticky; top: 5rem; } }
+
+/* ===== B가 고칠 곳 2: 문자 앱 틀 ===== */
+.sms { container-type: inline-size; max-width: 26rem; width: 100%; margin: 0 auto; border: 1px solid var(--line);
+  border-radius: var(--radius-app); overflow: hidden; background: var(--paper); display: flex; flex-direction: column; min-height: 26rem; }
+.sms-top { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); }
+.sms-top .back { font-size: 1.5rem; line-height: 1; color: var(--muted); }
+.avatar { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--field); display: grid; place-items: center; color: var(--muted); font-weight: 700; flex: none; }
+.sms-top .who { font-weight: 500; }
+.sms-top .who small { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+.sms-thread { flex: 1; padding: 1rem .9rem; display: flex; flex-direction: column; gap: .5rem; }
+.day { text-align: center; font-size: .75rem; color: var(--muted); margin-bottom: .4rem; }
+.bubble-row { display: flex; align-items: flex-end; gap: .4rem; }
+.bubble { background: var(--bubble); border-radius: 18px 18px 18px 4px; padding: .65rem .85rem; max-width: 85%; font-size: .95rem; }
+.bubble .lnk { color: var(--link); text-decoration: underline; word-break: break-all; }
+.bubble-row time { font-size: .7rem; color: var(--muted); flex: none; }
+.sms-input { display: flex; gap: .5rem; align-items: center; padding: .6rem .8rem; border-top: 1px solid var(--line); color: var(--muted); }
+.sms-input .box { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-size: .85rem; }
+
+/* ===== B가 고칠 곳 3: 메일 앱 틀 =====
+   좁을 때(34rem 미만): 받은편지함 목록 → 누르면 메일 전체 / 넓을 때: 왼쪽 목록 + 오른쪽 읽기 창
+   너비 기준은 화면 전체가 아니라 메일 틀의 너비 (컨테이너 쿼리) */
+.mail-wrap { container-type: inline-size; }
+.mail { border: 1px solid var(--line); border-radius: var(--radius-app); overflow: hidden; background: var(--paper); min-height: 28rem; display: flex; flex-direction: column; }
+.mail-bar { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); font-weight: 500; }
+.mail-bar .search { margin-left: auto; font-weight: 400; font-size: .8rem; color: var(--muted); background: var(--field); border-radius: 999px; padding: .25rem .8rem; }
+.mail-body { flex: 1; display: grid; }
+.mail-list { border-right: 0; }
+.mail-row { display: grid; grid-template-columns: auto 1fr auto; gap: .2rem .6rem; width: 100%; text-align: left; padding: .8rem .9rem;
+  border: 0; border-bottom: 1px solid var(--line); background: none; }
+.mail-row .dot { grid-row: span 2; width: .55rem; height: .55rem; border-radius: 50%; margin-top: .5rem; background: transparent; }
+.mail-row.new .dot { background: var(--unread); }
+.mail-row .nm { font-size: .95rem; }
+.mail-row.new .nm, .mail-row.new .sj { font-weight: 700; }
+.mail-row time { font-size: .75rem; color: var(--muted); }
+.mail-row .sj { grid-column: 2 / -1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row.old { opacity: .55; cursor: default; }
+.mail-row.on { background: var(--accent-soft); }
+.mail-read { padding: 1rem 1.1rem 1.3rem; display: none; }
+.mail[data-view="read"] .mail-read { display: block; }
+.mail[data-view="read"] .mail-list { display: none; }
+.mail-read .back { border: 0; background: none; color: var(--muted); padding: 0 0 .6rem; font-size: .9rem; }
+.mail-read h3 { font-size: 1.15rem; line-height: 1.4; margin-bottom: .8rem; }
+.from { display: flex; gap: .6rem; align-items: flex-start; }
+.from .meta { flex: 1; min-width: 0; }
+.from-name { border: 0; background: none; padding: 0; font-weight: 700; text-align: left; }
+.from-name::after { content: " ▾"; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.from-name[aria-expanded="true"]::after { content: " ▴"; }
+.from .to { display: block; font-size: .8rem; color: var(--muted); }
+.from time { font-size: .78rem; color: var(--muted); }
+.from-detail { margin-top: .5rem; background: var(--field); border-radius: 10px; padding: .6rem .8rem; font-size: .82rem; display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; }
+.from-detail dt { color: var(--muted); }
+.from-detail dd { margin: 0; word-break: break-all; }
+.mail-text { margin-top: 1.1rem; font-size: .95rem; white-space: pre-line; }
+.mail-text .lnk { color: var(--link); text-decoration: underline; word-break: break-all; }
+.attach { margin-top: 1rem; display: inline-flex; gap: .6rem; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: .55rem .8rem; font-size: .85rem; }
+.attach i { width: 1.6rem; height: 2rem; border-radius: 4px; background: var(--field); border: 1px solid var(--line); }
+.empty-read { display: none; }
+@container (min-width: 34rem) {
+  .mail-body { grid-template-columns: 15rem 1fr; }
+  .mail-list { border-right: 1px solid var(--line); }
+  .mail[data-view] .mail-list { display: block; }
+  .mail[data-view] .mail-read { display: block; }
+  .mail-read .back { display: none; }
+  .mail[data-view="list"] .mail-read > * { display: none; }
+  .mail[data-view="list"] .mail-read .empty-read { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: .9rem; }
+}
+
+/* ===== B가 고칠 곳 4: 선택지 ===== */
+.choices { border: 1px solid var(--line); border-radius: var(--radius-app); padding: 1rem; background: var(--paper); }
+.choices h2 { font-size: 1.05rem; margin-bottom: .6rem; }
+.timer { height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; margin-bottom: .3rem; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width 1s linear; }
+.timer-txt { font-size: .78rem; color: var(--muted); margin-bottom: .8rem; }
+.timer.over i { background: var(--caution); }
+.opt { display: block; width: 100%; text-align: left; border: 1.5px solid var(--line); background: var(--paper); border-radius: var(--radius-btn); padding: .85rem .9rem; margin-bottom: .55rem; font-size: .95rem; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { opacity: .5; cursor: not-allowed; }
+.wait-open { font-size: .82rem; color: var(--muted); margin-bottom: .6rem; }
+
+/* 선택 미리보기 (B 11/09 방식 그대로, 2.2초) */
+.preview { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 92%, transparent); border-radius: var(--radius-app); }
+.preview .box { max-width: 24rem; width: calc(100% - 2rem); border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius-app); padding: 1.2rem; }
+.preview .lbl { font-size: .8rem; color: var(--muted); }
+.preview .ch { font-weight: 500; margin: .2rem 0 .8rem; }
+.preview .st { font-weight: 700; color: var(--navy); }
+.preview .st.wait { color: var(--caution); }
+.preview .bar { height: 4px; background: var(--field); border-radius: 2px; margin-top: .9rem; overflow: hidden; }
+.preview .bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: fill 2.2s linear forwards; }
+@keyframes fill { to { width: 100%; } }
+
+/* ===== 해설 ===== */
+.explain { display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .explain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+.recap { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; font-size: .9rem; }
+.recap .who { font-weight: 700; margin-bottom: .3rem; }
+.verdict { display: inline-block; border-radius: 999px; padding: .2rem .8rem; font-size: .85rem; font-weight: 500; margin-bottom: .7rem; }
+.verdict.good { background: var(--safe-soft); color: var(--safe); }
+.verdict.bad { background: var(--danger-soft); color: var(--danger); }
+.verdict.wait { background: var(--caution-soft); color: var(--caution); }
+.ex-box { border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; display: grid; gap: .8rem; }
+
+/* ===== 결과: 사전·사후 나란히 ===== */
+.result { display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .result { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; } }
+.score { border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem; }
+.score + .score { margin-top: .8rem; }
+.score h3 { font-size: 1rem; margin-bottom: .2rem; }
+.score p { font-size: .85rem; color: var(--muted); margin-bottom: .8rem; }
+.pp { display: grid; grid-template-columns: 3rem 1fr 3rem; gap: .5rem; align-items: center; font-size: .88rem; margin-top: .4rem; }
+.pp .track { height: .7rem; border-radius: 999px; background: var(--field); overflow: hidden; }
+.pp .track i { display: block; height: 100%; border-radius: 999px; background: var(--muted); }
+.pp.post .track i { background: var(--accent); }
+.pp b { text-align: right; }
+.more { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.more a { color: var(--link); }
+
+/* ===== B가 고칠 곳 5: 개인용 게임 (행동 문구, 시간 제한 없음) =====
+   폰 2열, 넓은 화면 4열. 카드 수는 같다 (8장) */
+.game { max-width: 52rem; }
+.game-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
+.game-head b { font-size: 1.3rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+@media (min-width: 48rem) { .grid { grid-template-columns: repeat(4, 1fr); } }
+.blk { position: relative; min-height: 5.5rem; border: 0; border-bottom: 3px solid var(--line); border-radius: 14px; background: var(--field);
+  padding: .8rem; text-align: left; font-size: .92rem; overflow: hidden; transition: transform .1s; }
+.blk:active { transform: translateY(2px); }
+.blk.ok { background: var(--safe-soft); color: var(--safe); border-bottom-color: var(--safe); }
+.blk.ng { background: var(--danger-soft); color: var(--danger); animation: shk .3s; }
+.blk .why { display: block; font-size: .8rem; margin-top: .3rem; }
+.blk .bd { position: absolute; right: .5rem; top: .5rem; font-size: .72rem; font-weight: 700; background: var(--caution-soft); color: var(--caution); border-radius: 999px; padding: 0 .5rem; }
+@keyframes shk { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* ===== 시안용 바로 가기 (B 디자인할 때 편하게) ===== */
+.jump { margin: 3rem auto 0; max-width: 70rem; padding: 0 1rem 2rem; font-size: .85rem; color: var(--muted); }
+.jump summary { cursor: pointer; }
+.jump div { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.jump button { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: .3rem .8rem; font-size: .8rem; }
+.data-tag { display: inline-block; font-size: .72rem; color: var(--caution); background: var(--caution-soft); border-radius: 6px; padding: 0 .4rem; margin-left: .3rem; vertical-align: middle; }
+
+/* ===== 중간안 (A 11/13): 지금 사이트 느낌 + 포스터 색·포인트 =====
+   흰 바탕, 납작한 카드, 글꼴은 지금 사이트(IBM Plex Sans KR) 그대로
+   포스터에서 가져온 것: 색(파랑·남색·노랑), 노란 숫자 동그라미, 노란 강조 띠, 카드 색 순서 */
+:root {
+  --navy: #0F1F45; --ink: #1B2A41; --accent: #2563C9; --accent-soft: #E3ECFA; --point: #FFE699;
+  --mascot: #3B7BE0; --link: #2563C9; --unread: #2563C9; --focus: #2563C9;
+}
+main:focus { outline: none; }
+.top { border-bottom: 1px solid var(--line); }
+.draft-tag { background: var(--point); color: var(--navy); }
+.btn { background: var(--accent); color: #fff; }
+.step::before { content: ""; }
+.hero2 { display: grid; gap: 2rem; align-items: center; min-height: calc(100vh - 12rem); }
+.hero2 .mascot { width: 8.5rem; height: auto; display: block; animation: pop .9s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes pop { from { transform: translateY(30%); opacity: 0; } to { transform: none; opacity: 1; } }
+.hero2 h1 { font-size: clamp(2.1rem, 4.3vw, 3.6rem); line-height: 1.18; letter-spacing: -.025em; font-weight: 700; color: var(--navy); margin: .6rem 0 1rem; }
+.band { background: linear-gradient(transparent 50%, var(--point) 50%, var(--point) 94%, transparent 94%); font-weight: 700; color: var(--navy); font-size: clamp(1.02rem, .95rem + .4vw, 1.2rem); }
+.go3 { display: grid; gap: .8rem; }
+.go3 button { border: 0; border-radius: 14px; padding: 1.2rem 1.15rem 1.3rem; text-align: left; display: flex; flex-direction: column; gap: .2rem; transition: transform .12s; }
+.go3 button:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
+.go3 .p:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent); }
+.go3 svg { margin-bottom: .6rem; flex: none; }
+.go3 .num { width: 2rem; height: 2rem; border-radius: 50%; background: var(--point); color: var(--navy); display: grid; place-items: center; font-weight: 700; margin-bottom: .6rem; }
+.go3 b { font-size: 1.25rem; }
+.go3 .kw { font-size: .85rem; font-weight: 700; }
+.go3 .ds { font-size: .88rem; margin-top: .35rem; line-height: 1.55; opacity: .92; }
+.go3 .p { background: var(--accent); color: #fff; }
+.go3 .o { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--navy); }
+.go3 .o .kw { color: var(--accent); }
+.go3 .f { background: var(--navy); color: #fff; }
+.home-foot { font-size: .8rem; color: var(--muted); margin-top: 2rem; }
+@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(3, 1fr); } .go3 button { min-height: 13rem; } }
+@media (min-width: 72rem) { .hero2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+
+/* 참고용 안내 */
+.draft-tag { border: 0; font: inherit; font-size: .78rem; cursor: pointer; }
+@media (max-width: 39.99rem) { .draft-tag .wide { display: none; } }
+.notice-back { position: fixed; inset: 0; z-index: 50; background: rgba(15, 31, 69, .45); display: grid; place-items: center; padding: 1rem; }
+.notice { background: var(--paper); border-radius: 18px; padding: 1.4rem 1.3rem 1.2rem; max-width: 30rem; width: 100%; max-height: calc(100vh - 2rem); overflow: auto; }
+.notice h2 { font-size: 1.25rem; color: var(--navy); margin-bottom: .8rem; }
+.notice h2::before { content: ""; display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; background: var(--point); margin-right: .5rem; box-shadow: 0 0 0 2px var(--navy); }
+.notice dl { margin: 0 0 1.1rem; }
+.notice dt { font-weight: 700; color: var(--navy); margin-top: .7rem; }
+.notice dd { margin: .15rem 0 0; color: var(--ink); font-size: .93rem; }
+.notice .btn { width: 100%; }
+/* 나머지 화면도 같은 느낌으로 */
+.step { color: var(--accent); font-weight: 700; }
+.title { font-weight: 700; letter-spacing: -.02em; }
+.verdict.good { background: #E3ECFA; color: var(--accent); }
+.pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.timer i { background: var(--accent); }
+.pp.post .track i { background: var(--accent); }
+.blk.ok { background: var(--accent-soft); color: var(--accent); border-bottom-color: var(--accent); }
+.blk .bd { background: var(--point); color: var(--navy); }
+.data-tag { background: var(--point); color: var(--navy); }
+.big-band { display: inline; }
+</style>
+</head>
+<body>
+<div class="site">
+  <header class="top">
+    <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+    <button class="logo" id="logo">캐치피싱</button>
+    <button class="draft-tag" id="noticeBtn">참고용 시안<span class="wide">: 동작·구조·대략 테마만</span></button>
+  </header>
+  <nav class="side" id="side" aria-label="메뉴">
+    <p class="side-head">메뉴</p>
+    <button data-go="home">첫 화면</button>
+    <a href="https://catchphish-three.vercel.app/check" target="_blank" rel="noopener">링크 검사</a>
+    <a href="https://catchphish-three.vercel.app/manual" target="_blank" rel="noopener">대응 매뉴얼</a>
+  </nav>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+<div class="notice-back" id="notice" hidden>
+  <section class="notice" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+    <h2 id="noticeTitle">이 시안은 참고용이에요</h2>
+    <dl>
+      <dt>참고할 것</dt>
+      <dd>화면 순서(흐름), 누르면 일어나는 일(동작), 폰·PC에서 무엇이 어디에 오는지(구조), 대략적인 테마(포스터 색: 파랑·남색·노랑 포인트)</dd>
+      <dt>따라 하지 않아도 되는 것</dt>
+      <dd>글자 크기, 간격, 모서리, 아이콘 같은 세부 디자인</dd>
+      <dt>알아 둘 것</dt>
+      <dd>문구는 시안용 예시예요 (B 카드로 바뀌어요). 서버에 연결되지 않아서 채점·기록은 흉내만 내요. 회색 점선 상자는 내용이 들어갈 자리예요</dd>
+    </dl>
+    <button class="btn" id="noticeOk">확인했어요</button>
+  </section>
+</div>
+<details class="jump">
+  <summary>시안: 화면 바로 가기 (B 디자인용)</summary>
+  <div id="jumpBtns"></div>
+</details>
+
+<script>
+/* =====================================================================
+   데이터
+   ===================================================================== */
+
+// 하는 일: 기관용 카드. 지금 scenarios.json에 있는 카드를 서버가 화면에 보내는 칸 그대로 옮겼다
+// 참고: is_phishing, explanation_short는 원래 서버만 안다. 시안이라 채점 흉내를 내려고 화면에 두었다
+// 참고: 선택지 문구는 지금 카드 그대로다. B가 11/16에 "세 개 모두 확인" 문구로 손보는 중
+const ORG = [{"scenario_id": "S01", "channel": "sms", "sender": "건강보험 / 010-0000-0000", "subject": null, "body": "[건강보험] 올해 건강검진 결과 통보 내역이 도착했습니다. 아래 주소에서 확인해 주세요. 확인하지 않으면 불이익이 있을 수 있습니다.", "link": "https://health-notice.example/check", "attachment": null, "choice_labels": {"click": "문자 속 주소를 열어 검진 결과를 확인한다", "call": "문자에 적힌 번호로 전화해 물어본다", "official": "처리를 멈추고 건강보험 공식 앱이나 대표번호로 확인한다"}, "is_phishing": true, "explanation_short": "기관 이름을 빌려 불안하게 만드는 문자예요. 문자 속 주소 말고 공식 앱이나 대표번호로 확인하세요.", "reply_to": null}, {"scenario_id": "S02", "channel": "email", "sender": "인사팀 <hr-support@company-notice.example>", "subject": "[긴급] 연말정산 서류 오늘 중 제출 안내", "body": "인사팀입니다. 연말정산 서류에 오류가 발견되었습니다. 오늘 중에 첨부 파일을 열어 내용을 확인하고 제출해 주세요. 미제출 시 급여에 불이익이 있을 수 있습니다.", "link": null, "attachment": "연말정산_안내.pdf.lnk", "choice_labels": {"click": "첨부된 연말정산 파일을 열어 바로 제출한다", "call": "메일에 답장해 무엇이 잘못됐는지 물어본다", "official": "처리를 멈추고 인사팀 사내 연락처로 확인한다"}, "is_phishing": true, "explanation_short": "인사팀 이름을 빌린 바깥 주소 메일이에요. 첨부를 열지 말고 사내 연락처로 확인하세요.", "reply_to": null}, {"scenario_id": "S03", "channel": "email", "sender": "예시물산 경리팀 <account@yesi-trade.example>", "subject": "대금 입금 계좌 변경 안내", "body": "안녕하세요, 예시물산 경리팀입니다. 거래 은행이 변경되어 이번 달 대금부터 새 계좌로 보내 주셔야 합니다. 새 계좌 정보는 아래 번호로 전화 주시면 바로 안내드리겠습니다. 오늘 마감이라 빠른 처리를 부탁드립니다. 문의: 010-0000-0000", "link": null, "attachment": null, "choice_labels": {"click": "메일 안내대로 바로 처리한다", "call": "메일에 적힌 번호로 전화해 새 계좌를 안내받는다", "official": "처리를 멈추고 기존에 알던 거래처 담당자 연락처로 확인한다"}, "is_phishing": true, "explanation_short": "계좌를 바꾸라는 요구는 큰 위험 신호예요. 메일 속 번호 말고 기존에 알던 거래처 연락처로 확인하세요.", "reply_to": null}, {"scenario_id": "S04", "channel": "sms", "sender": "Telegram / 010-0000-0000", "subject": null, "body": "[Telegram] 정책 위반이 확인되어 계정이 제한될 예정입니다. 아래 링크에서 재로그인을 진행해 주세요.", "link": "https://taiegram-login.example/verify", "attachment": null, "choice_labels": {"click": "문자 속 주소로 들어가 다시 로그인한다", "call": "문자에 적힌 번호로 전화해 물어본다", "official": "처리를 멈추고 메신저 공식 앱에서 계정 상태를 확인한다"}, "is_phishing": true, "explanation_short": "진짜와 한 글자 다른 주소예요. 문자 속 주소로 로그인하지 말고 공식 앱에서 확인하세요.", "reply_to": null}, {"scenario_id": "S05", "channel": "email", "sender": "정보보안팀 <security@company.example>", "subject": "[공지] 정기 비밀번호 변경 안내", "body": "정보보안팀입니다. 정기 보안 점검에 따라 이번 달 말까지 사내 포털에서 비밀번호를 변경해 주세요. 변경은 포털의 [내 정보 > 비밀번호 변경] 메뉴에서 하며, 이 메일로 비밀번호를 회신하실 필요는 없습니다. 문의는 사내 메신저 보안팀 채널로 주세요.", "link": "https://portal.company.example/security", "attachment": null, "choice_labels": {"click": "메일 속 포털 주소로 들어가 비밀번호를 바꾼다", "call": "메일에 답장해 변경 방법을 물어본다", "official": "처리를 멈추고 보안팀에 따로 확인한다"}, "is_phishing": false, "explanation_short": "정상 메일이에요. 비밀번호를 회신하라고 하지 않고 포털 메뉴로 안내해서 바로 처리해도 돼요.", "reply_to": null}, {"scenario_id": "S07", "channel": "sms", "sender": "사이버수사 안내 / 010-0000-0000", "subject": null, "body": "[사이버수사] 회원님의 번호가 불법 스팸 발송에 이용되어 이용정지될 예정입니다. 아래 주소에서 사건 안내를 확인하고 벌금 납부 방법을 확인해 주세요.", "link": "https://police-notice.example/case", "attachment": null, "choice_labels": {"click": "문자 속 주소에서 사건 안내와 벌금 납부 방법을 확인한다", "call": "문자에 적힌 번호로 전화해 사건을 물어본다", "official": "처리를 멈추고 해당 기관 대표번호로 직접 확인한다"}, "is_phishing": true, "explanation_short": "수사기관 이름으로 겁을 주는 문자예요. 문자 속 주소나 번호 말고 기관 대표번호로 확인하세요.", "reply_to": null}, {"scenario_id": "S08", "channel": "sms", "sender": "사내 우편실 / 02-0000-0000", "subject": null, "body": "[사내 우편실] 택배 1건이 1층 우편실에 도착했습니다. 오늘 18시까지 찾아가 주세요. 보관함 번호는 사내 포털에서 볼 수 있습니다.", "link": "https://portal.company.example/mailroom", "attachment": null, "choice_labels": {"click": "문자 속 포털 주소에서 보관함 번호를 확인한다", "call": "문자에 적힌 번호로 전화해 물어본다", "official": "처리를 멈추고 총무팀에 따로 확인한다"}, "is_phishing": false, "explanation_short": "정상 문자예요. 돈·개인정보·앱 설치를 요구하지 않고 우편실에서 직접 찾을 수 있어서 바로 처리해도 돼요.", "reply_to": null}, {"scenario_id": "S09", "channel": "email", "sender": "코드허브 계정 알림 <security-alert@codehub-support.example>", "subject": "[보안 경고] 비정상 로그인 시도가 감지되었습니다", "body": "코드허브 보안팀입니다. 회원님의 계정에서 비정상 로그인 시도가 감지되었습니다. 24시간 안에 아래 주소에서 본인 확인을 하지 않으면 계정이 잠깁니다.", "link": "https://codehub-verify.example/login", "attachment": null, "choice_labels": {"click": "메일 속 주소로 들어가 본인 확인을 한다", "call": "메일에 답장해 로그인 시도가 맞는지 물어본다", "official": "처리를 멈추고 평소 쓰던 공식 주소로 직접 접속해 확인한다"}, "is_phishing": true, "explanation_short": "보안 경고를 흉내 낸 바깥 주소 메일이에요. 메일 속 주소 말고 평소 쓰던 공식 주소로 접속해 확인하세요.", "reply_to": "코드허브 지원 <help@codehub-verify.example>"}, {"scenario_id": "S10", "channel": "sms", "sender": "법원 등기 안내 / 010-0000-0000", "subject": null, "body": "[법원 등기] 등기 우편이 반송되었습니다. 오늘까지 아래 주소에서 반송 내용을 확인하지 않으면 불출석 처리될 수 있습니다.", "link": "https://court-notice.example/return", "attachment": null, "choice_labels": {"click": "문자 속 주소를 열어 반송 내용을 확인한다", "call": "문자에 적힌 번호로 전화해 무슨 사건인지 묻는다", "official": "처리를 멈추고 법원 대표번호로 직접 확인한다"}, "is_phishing": true, "explanation_short": "법원 이름으로 겁을 주는 문자예요. 문자 속 주소나 번호 말고 법원에 직접 확인하세요.", "reply_to": null}, {"scenario_id": "S13", "channel": "email", "sender": "인재개발팀 <edu@company.example>", "subject": "[안내] 하반기 정보보호 교육 이수 안내", "body": "인재개발팀입니다. 하반기 정보보호 온라인 교육을 이번 달 말까지 이수해 주세요. 교육은 사내 포털의 [교육 > 내 강의실]에서 들을 수 있으며, 이 메일로 개인정보를 회신하거나 파일을 설치할 필요는 없습니다. 문의는 사내 메신저 인재개발팀 채널로 주세요.", "link": "https://portal.company.example/edu", "attachment": null, "choice_labels": {"click": "메일 속 포털 주소로 들어가 교육을 듣는다", "call": "메일에 답장해 교육 방법을 물어본다", "official": "처리를 멈추고 인재개발팀에 따로 확인한다"}, "is_phishing": false, "explanation_short": "정상 메일이에요. 개인정보 회신이나 설치를 요구하지 않고 포털 메뉴로 안내해서 바로 처리해도 돼요.", "reply_to": null}, {"scenario_id": "S14", "channel": "sms", "sender": "사내 인사팀 / 02-0000-0000", "subject": null, "body": "[인사팀] 올해 임직원 건강검진 예약 기간은 이번 달 말까지입니다. 예약은 사내 포털 [복지 > 건강검진] 메뉴에서 할 수 있습니다.", "link": "https://portal.company.example/health", "attachment": null, "choice_labels": {"click": "문자 속 포털 주소에서 검진을 예약한다", "call": "문자에 적힌 번호로 전화해 물어본다", "official": "처리를 멈추고 인사팀에 따로 확인한다"}, "is_phishing": false, "explanation_short": "정상 문자예요. 겁을 주거나 돈·개인정보·앱 설치를 요구하지 않고 포털 메뉴로 확인할 수 있어서 바로 처리해도 돼요.", "reply_to": null}];
+
+// 하는 일: 개인용 카드 8개 (세트 A·B 쌍둥이 4쌍). 흐름 문서 2번 예시 소재로 만든 시안용 문구
+// 참고: B의 실제 카드가 오면 이 자리를 바꾼다. 주소는 .example, 번호는 가짜 번호만
+const PERSONAL = [
+  { scenario_id: "PA1", set: "A", pair: 1, channel: "sms", sender: "학사지원팀 / 02-0000-0000", subject: null,
+    body: "[학사지원팀] 2학기 장학금 지급 계좌 확인이 필요합니다. 오늘 18시까지 아래 주소에서 계좌 정보를 다시 입력해 주세요.",
+    link: "https://scholarship-check.example/account", attachment: null, is_phishing: true,
+    choice_labels: { click: "링크로 들어가 학사지원팀 공지가 맞는지 확인한다", call: "문자에 적힌 번호로 전화해 진짜 학사지원팀인지 확인한다", official: "학교 포털 앱을 열어 장학금 공지가 있는지 확인한다" },
+    explanation_short: "학교 이름을 빌려 계좌 정보를 입력하게 하는 문자예요. 장학금 안내는 학교 포털에서 직접 확인해요." },
+  { scenario_id: "PB1", set: "B", pair: 1, channel: "sms", sender: "학생지원팀 / 02-0000-0000", subject: null,
+    body: "[학생지원팀] 등록금 환불 대상입니다. 오늘 18시까지 아래 주소에서 환불받을 계좌를 입력해 주세요.",
+    link: "https://refund-notice.example/apply", attachment: null, is_phishing: true,
+    choice_labels: { click: "링크로 들어가 환불 안내가 맞는지 확인한다", call: "문자에 적힌 번호로 전화해 진짜 학생지원팀인지 확인한다", official: "학교 포털 앱을 열어 환불 공지가 있는지 확인한다" },
+    explanation_short: "환불을 미끼로 계좌 정보를 입력하게 하는 문자예요. 환불 안내는 학교 포털에서 직접 확인해요." },
+  { scenario_id: "PA2", set: "A", pair: 2, channel: "email", sender: "학교 포털 관리자 <portal-admin@univ-account.example>", reply_to: "support@univ-account.example",
+    subject: "포털 비밀번호 사용 기간이 오늘 끝납니다",
+    body: "학교 포털 비밀번호 사용 기간이 오늘 끝납니다.\n계속 쓰려면 아래 주소에서 지금 비밀번호로 로그인한 뒤 새 비밀번호를 정해 주세요.",
+    link: "https://portal-login.univ-account.example", attachment: null, is_phishing: true,
+    choice_labels: { click: "메일 속 주소로 들어가 비밀번호 상태를 확인한다", call: "메일에 답장해 정말 기간이 끝나는지 확인한다", official: "학교 포털에 직접 접속해 비밀번호 안내가 있는지 확인한다" },
+    explanation_short: "표시 이름은 학교 포털이지만 주소는 학교 주소가 아니에요. 로그인을 요구하면 직접 접속해서 확인해요." },
+  { scenario_id: "PB2", set: "B", pair: 2, channel: "email", sender: "저장공간 알림 <storage@cloud-notice.example>", reply_to: "help@cloud-notice.example",
+    subject: "저장공간이 가득 차 파일이 삭제될 예정입니다",
+    body: "저장공간이 가득 찼습니다.\n오늘 안에 아래 주소에서 로그인해 용량을 늘리지 않으면 오래된 파일부터 삭제됩니다.",
+    link: "https://cloud-notice.example/login", attachment: null, is_phishing: true,
+    choice_labels: { click: "메일 속 주소로 들어가 저장공간 상태를 확인한다", call: "메일에 답장해 정말 삭제되는지 확인한다", official: "쓰고 있는 저장공간 앱을 직접 열어 용량을 확인한다" },
+    explanation_short: "파일이 사라진다고 서두르게 하며 로그인을 요구해요. 앱을 직접 열어 확인해요." },
+  { scenario_id: "PA3", set: "A", pair: 3, channel: "email", sender: "학사지원팀 <haksa@univ.example>", reply_to: null,
+    subject: "2학기 수강신청 정정 기간 안내",
+    body: "수강신청 정정 기간은 이번 주 금요일까지입니다.\n정정은 학교 포털 [수강신청] 메뉴에서 할 수 있어요. 기간이 지나면 정정할 수 없으니 오늘까지 시간표를 꼭 확인해 주세요.",
+    link: null, attachment: null, is_phishing: false,
+    choice_labels: { click: "안내대로 학교 포털 수강신청 메뉴에서 시간표를 확인한다", call: "메일에 답장해 정정 기간을 한 번 더 확인한다", official: "학사지원팀 대표번호를 찾아 메일이 맞는지 확인한다" },
+    explanation_short: "\"오늘까지\"라는 급한 말이 있지만 링크도, 로그인 요구도 없어요. 학교 포털에서 하라는 평범한 안내예요." },
+  { scenario_id: "PB3", set: "B", pair: 3, channel: "email", sender: "김교수 <prof.kim@univ.example>", reply_to: null,
+    subject: "[과제] 3주차 보고서 제출 안내",
+    body: "3주차 보고서는 오늘 자정까지 학교 포털 과제함에 올려 주세요.\n늦게 내면 감점이 있으니 미리 올려 두세요.",
+    link: null, attachment: null, is_phishing: false,
+    choice_labels: { click: "안내대로 학교 포털 과제함에서 제출 기한을 확인한다", call: "메일에 답장해 제출 기한을 한 번 더 확인한다", official: "학과 사무실에 전화해 교수님 메일이 맞는지 확인한다" },
+    explanation_short: "\"오늘 자정까지\"라는 급한 말이 있지만 링크도, 로그인 요구도 없어요. 학교 포털에서 하라는 평범한 안내예요." },
+  { scenario_id: "PA4", set: "A", pair: 4, channel: "sms", sender: "택배 기사 / 010-0000-0000", subject: null,
+    body: "[택배] 고객님 택배를 오늘 14시에 문 앞에 두었습니다. 오늘 안에 확인 부탁드려요.",
+    link: null, attachment: null, is_phishing: false,
+    choice_labels: { click: "문 앞에 나가 택배가 왔는지 확인한다", call: "문자에 적힌 번호로 전화해 배송을 확인한다", official: "택배사 대표번호를 찾아 배송 기록을 확인한다" },
+    explanation_short: "010 번호라도 링크나 요구가 없는 배송 알림이에요. 문 앞을 보면 바로 확인할 수 있어요." },
+  { scenario_id: "PB4", set: "B", pair: 4, channel: "sms", sender: "점장님 / 010-0000-0000", subject: null,
+    body: "[근무표] 다음 주 근무표 매장 단톡방 공지에 올렸어요. 오늘까지 가능 여부 답장 부탁해요.",
+    link: null, attachment: null, is_phishing: false,
+    choice_labels: { click: "매장 단톡방 공지를 열어 근무표를 확인한다", call: "문자에 적힌 번호로 답장해 가능 여부를 알린다", official: "매장 대표번호로 전화해 점장님이 보낸 게 맞는지 확인한다" },
+    explanation_short: "010 번호라도 링크나 요구가 없는 근무 안내예요. 늘 쓰던 단톡방에서 확인하면 돼요." }
+];
+
+// 하는 일: 받은편지함에 함께 보이는 지난 메일 (누를 수 없음, 목록을 실제처럼 보이게)
+const OLD_MAIL = {
+  personal: [["학교 도서관", "대출 도서 반납일 안내", "어제"], ["동아리 회장", "이번 주 정기 모임 장소", "11월 10일"]],
+  org: [["총무팀", "이번 주 회의실 예약 현황", "어제"], ["경영지원팀", "11월 사내 소식지", "11월 10일"]]
+};
+
+// 하는 일: 기관용 세트 구성 (흐름 문서 2번 표)
+const ORG_SET = { A: ["S01", "S05", "S08"], B: ["S10", "S13", "S14"] };
+const JOB_CARD = { hr: "S02", finance: "S03", sales: "S04", dev: "S09", office: "S07" };
+const JOBS = [["hr", "인사"], ["finance", "재무·회계"], ["sales", "영업·고객"], ["dev", "개발·IT"], ["office", "일반 사무"]];
+
+// 하는 일: 개인용 게임 행동 문구 (A가 새 선택지 문구에서 뽑을 자리. 지금은 예시)
+const ACTIONS = [
+  ["문자 속 번호로 전화해 문의하기", 1, "보낸 사람이 정한 번호라 그쪽 사람이 받아요"],
+  ["대표번호를 직접 찾아 문의하기", 0, "내가 찾은 번호라 진짜 기관으로 연결돼요"],
+  ["메일 속 주소로 들어가 로그인하기", 1, "가짜 로그인 화면일 수 있어요"],
+  ["앱을 직접 열어 알림 확인하기", 0, "공식 앱 안의 알림은 내가 연 경로라 안전해요"],
+  ["문자가 알려 준 앱 설치하기", 1, "설치 파일로 악성 앱이 깔릴 수 있어요"],
+  ["앱 장터에서 공식 앱 찾아 설치하기", 0, "공식 장터에서 직접 찾은 앱이에요"],
+  ["메일에 답장해 진짜인지 묻기", 1, "답장은 보낸 사람에게 가요. 가짜라면 가짜가 대답해요"],
+  ["담당자에게 따로 연락해 확인하기", 0, "내가 아는 연락처로 확인하는 방법이에요"]
+];
+
+const COPY_LINE = "돈, 개인정보, 로그인, 앱 설치, 첨부 열기를 요구하면 처리를 멈추고 따로 확인해요.";
+const LIMIT = { sms: 15, email: 25 };
+const SITE = "https://catchphish-three.vercel.app";
+
+/* =====================================================================
+   상태와 도우미
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const main = $("main");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let S = {};          // 지금 상태
+let timer = null;
+
+function reset(mode) {
+  // 하는 일: 사전 세트를 무작위로 고르고, 사후는 반대 세트 (실제로는 서버가 정함)
+  const first = Math.random() < 0.5 ? "A" : "B";
+  S = { mode, job: "office", target: null, revisit: null, conf: null, first,
+        phase: "pre", idx: 0, cards: [], answers: { pre: [], post: [] } };
+}
+function setOf(phase) { return phase === "pre" ? S.first : (S.first === "A" ? "B" : "A"); }
+function buildCards(phase) {
+  const set = setOf(phase);
+  if (S.mode === "personal") return shuffle(PERSONAL.filter(c => c.set === set));
+  const byId = id => ORG.find(c => c.scenario_id === id);
+  const common = ORG_SET[set].map(byId);
+  // 참고: 세트 B 직군 카드는 B가 쓰는 중이라 자리만 표시
+  const job = set === "A" ? byId(JOB_CARD[S.job]) : { ...byId(JOB_CARD[S.job]), scenario_id: "새 직군 카드 자리", placeholder: true };
+  return shuffle([...common, job]);
+}
+function render(html, focus = true) {
+  clearInterval(timer);
+  main.innerHTML = html;
+  window.scrollTo(0, 0);
+  if (focus) main.focus({ preventScroll: true });
+}
+function phaseName() { return S.phase === "pre" ? "사전 체험" : "사후 체험"; }
+
+/* =====================================================================
+   화면들
+   ===================================================================== */
+function home() {
+  S = {};
+  render(`
+    <section class="hero2">
+      <div>
+        <svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">   <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">       <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>   <g transform="rotate(-9 100 108)">     <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>     <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>     <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>     <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>     <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>   </g>   <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>   <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>   <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/> </svg>
+        <h1>오늘 받은 그 메일,<br>진짜였을까요?</h1>
+        <p><span class="band">모두 의심하지 말고, 요구하는 행동을 보세요</span></p>
+      </div>
+      <nav class="go3" aria-label="시작하기">
+        <button class="p" data-start="personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></button>
+        <button class="o" data-start="org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></button>
+        <button class="f" data-free><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 4h10v6a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 6H5v2a4 4 0 0 0 4 4M19 6h4v2a4 4 0 0 1-4 4M14 15v4M10 23h8M11 19h6v4h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b>자유 훈련</b><span class="kw">순위표</span><span class="ds">체험 없이 바로 게임! 별명으로 순위표에 도전해요</span></button>
+      </nav>
+    </section>`);
+  main.querySelectorAll("[data-start]").forEach(b => b.onclick = () => start(b.dataset.start));
+  main.querySelector("[data-free]").onclick = () => { location.href = "game_draft.html"; };
+}
+
+function start(mode) { reset(mode); mode === "org" ? orgCode() : survey(); }
+
+function orgCode() {
+  render(`
+    <p class="step">기관용 체험</p>
+    <h1 class="title">기관 코드를 입력해 주세요</h1>
+    <p class="lead">교육 담당자에게 받은 코드예요. 시안이라 아무 글자나 넣어도 넘어가요.</p>
+    <input class="field" id="code" autocomplete="off" placeholder="기관 코드">
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`);
+  $("code").oninput = e => $("next").disabled = !e.target.value.trim();
+  $("next").onclick = job;
+}
+
+function job() {
+  render(`
+    <p class="step">기관용 체험</p>
+    <h1 class="title">하는 일을 골라 주세요</h1>
+    <p class="lead">내 직군에게 자주 오는 메시지가 하나 섞여요.</p>
+    <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`);
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(".pick button").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; $("next").disabled = false;
+  });
+  $("next").onclick = survey;
+}
+
+function survey() {
+  const qs = [];
+  if (S.mode === "personal") qs.push(["target", "지금 어떤 분이세요?", [["student", "학생"], ["general", "일반인"]]]);
+  qs.push(["revisit", "캐치피싱을 해 본 적 있나요?", [["true", "있어요"], ["false", "처음이에요"]]]);
+  qs.push(["conf", "피싱 문자·메일을 알아볼 자신이 얼마나 있나요?", [["1", "1 전혀 없음"], ["2", "2"], ["3", "3 보통"], ["4", "4"], ["5", "5 아주 많음"]]]);
+  render(`
+    <p class="step">${S.mode === "org" ? "기관용" : "개인용"} 체험 · 시작 전</p>
+    <h1 class="title">체험 전 사전질문</h1>
+    <p class="lead">결과 화면에서 내 생각과 실제 판단을 비교해 드려요.</p>
+    ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${q}</p>
+      <div class="pick" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>`).join("")}
+    ${S.mode === "org" ? `<div class="ghost" style="margin-top:1.2rem"><b>기존 문진 Q2~Q4 자리</b><br>지금 game.html 사전질문 그대로 들어가요</div>` : ""}
+    <div class="row"><button class="btn" id="next" disabled>체험 시작</button></div>`);
+  const need = qs.map(q => q[0]);
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); S[b.dataset.k] = b.dataset.v;
+    $("next").disabled = !need.every(k => S[k] != null);
+  });
+  $("next").onclick = () => beginPhase("pre");
+}
+
+function beginPhase(phase) {
+  S.phase = phase; S.idx = 0; S.cards = buildCards(phase); S.answers[phase] = [];
+  const pre = phase === "pre";
+  render(`
+    <p class="step">${phaseName()}</p>
+    <h1 class="title">${pre ? "문자와 메일 4개가 도착해요" : "새 문자와 메일 4개가 도착해요"}</h1>
+    <p class="lead">${pre ? "평소처럼 하루를 보내다 받은 메시지라고 생각하고, 어떻게 할지 골라 주세요." : "처음 보는 메시지예요. 배운 대로 골라 보세요."}</p>
+    <div class="ghost">시안 표시: 이번 세트는 <b>세트 ${setOf(phase)}</b> (사람마다 무작위, 사후는 반대 세트)</div>
+    <div class="row"><button class="btn" id="next">시작하기</button></div>`);
+  $("next").onclick = message;
+}
+
+/* ----- 문자·메일 화면 ----- */
+function smsHTML(c) {
+  const [name, num] = (c.sender || "").split(" / ");
+  const link = c.link ? `<br><span class="lnk">${esc(c.link)}</span>` : "";
+  return `<div class="sms" role="group" aria-label="휴대폰으로 받은 문자">
+    <div class="sms-top"><span class="back" aria-hidden="true">‹</span><span class="avatar" aria-hidden="true">?</span>
+      <span class="who">${esc(num || name)}<small>저장되지 않은 번호</small></span></div>
+    <div class="sms-thread"><p class="day">오늘</p>
+      <div class="bubble-row"><div class="bubble">${esc(c.body)}${link}</div><time>오후 2:14</time></div></div>
+    <div class="sms-input" aria-hidden="true"><span>＋</span><span class="box">문자 메시지</span></div>
+  </div>`;
+}
+function mailHTML(c) {
+  // 하는 일: "표시 이름 <주소>"를 나눈다. 처음엔 표시 이름만 보이고, 이름을 누르면 주소가 펼쳐진다
+  const [nm, ad] = (c.sender || "").split("<").map(s => s.replace(">", "").trim());
+  const old = OLD_MAIL[S.mode].map(([n, s, t]) => `<div class="mail-row old" aria-disabled="true"><span class="dot"></span><span class="nm">${n}</span><time>${t}</time><span class="sj">${s}</span></div>`).join("");
+  const link = c.link ? `\n\n<span class="lnk">${esc(c.link)}</span>` : "";
+  return `<div class="mail-wrap"><div class="mail" id="mail" data-view="list" role="group" aria-label="메일 앱">
+    <div class="mail-bar"><span>받은편지함</span><span class="search">메일 검색</span></div>
+    <div class="mail-body">
+      <div class="mail-list">
+        <button class="mail-row new" id="openMail"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(nm)}</span><time>오후 2:14</time><span class="sj">${esc(c.subject)}</span></button>
+        ${old}
+      </div>
+      <div class="mail-read">
+        <p class="empty-read">메일을 눌러 열어 보세요</p>
+        <button class="back" id="backList">‹ 받은편지함</button>
+        <h3>${esc(c.subject)}</h3>
+        <div class="from"><span class="avatar" aria-hidden="true">${esc(nm.charAt(0))}</span>
+          <div class="meta"><button class="from-name" id="fromBtn" aria-expanded="false" aria-controls="fromDetail">${esc(nm)}</button>
+            <span class="to">받는 사람: 나</span>
+            <dl class="from-detail" id="fromDetail" hidden>
+              <dt>보낸 사람</dt><dd>${esc(ad || "주소 없음")}</dd>
+              ${c.reply_to ? `<dt>답장 주소</dt><dd>${esc(c.reply_to)}</dd>` : ""}
+              <dt>받는 사람</dt><dd>나</dd></dl></div>
+          <time>오후 2:14</time></div>
+        <div class="mail-text">${esc(c.body)}${link}</div>
+        ${c.attachment ? `<div class="attach"><i aria-hidden="true"></i><span><b>${esc(c.attachment)}</b><br>첨부파일 1개</span></div>` : ""}
+      </div>
+    </div></div></div>`;
+}
+
+function message() {
+  const c = S.cards[S.idx];
+  const keys = shuffle(["click", "call", "official"]);   // 하는 일: 보이는 순서만 섞는다. 보내는 값은 그대로
+  const isMail = c.channel === "email";
+  render(`
+    <p class="step">${phaseName()} · ${S.idx + 1} / 4 ${c.placeholder ? `<span class="data-tag">세트 B 직군 카드는 B가 쓰는 중이라 세트 A 카드로 자리만 채움</span>` : ""}</p>
+    <div class="stage" id="stage">
+      ${isMail ? mailHTML(c) : smsHTML(c)}
+      <aside class="choices" aria-label="행동 고르기">
+        <h2>이 메시지, 어떻게 할까요?</h2>
+        <div class="timer" id="tbar"><i></i></div><p class="timer-txt" id="ttxt"></p>
+        ${isMail ? `<p class="wait-open" id="waitOpen">메일을 열면 고를 수 있어요</p>` : ""}
+        ${keys.map(k => `<button class="opt" data-k="${k}" ${isMail ? "disabled" : ""}>${esc(c.choice_labels[k])}</button>`).join("")}
+      </aside>
+    </div>`);
+  if (isMail) {
+    const mail = $("mail");
+    $("openMail").onclick = () => {
+      mail.dataset.view = "read"; $("openMail").classList.add("on"); $("openMail").classList.remove("new");
+      main.querySelectorAll(".opt").forEach(b => b.disabled = false); $("waitOpen").hidden = true;
+    };
+    $("backList").onclick = () => mail.dataset.view = "list";
+    $("fromBtn").onclick = e => { const open = e.currentTarget.getAttribute("aria-expanded") === "true";
+      e.currentTarget.setAttribute("aria-expanded", String(!open)); $("fromDetail").hidden = open; };
+  }
+  startTimer(LIMIT[c.channel]);
+  main.querySelectorAll(".opt").forEach(b => b.onclick = () => choose(c, b.dataset.k));
+}
+
+function startTimer(sec) {
+  // 하는 일: 문자 15초, 메일 25초 (game.html LIMIT 그대로). 시간이 지나도 고를 수 있다
+  let left = sec; const bar = $("tbar"), txt = $("ttxt");
+  const draw = () => { bar.firstElementChild.style.width = Math.max(0, left / sec * 100) + "%";
+    txt.textContent = left > 0 ? `남은 시간 ${left}초` : "시간이 지났어요. 그래도 고를 수 있어요"; bar.classList.toggle("over", left <= 0); };
+  draw(); timer = setInterval(() => { left--; draw(); if (left <= 0) clearInterval(timer); }, 1000);
+}
+
+function choose(c, k) {
+  clearInterval(timer);
+  main.querySelectorAll(".opt").forEach(b => b.disabled = true);
+  const ok = c.is_phishing ? k === "official" : k !== "official";
+  const over = !c.is_phishing && k === "official";
+  S.answers[S.phase].push({ id: c.scenario_id, phishing: c.is_phishing, choice: k, ok, over });
+  // 선택 미리보기 (정답·오답은 알려 주지 않음)
+  const st = k === "click" ? (c.attachment ? "첨부 파일을 여는 중이에요" : c.link ? "링크로 이동하는 중이에요" : "안내대로 처리하는 중이에요")
+           : k === "call" ? (c.channel === "email" ? "답장을 보내는 중이에요" : "전화를 거는 중이에요") : "따로 확인하는 중이에요";
+  const pv = document.createElement("div");
+  pv.className = "preview";
+  pv.innerHTML = `<div class="box" role="status"><p class="lbl">내가 고른 행동</p><p class="ch">${esc(c.choice_labels[k])}</p>
+    <p class="st ${k === "official" ? "wait" : ""}">${st}</p>${k === "official" ? `<p class="note">그동안 업무가 지연되고 있어요</p>` : ""}<div class="bar"><i></i></div></div>`;
+  $("stage").appendChild(pv);
+  setTimeout(() => explain(c, k, ok, over), matchMedia("(prefers-reduced-motion: reduce)").matches ? 600 : 2200);
+}
+
+function explain(c, k, ok, over) {
+  const v = over ? ["wait", "업무가 지연됐어요"] : ok ? ["good", c.is_phishing ? "피싱을 막았어요" : "업무를 처리했어요"] : ["bad", "속았어요"];
+  const who = c.channel === "email" ? (c.sender || "").split("<")[0].trim() : (c.sender || "").split(" / ").pop();
+  render(`
+    <p class="step">${phaseName()} · 문제 ${S.idx + 1}번 결과</p>
+    <div class="explain">
+      <div class="recap"><p class="who">${esc(who)}</p><p>${esc(c.body)}</p></div>
+      <div>
+        <span class="verdict ${v[0]}">${v[1]}</span>
+        <div class="ex-box">
+          <p>${esc(c.explanation_short)}</p>
+          <div class="ghost"><b>단서 표시 자리</b> (clues): 메시지 속 단서에 번호를 붙여 보여 줘요</div>
+          <div class="ghost"><b>"실제였다면" 한 줄 자리</b> (consequence)</div>
+          <div class="ghost"><b>[자세히 보기] 자리</b>: 탐지 엔진 분석, AI 판단</div>
+        </div>
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="next">${S.idx < 3 ? "다음 메시지" : "다음"}</button></div>`);
+  $("next").onclick = () => { S.idx++; S.idx < 4 ? message() : afterPhase(); };
+}
+
+function afterPhase() {
+  if (S.phase === "post") return result();
+  S.mode === "org" ? copyLine() : chain();
+}
+
+/* ----- 따라 쓰기 (기관용) ----- */
+function copyLine() {
+  const bare = t => (t || "").replace(/[\s.,!?·'"‘’“”…~-]/g, "");
+  render(`
+    <p class="step">기관용 체험 · 배우기</p>
+    <h1 class="title">대응 매뉴얼 문장을 따라 써 보세요</h1>
+    <p class="lead">직접 읽고 쓰면 오래 기억에 남아요. 붙여 넣기는 막혀 있어요.</p>
+    <blockquote class="ghost" style="margin:0;font-size:1.05rem;color:var(--ink)">${COPY_LINE}</blockquote>
+    <textarea class="field" id="copy" rows="3" style="max-width:40rem;margin-top:.8rem;resize:vertical" aria-label="따라 쓰기"></textarea>
+    <p class="note">폰에서 문장 길이·제한 시간은 아직 의견 받는 중이에요.</p>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`);
+  const t = $("copy");
+  t.onpaste = e => e.preventDefault();
+  const check = () => $("next").disabled = bare(t.value) !== bare(COPY_LINE);
+  t.oninput = check; t.addEventListener("compositionend", check);
+  $("next").onclick = chain;
+}
+
+/* ----- 연쇄형 연습 ----- */
+const CHAIN = [
+  "(1단계 자리) 링크도 요구도 없는 평범한 첫 연락이 들어가요.",
+  "(2단계 자리) 작은 부탁이 들어가요. 예: 파일 하나 확인해 달라는 말",
+  "(3단계 자리) 큰 요구가 들어가요. 예: 앱 설치, 정보 입력"
+];
+function chain(step = 0) {
+  render(`
+    <p class="step">연습 · 연쇄형 체험 ${step + 1} / 3 <span class="data-tag">점수에 안 들어가요</span></p>
+    <div class="stage">
+      <div class="sms" role="group" aria-label="연쇄형 문자">
+        <div class="sms-top"><span class="back" aria-hidden="true">‹</span><span class="avatar" aria-hidden="true">?</span><span class="who">010-0000-0000<small>저장되지 않은 번호</small></span></div>
+        <div class="sms-thread"><p class="day">오늘</p>
+          ${CHAIN.slice(0, step + 1).map(t => `<div class="bubble-row"><div class="bubble">${t}</div><time>오후 2:14</time></div>`).join("")}</div>
+        <div class="sms-input" aria-hidden="true"><span>＋</span><span class="box">문자 메시지</span></div>
+      </div>
+      <aside class="choices"><h2>계속할까요?</h2>
+        <p class="note" style="margin:0 0 .8rem">B가 연쇄형 첫 단계부터 평범하게 고치는 중이에요 (chain 칸)</p>
+        <button class="opt" id="cont">이어서 답한다</button><button class="opt" id="stop">여기서 멈추고 따로 확인한다</button></aside>
+    </div>`);
+  const done = stopped => render(`
+    <p class="step">연습 · 연쇄형 체험 결과</p>
+    <h1 class="title">${stopped ? `${step + 1}단계에서 멈췄어요` : "끝까지 따라갔어요"}</h1>
+    <div class="ghost"><b>연쇄형 해설 자리</b> (stop_explanation / end_explanation)</div>
+    <div class="row"><button class="btn" id="next">${S.mode === "personal" ? "게임으로 훈련하기" : "사후 체험 시작"}</button></div>`);
+  $("cont").onclick = () => step < 2 ? chain(step + 1) : (done(false), $("next").onclick = nextAfterChain);
+  $("stop").onclick = () => { done(true); $("next").onclick = nextAfterChain; };
+}
+function nextAfterChain() { S.mode === "personal" ? game() : beginPhase("post"); }
+
+/* ----- 개인용 게임: 행동 문구 ----- */
+function game() {
+  const cards = shuffle(ACTIONS);
+  const total = cards.filter(a => a[1]).length;
+  let found = 0;
+  render(`
+    <section class="game">
+      <p class="step">개인용 체험 · 게임 훈련</p>
+      <h1 class="title">위험한 행동만 골라 눌러요</h1>
+      <p class="lead">시간 제한은 없어요. 위험한 행동을 다 찾으면 끝나요.</p>
+      <div class="game-head"><span>찾은 위험한 행동</span><b id="found">0 / ${total}</b></div>
+      <div class="grid" id="grid">${cards.map((a, i) => `<button class="blk" data-i="${i}">${esc(a[0])}</button>`).join("")}</div>
+      <p class="note">행동 문구는 예시예요. B가 쓴 새 선택지 문구에서 A가 뽑아 넣어요. 방식: 게임 시안과 같은 틀</p>
+    </section>`);
+  main.querySelectorAll(".blk").forEach(b => b.onclick = () => {
+    if (b.dataset.done) return;
+    const a = cards[b.dataset.i];
+    if (a[1]) {
+      b.dataset.done = 1; b.classList.add("ok"); found++;
+      b.insertAdjacentHTML("beforeend", `<span class="bd">위험</span><span class="why">${esc(a[2])}</span>`);
+      $("found").textContent = `${found} / ${total}`;
+      if (found === total) setTimeout(gameEnd, 900);
+    } else {
+      b.classList.remove("ng"); void b.offsetWidth; b.classList.add("ng");
+      if (!b.querySelector(".why")) b.insertAdjacentHTML("beforeend", `<span class="why">안전한 행동이에요. ${esc(a[2])}</span>`);
+    }
+  });
+}
+function gameEnd() {
+  render(`
+    <p class="step">개인용 체험 · 게임 훈련 끝</p>
+    <h1 class="title">위험한 행동을 모두 찾았어요</h1>
+    <div class="ghost" style="max-width:40rem"><b>판단 기준 한 줄</b><br>메시지가 알려 준 길(링크, 번호, 답장)이 아니라, 내가 직접 찾은 길로 확인해요.</div>
+    <div class="row"><button class="btn" id="next">사후 체험 시작</button></div>`);
+  $("next").onclick = () => beginPhase("post");
+}
+
+/* ----- 결과: 사전·사후 나란히 ----- */
+function tally(list) {
+  const ph = list.filter(a => a.phishing), nm = list.filter(a => !a.phishing);
+  return { pt: ph.length, pb: ph.filter(a => a.ok).length, nt: nm.length, nh: nm.filter(a => a.ok && !a.over).length };
+}
+function result() {
+  const a = tally(S.answers.pre), b = tally(S.answers.post);
+  const row = (lbl, n, t, cls) => `<div class="pp ${cls}"><span>${lbl}</span><span class="track"><i style="width:${t ? n / t * 100 : 0}%"></i></span><b>${n}/${t}</b></div>`;
+  render(`
+    <p class="step">${S.mode === "org" ? "기관용" : "개인용"} 체험 · 결과</p>
+    <h1 class="title">배우기 전과 후를 비교해 봐요</h1>
+    <div class="result">
+      <div>
+        <section class="score"><h3>막은 피싱</h3><p>피싱을 잘 멈췄나요?</p>
+          ${row("사전", a.pb, a.pt, "pre")}${row("사후", b.pb, b.pt, "post")}</section>
+        <section class="score"><h3>처리한 업무</h3><p>정상 메시지까지 의심하지 않고 잘 처리했나요?</p>
+          ${row("사전", a.nh, a.nt, "pre")}${row("사후", b.nh, b.nt, "post")}</section>
+      </div>
+      <div style="display:grid;gap:.8rem">
+        <div class="ghost"><b>보안 대응 수준 자리</b><br>개인용에만 둘지 팀 의견 받는 중</div>
+        <div class="ghost"><b>내가 한 일 / 자신감과 실제 비교 자리</b></div>
+        ${S.mode === "org" ? `<div class="ghost"><b>같은 직군 평균 자리</b></div>` : ""}
+      </div>
+    </div>
+    <div class="more"><span>더 알아보기:</span>
+      <a href="${SITE}/check" target="_blank" rel="noopener">링크 검사</a>
+      <a href="${SITE}/manual" target="_blank" rel="noopener">대응 매뉴얼</a></div>
+    <div class="row"><button class="btn sub" id="again">처음으로</button></div>`);
+  $("again").onclick = home;
+}
+
+/* =====================================================================
+   메뉴, 바로 가기
+   ===================================================================== */
+const side = $("side"), menuBtn = $("menuBtn");
+const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
+menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
+document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+side.querySelector("[data-go=home]").onclick = () => { setMenu(false); home(); };
+$("logo").onclick = home;
+
+// 하는 일: 디자인할 화면으로 바로 간다. 주소 끝 ?mode=personal&screen=mail 처럼 써도 된다
+function fakeAnswers() { ["pre", "post"].forEach(p => { S.answers[p] = buildCards(p).map(c => ({ phishing: c.is_phishing, ok: Math.random() < .6, over: false })); }); }
+function jumpTo(screen, mode) {
+  reset(mode || (S.mode || "personal"));
+  const goMsg = ch => { beginPhase("pre"); S.idx = Math.max(0, S.cards.findIndex(c => c.channel === ch)); message(); };
+  const map = {
+    home, code: () => { reset("org"); orgCode(); }, job: () => { reset("org"); job(); }, survey,
+    sms: () => goMsg("sms"), mail: () => goMsg("email"),
+    explain: () => { beginPhase("pre"); const c = S.cards[0]; explain(c, "click", !c.is_phishing, false); },
+    copy: () => { reset("org"); copyLine(); }, chain: () => chain(0), game: () => { reset("personal"); game(); },
+    result: () => { fakeAnswers(); result(); }
+  };
+  (map[screen] || home)();
+}
+const JUMPS = [["home", "첫 화면"], ["code", "기관 코드"], ["job", "직군"], ["survey", "사전질문"], ["sms", "문자 화면"], ["mail", "메일 화면"],
+  ["explain", "해설"], ["copy", "따라 쓰기"], ["chain", "연쇄형"], ["game", "개인용 게임"], ["result", "결과"]];
+$("jumpBtns").innerHTML = ["personal", "org"].map(m => `<span style="width:100%">${m === "personal" ? "개인용" : "기관용"}</span>` +
+  JUMPS.map(([k, t]) => `<button data-s="${k}" data-m="${m}">${t}</button>`).join("")).join("");
+$("jumpBtns").querySelectorAll("button").forEach(b => b.onclick = () => jumpTo(b.dataset.s, b.dataset.m));
+
+const q = new URLSearchParams(location.search);
+const qm = ["personal", "org"].includes(q.get("mode")) ? q.get("mode") : null;
+// 참고용 안내: 첫 화면으로 열 때 한 번, 머리줄 "참고용 시안"을 누르면 다시
+const notice = $("notice");
+const openNotice = () => { notice.hidden = false; $("noticeOk").focus(); };
+$("noticeBtn").onclick = openNotice;
+$("noticeOk").onclick = () => { notice.hidden = true; };
+notice.addEventListener("click", e => { if (e.target === notice) notice.hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") notice.hidden = true; });
+if (!q.get("screen")) openNotice();
+
+if (q.get("screen")) jumpTo(q.get("screen"), qm);
+else if (qm) start(qm);
+else home();
+</script>
+</body>
+</html>
