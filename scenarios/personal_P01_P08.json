@@ -1,0 +1,329 @@
+{
+  "_설명": "개인용 새 카드 8개 (B 11/15). 쌍둥이: P01↔P05, P02↔P06, P03↔P07, P04↔P08. A가 서버를 개인용·기관용으로 나눈 뒤 scenarios.json에 합친다 (지금 scenarios.json에 넣으면 job_group common이라 1회차에 섞여 나옴)",
+  "scenarios": [
+    {
+      "scenario_id": "P01",
+      "audience": "personal",
+      "set": "A",
+      "pair": 1,
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "OO대학교 학사지원팀 / 02-0000-0000",
+      "subject": null,
+      "body": "[OO대학교 학사지원팀] 2학기 장학금 지급 계좌 확인이 필요합니다. 오늘 18시까지 아래 링크에서 계좌 정보를 다시 입력해 주세요. 기한이 지나면 지급이 보류됩니다.",
+      "link": "https://scholarship-check.example/verify",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "문자 링크로 계좌 정보를 다시 입력하라고 함"
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "학교 주소가 아닌 바깥 주소"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"오늘 18시까지\", \"지급이 보류\""
+        }
+      ],
+      "explanation": "학교 부서를 사칭해 계좌 정보를 받아 가는 문자입니다. 보낸 번호가 학교 대표번호처럼 보여도, 문자 링크로 계좌를 입력하게 하는 것 자체가 위험 신호예요. 학교 포털 앱에 직접 들어가 장학금 공지를 확인해야 합니다.",
+      "explanation_short": "번호가 학교처럼 보여도, 링크로 계좌를 입력하게 하면 의심하세요. 학교 포털 앱에서 직접 확인!",
+      "choice_labels": {
+        "click": "링크로 들어가 장학금 공지를 확인하고 계좌를 입력한다",
+        "call": "문자에 적힌 번호로 전화해 진짜 학사지원팀인지 확인한다",
+        "official": "학교 포털 앱을 열어 장학금 공지가 있는지 확인한다"
+      },
+      "consequence": {
+        "title": "장학금 대신 계좌 정보가 넘어갔어요",
+        "detail": "입력한 계좌번호와 개인정보가 사기 조직에 넘어가 다른 사기에 쓰일 수 있어요."
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 1번 A)"
+    },
+    {
+      "scenario_id": "P02",
+      "audience": "personal",
+      "set": "A",
+      "pair": 2,
+      "channel": "email",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+B+C",
+      "sender": "OO대학교 포털",
+      "from": "OO대학교 포털 <noreply@univ-portal-notice.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=univ-portal-notice.example; dkim=pass; dmarc=pass",
+      "subject": "[안내] 포털 비밀번호 사용 기간 만료",
+      "body": "OO대학교 포털입니다. 비밀번호 사용 기간이 오늘 만료됩니다. 계속 이용하려면 아래 링크에서 기존 비밀번호를 입력해 연장해 주세요.",
+      "link": "https://univ-portal-notice.example/extend",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "표시 이름 위장",
+          "text": "이름은 학교 포털인데 실제 주소는 비슷하게 만든 바깥 주소"
+        },
+        {
+          "factor": "요구하는 행동",
+          "text": "링크에서 기존 비밀번호를 입력하라고 함"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"오늘 만료\""
+        }
+      ],
+      "explanation": "학교 포털처럼 보이게 만든 메일입니다. 공격자가 비슷한 주소를 직접 등록해서 메일 인증까지 통과했어요. 인증 통과나 이름만으로 믿지 말고, 비밀번호를 링크에 입력하게 하는지 보세요. 포털에 직접 접속해 확인해야 합니다.",
+      "explanation_short": "이름과 인증이 그럴듯해도 링크에 비밀번호를 넣게 하면 의심하세요.",
+      "choice_labels": {
+        "click": "메일 링크로 들어가 안내를 확인하고 비밀번호를 연장한다",
+        "call": "메일에 답장해 진짜 학교 포털의 안내인지 확인한다",
+        "official": "즐겨찾기한 학교 포털에 직접 접속해 공지를 확인한다"
+      },
+      "consequence": {
+        "title": "학교 포털 계정이 넘어갔어요",
+        "detail": "입력한 비밀번호로 공격자가 포털에 들어와 성적·개인정보를 보거나 다른 사이트에도 같은 비밀번호로 접속을 시도할 수 있어요."
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 2번 A)"
+    },
+    {
+      "scenario_id": "P03",
+      "audience": "personal",
+      "set": "A",
+      "pair": 3,
+      "channel": "email",
+      "job_group": "common",
+      "is_phishing": false,
+      "case_type": null,
+      "sender": "OO대학교 학사지원팀",
+      "from": "OO대학교 학사지원팀 <haksa@univ.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=univ.example; dkim=pass; dmarc=pass",
+      "subject": "[학사] 2학기 수강신청 정정 기간 안내",
+      "body": "학사지원팀입니다. 수강신청 정정 기간이 오늘 18시까지입니다. 정정은 학교 포털의 [수강신청] 메뉴에서 직접 해 주세요. 이 메일로 비밀번호나 개인정보를 묻지 않습니다.",
+      "link": null,
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "포털 메뉴에서 직접 하라는 안내뿐, 링크·비밀번호·개인정보 요구 없음"
+        },
+        {
+          "factor": "보낸 주소",
+          "text": "학교 주소(univ.example)와 같음"
+        },
+        {
+          "factor": "급한 말",
+          "text": "\"오늘 18시까지\"가 있지만 요구하는 행동이 안전함"
+        }
+      ],
+      "explanation": "정상 학사 안내 메일입니다. \"오늘 18시까지\"처럼 급한 말이 있지만, 요구하는 행동은 평소 쓰는 학교 포털에 직접 들어가 정정하라는 것뿐이에요. 링크·비밀번호·개인정보를 요구하지 않으니 안내대로 처리해도 안전합니다. 급한 말만 보고 피싱이라고 판단하면 정정 기간을 놓칠 수 있어요.",
+      "explanation_short": "급한 말이 있어도 요구하는 행동이 안전하면 정상이에요. 포털에서 바로 정정하면 돼요.",
+      "choice_labels": {
+        "click": "안내대로 학교 포털 수강신청 메뉴에서 바로 정정한다",
+        "call": "메일에 답장해 정정 기간이 맞는지 확인한다",
+        "official": "학사지원팀 대표번호로 전화해 정정 기간을 확인한다"
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 3번 A)"
+    },
+    {
+      "scenario_id": "P04",
+      "audience": "personal",
+      "set": "A",
+      "pair": 4,
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": false,
+      "case_type": null,
+      "sender": "010-0000-0000",
+      "subject": null,
+      "body": "안녕하세요, OO택배 배송 기사입니다. 오늘 14시쯤 주문하신 물건을 문 앞에 두었습니다. 분실되지 않게 오늘 안에 확인해 주세요.",
+      "link": null,
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "문 앞 물건을 확인하라는 안내뿐, 링크·결제·개인정보 요구 없음"
+        },
+        {
+          "factor": "보낸 번호",
+          "text": "개인 번호지만, 요구하는 행동이 안전함"
+        },
+        {
+          "factor": "급한 말",
+          "text": "\"오늘 안에\"가 있지만 요구하는 행동이 안전함"
+        }
+      ],
+      "explanation": "정상 배송 알림 문자입니다. 개인 번호로 왔고 \"오늘 안에\"라는 말도 있지만, 요구하는 행동은 문 앞에 둔 물건을 확인하라는 것뿐이에요. 링크를 누르거나 결제·개인정보를 입력하라는 요구가 없으니 안내대로 해도 안전합니다. 번호나 급한 말만 보고 피싱이라고 판단하면 택배를 잃어버릴 수 있어요.",
+      "explanation_short": "개인 번호에 급한 말이 있어도, 요구하는 행동이 안전하면 정상이에요.",
+      "choice_labels": {
+        "click": "안내대로 문 앞에 둔 택배를 바로 가져온다",
+        "call": "문자에 적힌 번호로 전화해 배송이 맞는지 확인한다",
+        "official": "택배사 공식 앱을 열어 배송 완료가 맞는지 확인한다"
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 4번 A)"
+    },
+    {
+      "scenario_id": "P05",
+      "audience": "personal",
+      "set": "B",
+      "pair": 1,
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+C",
+      "sender": "OO대학교 재무팀 / 02-0000-0000",
+      "subject": null,
+      "body": "[OO대학교 재무팀] 등록금이 이중 납부되어 환불 대상입니다. 내일 12시까지 아래 링크에서 환불받을 계좌를 등록해 주세요. 기한이 지나면 환불이 취소됩니다.",
+      "link": "https://tuition-refund.example/verify",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "문자 링크로 환불 계좌를 등록하라고 함"
+        },
+        {
+          "factor": "낯선 주소",
+          "text": "학교 주소가 아닌 바깥 주소"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"내일 12시까지\", \"환불이 취소\""
+        }
+      ],
+      "explanation": "학교 재무팀을 사칭해 계좌 정보를 받아 가는 문자입니다. 환불이라는 좋은 소식으로 경계를 풀게 만들어요. 문자 링크 말고 학교 포털 앱에서 등록금 내역을 직접 확인해야 합니다.",
+      "explanation_short": "좋은 소식(환불)이어도 링크로 계좌를 등록하게 하면 의심하세요. 포털 앱에서 직접 확인!",
+      "choice_labels": {
+        "click": "링크로 들어가 환불 안내를 확인하고 계좌를 등록한다",
+        "call": "문자에 적힌 번호로 전화해 진짜 재무팀인지 확인한다",
+        "official": "학교 포털 앱을 열어 등록금 납부 내역을 확인한다"
+      },
+      "consequence": {
+        "title": "환불 대신 계좌 정보가 넘어갔어요",
+        "detail": "등록한 계좌번호와 개인정보가 사기 조직에 넘어가 다른 사기에 쓰일 수 있어요."
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 1번 B)"
+    },
+    {
+      "scenario_id": "P06",
+      "audience": "personal",
+      "set": "B",
+      "pair": 2,
+      "channel": "email",
+      "job_group": "common",
+      "is_phishing": true,
+      "case_type": "A+B+C",
+      "sender": "OO대학교 클라우드",
+      "from": "OO대학교 클라우드 <noreply@univ-cloud-notice.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=univ-cloud-notice.example; dkim=pass; dmarc=pass",
+      "subject": "[안내] 학생 저장공간 사용 기간 만료",
+      "body": "OO대학교 클라우드입니다. 학생 저장공간 사용 기간이 오늘 만료됩니다. 파일을 계속 보관하려면 아래 링크에서 기존 비밀번호를 입력해 연장해 주세요.",
+      "link": "https://univ-cloud-notice.example/extend",
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "표시 이름 위장",
+          "text": "이름은 학교 클라우드인데 실제 주소는 비슷하게 만든 바깥 주소"
+        },
+        {
+          "factor": "요구하는 행동",
+          "text": "링크에서 기존 비밀번호를 입력하라고 함"
+        },
+        {
+          "factor": "시간 압박",
+          "text": "\"오늘 만료\""
+        }
+      ],
+      "explanation": "학교 클라우드처럼 보이게 만든 메일입니다. 공격자가 비슷한 주소를 직접 등록해서 메일 인증까지 통과했어요. 인증 통과나 이름만으로 믿지 말고, 비밀번호를 링크에 입력하게 하는지 보세요. 클라우드에 직접 접속해 확인해야 합니다.",
+      "explanation_short": "이름과 인증이 그럴듯해도 링크에 비밀번호를 넣게 하면 의심하세요.",
+      "choice_labels": {
+        "click": "메일 링크로 들어가 안내를 확인하고 비밀번호를 연장한다",
+        "call": "메일에 답장해 진짜 학교 클라우드의 안내인지 확인한다",
+        "official": "즐겨찾기한 학교 클라우드에 직접 접속해 공지를 확인한다"
+      },
+      "consequence": {
+        "title": "학교 클라우드 계정이 넘어갔어요",
+        "detail": "입력한 비밀번호로 공격자가 클라우드에 들어와 저장된 과제·사진·문서를 보거나 지울 수 있어요."
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 2번 B)"
+    },
+    {
+      "scenario_id": "P07",
+      "audience": "personal",
+      "set": "B",
+      "pair": 3,
+      "channel": "email",
+      "job_group": "common",
+      "is_phishing": false,
+      "case_type": null,
+      "sender": "OO학과 이OO 교수",
+      "from": "OO학과 이OO 교수 <prof.lee@univ.example>",
+      "reply_to": null,
+      "auth_results": "spf=pass smtp.mailfrom=univ.example; dkim=pass; dmarc=pass",
+      "subject": "[과제] 3주차 보고서 제출 안내",
+      "body": "이번 주 보고서는 오늘 23시 59분까지 학습관리시스템(LMS) 과제함에 올려 주세요. 메일 첨부로는 받지 않습니다. 질문은 수업 게시판에 남겨 주세요.",
+      "link": null,
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "LMS 과제함에 직접 올리라는 안내뿐, 링크·비밀번호·개인정보 요구 없음"
+        },
+        {
+          "factor": "보낸 주소",
+          "text": "학교 주소(univ.example)와 같음"
+        },
+        {
+          "factor": "급한 말",
+          "text": "\"오늘 23시 59분까지\"가 있지만 요구하는 행동이 안전함"
+        }
+      ],
+      "explanation": "정상 과제 안내 메일입니다. \"오늘 23시 59분까지\"처럼 급한 말이 있지만, 요구하는 행동은 평소 쓰는 학습관리시스템(LMS)에 직접 들어가 과제를 올리라는 것뿐이에요. 링크·비밀번호·개인정보를 요구하지 않으니 안내대로 처리해도 안전합니다. 급한 말만 보고 피싱이라고 판단하면 제출 기한을 놓칠 수 있어요.",
+      "explanation_short": "급한 말이 있어도 요구하는 행동이 안전하면 정상이에요. LMS에 바로 올리면 돼요.",
+      "choice_labels": {
+        "click": "안내대로 학습관리시스템 과제함에 바로 보고서를 올린다",
+        "call": "메일에 답장해 제출 방법이 맞는지 확인한다",
+        "official": "학과 사무실에 전화해 과제 공지가 맞는지 확인한다"
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 3번 B)"
+    },
+    {
+      "scenario_id": "P08",
+      "audience": "personal",
+      "set": "B",
+      "pair": 4,
+      "channel": "sms",
+      "job_group": "common",
+      "is_phishing": false,
+      "case_type": null,
+      "sender": "010-0000-0000",
+      "subject": null,
+      "body": "안녕하세요, OO카페 매니저입니다. 다음 주 근무표가 확정되어 매장 단체 대화방에 올렸습니다. 오늘 안에 본인 근무 시간을 확인해 주세요.",
+      "link": null,
+      "attachment": null,
+      "clues": [
+        {
+          "factor": "요구하는 행동",
+          "text": "단체 대화방의 근무표를 확인하라는 안내뿐, 링크·결제·개인정보 요구 없음"
+        },
+        {
+          "factor": "보낸 번호",
+          "text": "개인 번호지만, 요구하는 행동이 안전함"
+        },
+        {
+          "factor": "급한 말",
+          "text": "\"오늘 안에\"가 있지만 요구하는 행동이 안전함"
+        }
+      ],
+      "explanation": "정상 근무표 안내 문자입니다. 개인 번호로 왔고 \"오늘 안에\"라는 말도 있지만, 요구하는 행동은 평소 쓰는 매장 단체 대화방에서 근무표를 확인하라는 것뿐이에요. 링크를 누르거나 결제·개인정보를 입력하라는 요구가 없으니 안내대로 해도 안전합니다. 번호나 급한 말만 보고 피싱이라고 판단하면 근무 시간을 놓칠 수 있어요.",
+      "explanation_short": "개인 번호에 급한 말이 있어도, 요구하는 행동이 안전하면 정상이에요.",
+      "choice_labels": {
+        "click": "안내대로 매장 단체 대화방에서 근무표를 바로 확인한다",
+        "call": "문자에 적힌 번호로 전화해 매니저가 맞는지 확인한다",
+        "official": "매장 대표번호로 전화해 근무표 공지가 맞는지 확인한다"
+      },
+      "source": "가상 구성 (학생용, 쌍둥이 4번 B)"
+    }
+  ]
+}
