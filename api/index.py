@@ -312,6 +312,13 @@ def game():
     return send_from_directory(FRONTEND, "game.html")
 
 
+@app.get("/train")
+def train_page():
+    # 자유 훈련 게임 "생활 속 피싱 신호 익히기" (A 11/19, docs/game_draft.html 시안을 사이트로 옮김)
+    # 참고: 게임 점수는 장부에 넣지 않는다 (팀 결정 16번). 지금은 화면 안에서만 계산하고 어디에도 저장하지 않는다
+    return send_from_directory(FRONTEND, "train.html")
+
+
 @app.get("/admin")
 def admin_page():
     # 회사 담당자용 관리자 화면 (회사 코드로 입장)
