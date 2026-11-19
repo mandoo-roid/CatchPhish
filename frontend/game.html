@@ -110,7 +110,7 @@ main:focus { outline: none; }
 .go.o svg { background: var(--blue-soft); color: var(--blue); }
 .go.o .kw { color: var(--blue); }
 @media (min-width: 40rem) { .go3 { grid-template-columns: repeat(2, minmax(0, 20rem)); } .go { min-height: 12rem; } }
-.back-home { display: inline-block; margin-top: 1.4rem; color: var(--muted); font-size: .9rem; }
+.back-btn { border: 0; background: none; color: var(--navy); font-weight: 700; padding: .2rem 0; margin-bottom: .8rem; text-decoration: none; display: inline-block; }
 .pick { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); max-width: 42rem; }
 .pick button { border: var(--bw) solid var(--navy); background: var(--paper); border-radius: var(--r-btn); padding: .85rem 1rem; text-align: left; font-weight: 500;
   box-shadow: 3px 4px 0 var(--shadow); transition: transform .08s, box-shadow .08s; }
@@ -446,25 +446,30 @@ async function busy(btn, fn) {
 function choose() {
   S = {};
   render(`
+    <a class="back-btn" href="/">‹ 처음으로</a>
     <h1 class="title">어떤 체험을 할까요?</h1>
     <p class="lead">문자와 메일을 받고 어떻게 할지 골라 보는 체험이에요. 이름은 저장하지 않고, 결과는 익명으로 모여요.</p>
     <nav class="go3" aria-label="체험 고르기">
       <button class="go p" data-start="personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></button>
       <button class="go o" data-start="org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></button>
-    </nav>
-    <a class="back-home" href="/">처음으로</a>`);
+    </nav>`);
   main.querySelectorAll("[data-start]").forEach(b => b.onclick = () => start(b.dataset.start));
 }
 
 function start(mode) { reset(mode); mode === "org" ? job() : survey(); }
 
+// 하는 일: 문제를 풀기 전 화면에만 뒤로가기를 둔다. 답을 고르면 장부에 기록되어, 뒤로 가서 다시 고르면 전후 비교 숫자가 틀어지기 때문
+function backBtn(label) { return `<button class="back-btn" id="back">‹ ${label}</button>`; }
 function job() {
   render(`
+    ${backBtn("체험 고르기")}
     <p class="step">기관용 체험</p>
     <h1 class="title">하는 일을 골라 주세요</h1>
     <p class="lead">내 직군에게 자주 오는 메시지가 하나 섞여요.</p>
     <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
     <div class="row"><button class="btn" id="next" disabled>다음</button></div>`, 0);
+  $("back").onclick = choose;
+  if (S.job) { const on = main.querySelector(`[data-v="${S.job}"]`); if (on) { on.setAttribute("aria-pressed", "true"); $("next").disabled = false; } }
   main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
     main.querySelectorAll(".pick button").forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; $("next").disabled = false;
@@ -480,14 +485,18 @@ function survey() {
   qs.push(["revisit", "캐치피싱을 해 본 적 있나요?", [["true", "있어요"], ["false", "처음이에요"]]]);
   qs.push(["Q1", SURVEY[0].text, [1, 2, 3, 4, 5].map(n => [String(n), n === 1 ? "1 전혀 아니다" : n === 5 ? "5 매우 그렇다" : String(n)])]);
   if (S.mode === "org") SURVEY.slice(1).forEach(q => qs.push([q.id, q.text, q.options.map(o => [o, o])]));
-  const ans = {};
+  const ans = S.draft || (S.draft = {});   // 참고: 뒤로 갔다 와도 고른 답이 남아 있게
   render(`
+    ${backBtn(S.mode === "org" ? "직군 고르기" : "체험 고르기")}
     <p class="step">${modeName()} 체험 · 시작 전</p>
     <h1 class="title">체험 전 사전질문</h1>
     <p class="lead">정답이 있는 질문이 아니에요. 평소 모습 그대로 답해 주세요. 결과 화면에서 내 생각과 실제 판단을 비교해 드려요.</p>
     ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
       <div class="pick" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false">${esc(t)}</button>`).join("")}</div>`).join("")}
     <div class="row"><button class="btn" id="next" disabled>체험 시작</button></div>`, 0);
+  $("back").onclick = () => S.mode === "org" ? job() : choose();
+  main.querySelectorAll(".pick button").forEach(b => { if (ans[b.dataset.k] === b.dataset.v) b.setAttribute("aria-pressed", "true"); });
+  $("next").disabled = !qs.every(q => ans[q[0]] != null);
   main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
     main.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true"); ans[b.dataset.k] = b.dataset.v;
@@ -513,11 +522,13 @@ function intro() {
   const pre = S.phase === "pre";
   const day = S.mode === "org" ? "평소 업무 중에" : "평소처럼 하루를 보내다";
   render(`
+    ${pre ? backBtn("사전질문") : ""}
     <p class="step">${modeName()} 체험 · ${phaseName()}</p>
     <h1 class="title">${pre ? "문자와 메일 4개가 도착해요" : "새 문자와 메일 4개가 도착해요"}</h1>
     <p class="lead">${pre ? `${day} 받은 메시지라고 생각하고, 어떻게 할지 골라 주세요.` : "처음 보는 메시지예요. 배운 대로 골라 보세요."}</p>
     <p class="note">문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.</p>
     <div class="row"><button class="btn" id="next">시작하기</button></div>`, pre ? 1 : 5);
+  if (pre) $("back").onclick = survey;   // 참고: 아직 답한 문제가 없어 기록이 남지 않는다. 다시 시작하면 새 익명 번호를 받는다
   $("next").onclick = message;
 }
 
