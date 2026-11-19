@@ -8,129 +8,115 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-/* 메인 화면 (B 11/02 수정: 흰 바탕)
-   하는 일: 흰 바탕에 남색 큰 제목을 두고, 오른쪽에 각 화면으로 가는 상자 3개(체험, 링크 검사, 대응 매뉴얼)를 둔다
-   이유: 링크 검사 화면처럼 밝은 화면으로 맞추면서, 첫눈에 질문 제목과 할 수 있는 일 3가지가 보이게 하려고
-   참고: 메인 화면에는 사이드 바를 넣지 않는다. 바탕은 기기의 어두운 모드와 상관없이 흰색(#FFFFFF)으로 둔다 */
+/* 첫 화면 (A 11/19, docs/experience_draft.html 시안의 첫 화면을 옮김)
+   하는 일: 큰 버튼 3개(개인용 / 기관용 / 자유 훈련). 링크 검사와 대응 매뉴얼은 ☰ 메뉴 안에 (C 제안, 팀 결정 14번)
+   이유: 첫 화면에서 바로 내 체험으로 들어가게 하려고. 개인용은 /game?mode=personal, 기관용은 /game?mode=org (흐름 문서 6번)
+   참고: 바탕은 기기의 어두운 모드와 상관없이 흰색 (B 11/02 결정 그대로). 마스코트 그림과 튀어 오르는 움직임은 B 11/12 그대로 */
 :root {
   color-scheme: light;
-  --navy: #16224A; --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
-  --accent: #4B53D6; --accent-soft: #EEF0FF; --focus: #2457C5;
+  --navy: #0F1F45; --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
+  --accent: #2563C9; --accent-soft: #E3ECFA; --focus: #2563C9; --point: #FFE699;
   --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-* { box-sizing: border-box; }
-html, body { height: 100%; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
-main { min-height: 100%; max-width: 78rem; margin: 0 auto; display: flex; flex-direction: column;
-  padding: calc(2rem + env(safe-area-inset-top, 0px)) 1.5rem calc(1.5rem + env(safe-area-inset-bottom, 0px)); }
-.brand { display: flex; align-items: center; gap: .55rem; font-weight: 700; font-size: 1.05rem; margin: 0; min-height: 2rem; color: var(--navy); }
-.brand img { height: 2rem; width: auto; }
-.hero { flex: 1; display: grid; gap: 2.5rem; align-content: center; padding: 3rem 0; }
-.kicker { color: var(--muted); font-size: .95rem; margin: 0 0 1rem; }
-/* 하는 일: 제목을 남색으로 크게 / 참고: 두 줄이 어색하게 끊기지 않게 줄마다 묶음 */
-h1 { font-size: clamp(2.1rem, 4.3vw, 3.9rem); line-height: 1.18; letter-spacing: -0.025em; margin: 0 0 1.4rem; font-weight: 700; color: var(--navy); word-break: keep-all; }
-h1 span { white-space: nowrap; }
-.lead { color: var(--muted); font-size: 1.1rem; max-width: 32rem; margin: 0 0 1.4rem; word-break: keep-all; }
-.facts { color: var(--muted); font-size: .9rem; margin: 0; }
-/* 하는 일: 각 화면으로 가는 상자 3개 (B 11/02 수정: 진한 색)
-   이유: 흰 바탕에서 옅은 회색 상자가 잘 안 보여서, 상자를 진한 색으로 채우고 글자는 흰색으로 바꿈
-   참고: 체험 상자는 보라색(가장 먼저 누를 곳), 나머지 둘은 남색. 흰 글자와의 밝기 차이는 보라 약 6:1, 남색 약 11:1로 잘 읽힌다 */
-.go { display: grid; gap: .9rem; }
-.go a { display: flex; flex-direction: column; gap: .5rem; text-decoration: none; color: #FFFFFF; min-height: 9.5rem;
-  background: #2A3A66; border: 1px solid #2A3A66; border-radius: 16px; padding: 1.25rem 1.2rem 1.1rem;
-  transition: background .15s, box-shadow .15s; }
-.go a:hover { background: var(--navy); box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--navy); }
-.go a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
-.go a.main { background: var(--accent); border-color: var(--accent); }
-.go a.main:hover { background: #3B42C4; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--accent); }
-.go svg { flex: none; }
-.go b { font-size: 1.15rem; line-height: 1.35; word-break: keep-all; color: #FFFFFF; }
-.go span { color: #D9DEF0; font-size: .88rem; line-height: 1.5; word-break: keep-all; }
-.go a.main span { color: #E6E8FF; }
-footer { font-size: .8rem; color: var(--muted); }
-@media (min-width: 72rem) {
-  .hero { grid-template-columns: minmax(0, 1fr) 38rem; align-items: center; gap: 3rem; }
-  .go { grid-template-columns: repeat(3, 1fr); }
-  .go a { min-height: 12.5rem; }
-}
-@media (min-width: 40rem) and (max-width: 71.99rem) { .go { grid-template-columns: repeat(3, 1fr); } }
-@media (prefers-reduced-motion: reduce) { .go a { transition: none; } }
-/* 마스코트 (B 11/12): 낚시꾼 애니메이션을 지우고, 그 자리에 편지봉투 마스코트를 둔다
-   하는 일: 처음 열 때 마스코트가 제목 뒤에서 위로 톡 튀어 올라와(살짝 넘어갔다 내려앉음) 그대로 머문다. 반복하지 않는다
-   이유: 포스터와 같은 캐릭터로 작품의 얼굴을 통일하고, 첫 화면에 가볍게 눈길을 주려고
-   참고: 아래쪽만 잘라서(clip-path) 제목 뒤에서 올라오는 것처럼 보인다. 움직임 줄이기 설정이면 처음부터 제자리에 있다 */
-.brand-sub { margin: .1rem 0 0; }
-.mascot-room { height: 150px; display: flex; justify-content: flex-start; align-items: flex-end; margin: 0 0 .5rem; clip-path: inset(-60% -20% 0 -20%); }
-.mascot { width: 165px; height: auto; transform: translateY(105%); animation: mascotPop .95s cubic-bezier(.2,.8,.3,1) .35s forwards; }
-@keyframes mascotPop {
-  0%   { transform: translateY(105%) rotate(0deg); }
-  55%  { transform: translateY(-14%) rotate(-3deg); }
-  75%  { transform: translateY(4%) rotate(1.5deg); }
-  90%  { transform: translateY(-2%) rotate(0deg); }
-  100% { transform: translateY(0) rotate(0deg); }
-}
-@media (max-width: 40rem) { .mascot-room { height: 118px; } .mascot { width: 128px; } }
-@media (prefers-reduced-motion: reduce) { .mascot { animation: none; transform: none; } }
+/* ===== 기본 ===== */
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans);
+  font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ===== 배치: 폰 / 태블릿 / PC =====
+   기준 너비는 home.html과 같게 40rem, 72rem
+   - 링크 검사·대응 매뉴얼은 모든 화면에서 ☰ 메뉴 안에 (누르면 옆에서 나옴) */
+.site { min-height: 100vh; }
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .6rem;
+  padding: .55rem 1rem; padding-top: calc(.55rem + env(safe-area-inset-top, 0px));
+  background: var(--paper); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--paper); }
+.menu-btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
+.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; background: none; border: 0; padding: 0; }
+.draft-tag { margin-left: auto; font-size: .78rem; color: var(--caution); background: var(--caution-soft); border-radius: 999px; padding: .1rem .7rem; }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper);
+  border-right: 1px solid var(--line); padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem;
+  transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35); }
+.side a, .side button { display: block; text-align: left; padding: .7rem .8rem; border-radius: 10px; color: var(--ink);
+  text-decoration: none; border: 0; background: none; width: 100%; }
+.side a:hover, .side button:hover { background: var(--field); }
+.side .side-head { font-size: .85rem; color: var(--muted); padding: .2rem .8rem .5rem; }
+.main { padding: 1.2rem 1rem 2rem; max-width: 70rem; margin: 0 auto; }
+@media (min-width: 72rem) { .main { padding: 2rem 2.5rem 3rem; max-width: 78rem; } }
+
+main:focus { outline: none; }
+.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; text-decoration: none; }
+.hero2 { display: grid; gap: 2rem; align-items: center; min-height: calc(100vh - 12rem); }
+.hero2 .mascot { width: 8.5rem; height: auto; display: block; animation: pop .9s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes pop { from { transform: translateY(30%); opacity: 0; } to { transform: none; opacity: 1; } }
+.hero2 h1 { font-size: clamp(2.1rem, 4.3vw, 3.6rem); line-height: 1.18; letter-spacing: -.025em; font-weight: 700; color: var(--navy); margin: .6rem 0 1rem; }
+.band { background: linear-gradient(transparent 50%, var(--point) 50%, var(--point) 94%, transparent 94%); font-weight: 700; color: var(--navy); font-size: clamp(1.02rem, .95rem + .4vw, 1.2rem); }
+.facts { color: var(--muted); font-size: .92rem; margin-top: 1rem; max-width: 30rem; }
+.go3 { display: grid; gap: .8rem; }
+.go3 a { border-radius: 14px; padding: 1.2rem 1.15rem 1.3rem; text-decoration: none; display: flex; flex-direction: column; gap: .2rem; }
+.go3 a:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
+.go3 .p:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent); }
+.go3 svg { margin-bottom: .6rem; flex: none; }
+.go3 b { font-size: 1.25rem; }
+.go3 .kw { font-size: .85rem; font-weight: 700; }
+.go3 .ds { font-size: .88rem; margin-top: .35rem; line-height: 1.55; opacity: .92; }
+.go3 .p { background: var(--accent); color: #fff; }
+.go3 .o { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--navy); }
+.go3 .o .kw { color: var(--accent); }
+.go3 .f { background: var(--navy); color: #fff; }
+footer { font-size: .8rem; color: var(--muted); margin-top: 2rem; }
+@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(3, 1fr); } .go3 a { min-height: 13rem; } }
+@media (min-width: 72rem) { .hero2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
 </style>
 </head>
 <body>
-<main>
-  <p class="brand">
-    <!-- 로고 자리 (B 11/02): 확정 로고를 frontend/img/에 올리면 바로 아래 줄의 주석 표시(앞뒤 기호)를 지우고 파일 이름을 맞춰요 -->
-    <!-- <img src="/img/logo.svg" alt=""> -->
-    캐치피싱
-  </p>
-  <!-- 수정 (B 11/04): 안내 한 줄을 "캐치피싱" 바로 아래로 -->
-  <p class="kicker brand-sub">회사 메일·문자로 배우는 피싱 대응 교육</p>
-
-  <section class="hero">
-    <div>
-      <!-- 마스코트 자리 (B 11/12). 포스터와 같은 편지봉투 마스코트, 제목 왼쪽 위에서 한 번 튀어 올라와 머문다 -->
-      <div class="mascot-room">
-<svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">
-  <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">
-      <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>
-  <g transform="rotate(-9 100 108)">
-    <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>
-    <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-    <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>
-    <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>
-    <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>
-    <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>
-    <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>
-  </g>
-  <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>
-  <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-</svg>
+<div class="site">
+  <header class="top">
+    <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+    <a class="logo" href="/">캐치피싱</a>
+  </header>
+  <nav class="side" id="side" aria-label="메뉴">
+    <p class="side-head">메뉴</p>
+    <a href="/">첫 화면</a>
+    <a href="/check">링크 검사</a>
+    <a href="/manual">대응 매뉴얼</a>
+  </nav>
+  <main class="main" id="main">
+    <section class="hero2">
+      <div>
+        <svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">   <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">       <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>   <g transform="rotate(-9 100 108)">     <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>     <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>     <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>     <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>     <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>   </g>   <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>   <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>   <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/> </svg>
+        <h1>오늘 받은 그 메일,<br>진짜였을까요?</h1>
+        <p><span class="band">모두 의심하지 말고, 요구하는 행동을 보세요</span></p>
+        <p class="facts">이름은 저장하지 않고, 기록은 익명 번호로만 남아요.</p>
       </div>
-      <h1><span>오늘 받은 그 메일,</span><br><span>진짜였을까요?</span></h1>
-      <p class="lead">회사로 오는 피싱 메일과 문자를 직접 겪어 보고, 왜 위험했는지 탐지 엔진의 해설로 확인해요.</p>
-      <p class="facts">체험은 메일·문자 5개, 10~20분 정도 걸려요. 기록은 익명 번호로만 남아요.</p>
-    </div>
-
-    <nav class="go" aria-label="시작하기">
-      <a class="main" href="/game">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="7" width="22" height="15" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2"/><path d="M4 9l10 7 10-7" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/></svg>
-        <b>피싱 대응 체험 시작</b>
-        <span>평소 업무처럼 메일·문자를 처리해 보고 내 대응 습관을 확인해요</span>
-      </a>
-      <a href="/check">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="12.5" cy="12.5" r="7.5" fill="none" stroke="#FFFFFF" stroke-width="2"/><path d="M18 18l6 6" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>
-        <b>의심 링크 검사해 보기</b>
-        <span>받은 링크를 붙여 넣으면 위험한 점을 알려 드려요. 링크에 접속하지 않아요</span>
-      </a>
-      <a href="/manual">
-        <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4h12l6 6v14H5z" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/><path d="M9 13h10M9 17.5h10" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/></svg>
-        <b>피싱 대응 매뉴얼 알아보기</b>
-        <span>어떤 메시지에서 무엇을 보고, 어떻게 확인하면 되는지 정리했어요</span>
-      </a>
-    </nav>
-  </section>
-
-  <footer>배화여자대학교 소프트웨어공학과 Phish&amp;Chips 캡스톤디자인</footer>
-</main>
+      <nav class="go3" aria-label="시작하기">
+        <a class="p" href="/game?mode=personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></a>
+        <a class="o" href="/game?mode=org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></a>
+        <!-- 참고: 자유 훈련 게임은 아직 사이트 안에 없어서 게임 시안(GitHub Pages)으로 연결한다. 사이트에 게임을 만들면 주소를 바꾼다 (A 11/19) -->
+        <a class="f" href="https://mandoo-roid.github.io/CatchPhish/game_draft.html"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 4h10v6a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 6H5v2a4 4 0 0 0 4 4M19 6h4v2a4 4 0 0 1-4 4M14 15v4M10 23h8M11 19h6v4h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b>자유 훈련</b><span class="kw">순위표</span><span class="ds">체험 없이 바로 게임! 별명으로 순위표에 도전해요</span></a>
+      </nav>
+    </section>
+    <footer>배화여자대학교 소프트웨어공학과 피시앤칩스(Phish&amp;Chips) 캡스톤디자인</footer>
+  </main>
+</div>
+<script>
+// 하는 일: ☰ 메뉴 열고 닫기 (바깥을 누르거나 Esc를 누르면 닫힘)
+const side = document.getElementById("side"), menuBtn = document.getElementById("menuBtn");
+const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
+menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
+document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+</script>
 </body>
 </html>
