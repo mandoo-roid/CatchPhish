@@ -4,6 +4,7 @@
 # 5(관리자 통계)는 겉모양과 주소만 먼저 만들어 둠. 통계 계산은 C의 stats.py가 오면 채운다.
 # 6(기록 검사): C의 ledger_v2.verify_ledger로 장부 전체와 마지막 기록 표시(head)를 검사한다 (A 10/28 연결, 10/30 v2).
 # 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
+# 9(연쇄형 연습): /api/practice. 사전과 사후 사이 연습 카드를 준다 (A 11/19). 1번은 mode(personal/org)를 보내면 새 흐름(세트 A·B, 사후는 반대 세트)
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -77,16 +78,51 @@ with open(os.path.join(ROOT, "scenarios", "scenarios.json"), encoding="utf-8") a
     SCENARIOS = {s["scenario_id"]: s for s in json.load(f)["scenarios"]}
 
 # 참고: choice_labels는 시나리오마다 다른 선택지 문구 (B가 scenarios.json에 추가, A 11/02). 채점 키(click·call·official)는 그대로
-PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", "attachment", "choice_labels"]
+PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", "attachment", "choice_labels", "from", "reply_to"]
+# 수정 (A 11/19): from·reply_to 추가. 새 카드는 sender에 이름만 있어서, 메일 화면에서 이름을 누르면 보낸 주소와 답장 주소가 보이게 하려고 (B 11/16 부탁).
+#   실제 메일 앱에서도 보이는 값이라 정답을 흘리지 않는다. 인증 결과(auth_results)는 엔진 분석용이라 보내지 않는다
+
+# 개인용·기관용 체험 (A 11/19, 흐름 문서 6번 "서버", 팀 결정 3·8·15번)
+MODES = {"personal", "org"}
+TARGETS = {"personal": {"student", "general"}, "org": {"worker"}}   # 장부 target 칸 (칸 이름 사전)
+SETS = ("A", "B")
 
 
 def pick_scenarios(job):
     # 하는 일: 공통 카드(job_group이 common)와 내 직군 카드만 골라 순서를 섞는다 (팀 결정: 공통 4 + 직군 1 = 5개)
     # 이유: 직군에 맞는 문제를 풀게 하고, 정상 메시지가 늘 같은 자리에 나와 위치를 외우는 일을 막으려고
     # 참고: 정답·채점은 scenario_id로 찾기 때문에 순서를 섞어도 채점에는 영향이 없다
-    cards = [s for s in SCENARIOS.values() if s.get("job_group") in ("common", job)]
+    # 수정 (A 11/19): 새 카드(개인용, 세트 B 직군 카드, 연쇄형 연습)는 예전 화면에 섞이지 않게 뺀다.
+    #   새 화면으로 바꾸기 전까지 예전 화면도 그대로 돌아가게 하려고. 예전 화면은 공통 3 + 직군 1 = 4개가 나온다
+    cards = [s for s in SCENARIOS.values() if s.get("job_group") in ("common", job)
+             and s.get("audience") != "personal" and s.get("set") != "B" and not s.get("practice")]
     random.shuffle(cards)
     return cards
+
+
+def pick_set(mode, set_name, job=None):
+    # 하는 일: 개인용·기관용 세트 하나(4문제)를 골라 순서를 섞는다 (A 11/19)
+    # 이유: 팀 결정 3번. 사전과 사후는 쌍둥이 세트 A·B. 기관용은 공통 3 + 내 직군 카드 1 (직군 카드는 pair 4번)
+    # 참고: 카드는 이름표 audience·set·pair로 고른다 (B 11/16). 연쇄형 연습 카드(practice)는 여기서 나오지 않는다
+    cards = [s for s in SCENARIOS.values()
+             if s.get("audience") == mode and s.get("set") == set_name and not s.get("practice")]
+    if mode == "org":
+        cards = [s for s in cards if s.get("pair") != 4 or s.get("job_group") == job]
+    random.shuffle(cards)
+    return cards
+
+
+def pre_set_of(answers, mode):
+    # 하는 일: 사전 체험에서 푼 카드 번호로 그 사람이 본 세트(A/B)를 알아낸다 (A 11/19)
+    # 이유: 사후는 반대 세트를 내야 한다. 화면이 보낸 "세트" 글자를 믿지 않고, 실제로 푼 카드에서 서버가 직접 확인한다
+    # 참고: 카드가 하나도 없거나, 다른 체험(개인용·기관용)이나 두 세트가 섞여 있으면 None
+    sets = set()
+    for a in answers:
+        card = SCENARIOS.get(a.get("scenario_id")) if isinstance(a, dict) else None
+        if card is None or card.get("audience") != mode or card.get("set") not in SETS:
+            return None
+        sets.add(card["set"])
+    return sets.pop() if len(sets) == 1 else None
 
 
 def pick_retry(first_answers):
@@ -160,7 +196,20 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
     if not LEDGER_READY:
         return False
     anon, job, sc = data.get("anon_id"), data.get("job"), data.get("self_check")
-    if not (isinstance(anon, str) and ANON_ID.match(anon) and job in JOBS and isinstance(sc, dict)):
+    mode = data.get("mode")
+    # 수정 (A 11/19): 새 화면(mode를 보냄)은 개인용이면 직군 없이 저장한다. 예전 화면은 지금처럼 직군이 있어야 저장
+    if mode in MODES:
+        if mode == "personal":
+            job = None
+        if mode == "org" and job not in JOBS:
+            return False
+        if card.get("audience") not in (None, mode):   # 개인용 체험에 기관용 카드를 보낸 경우 등
+            return False
+        if data.get("target") not in TARGETS[mode] or not isinstance(data.get("revisit"), bool):
+            return False
+    elif mode is not None or job not in JOBS:
+        return False
+    if not (isinstance(anon, str) and ANON_ID.match(anon) and isinstance(sc, dict)):
         return False
     # 하는 일: 문진표는 Q1~Q4만, 짧은 값만 남긴다 / 이유: 정해진 값만 받는다는 보안 원칙
     self_check = {k: sc[k] for k in SURVEY_KEYS if isinstance(sc.get(k), (int, str)) and len(str(sc[k])) <= 60}
@@ -178,6 +227,17 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
     # 이유: 관리자 화면에서 같은 사람의 1회차와 2회차를 비교하고, 기존 통계는 1회차만으로 계산하려고
     if data.get("round") == 2:
         record["round"] = 2
+    # 하는 일: 새 칸 (11/13 이름 정함, 칸 이름 사전). 새 화면 기록에만 넣고, 예전 화면 기록은 지금 모양 그대로 (A 11/19)
+    # 이유: 관리자 통계에서 개인용·기관용, 세트, 대상, 해 본 적 있는지별로 나누고, 연쇄형 연습은 비교 통계에서 빼려고 (팀 결정 15번)
+    # 참고: set과 practice는 화면이 보낸 값이 아니라 카드 파일에서 꺼낸다 (화면이 바꿔 보낼 수 없게)
+    if mode in MODES:
+        record["mode"] = mode
+        record["target"] = data["target"]
+        record["revisit"] = data["revisit"]
+        if card.get("set") in SETS:
+            record["set"] = card["set"]
+        if card.get("practice"):
+            record["practice"] = True
     try:
         append_record(record)
         return True
@@ -281,6 +341,8 @@ def img_file(name):
 def start():
     # 서버 약속 1번: 문진표 답과 직군을 받고, 익명 번호와 풀 시나리오(정답 빼고)를 돌려줌
     data = request.get_json(silent=True) or {}
+    if data.get("mode") in MODES:
+        return start_mode(data)
     if data.get("job") not in JOBS:
         return bad("직군을 골라 주세요.")
     if not isinstance(data.get("self_check"), dict):
@@ -294,6 +356,45 @@ def start():
         return jsonify({"anon_id": retry["anon_id"], "scenarios": cards, "round": 2})
     cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in pick_scenarios(data["job"])]
     return jsonify({"anon_id": "U" + secrets.token_hex(3).upper(), "scenarios": cards, "round": 1})
+
+
+def start_mode(data):
+    # 서버 약속 1번 새 모양 (A 11/19): 개인용·기관용. 사전은 세트 A·B 중 무작위, 사후(retry)는 반대 세트
+    # 받는 것: mode(personal/org), job(기관용만), self_check, target, revisit / 사후는 retry: {anon_id, answers}
+    # 돌려주는 것: anon_id, scenarios(4개, 정답 빼고), round(1 사전 / 2 사후)
+    # 이유: 팀 결정 3·8번. 만점이어도 모두 사후 체험, 처음과 반대 세트라 공정하게 비교된다
+    mode = data["mode"]
+    if mode == "org" and data.get("job") not in JOBS:
+        return bad("직군을 골라 주세요.")
+    if not isinstance(data.get("self_check"), dict):
+        return bad("문진표 답이 없습니다.")
+    if data.get("target") not in TARGETS[mode] or not isinstance(data.get("revisit"), bool):
+        return bad("사전질문 답이 없습니다.")
+    job = data.get("job") if mode == "org" else None
+    retry = data.get("retry")
+    if retry is not None:
+        if not (isinstance(retry, dict) and isinstance(retry.get("anon_id"), str) and ANON_ID.match(retry["anon_id"])
+                and isinstance(retry.get("answers"), list)):
+            return bad("사후 체험 정보가 올바르지 않습니다.")
+        pre = pre_set_of(retry["answers"], mode)
+        if pre is None:
+            return bad("사전 체험 기록이 올바르지 않습니다.")
+        post = "B" if pre == "A" else "A"
+        cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in pick_set(mode, post, job)]
+        return jsonify({"anon_id": retry["anon_id"], "scenarios": cards, "round": 2})
+    cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in pick_set(mode, random.choice(SETS), job)]
+    return jsonify({"anon_id": "U" + secrets.token_hex(3).upper(), "scenarios": cards, "round": 1})
+
+
+@app.post("/api/practice")
+def practice():
+    # 서버 약속 9번(새로 추가, A 11/19): 사전과 사후 사이 연쇄형 연습 카드(practice: true)를 정답 빼고 돌려준다
+    # 이유: 팀 결정 15번. 연습 기록은 장부에 practice: true로 남아 비교 통계에서 빠진다
+    # 참고: 답은 지금처럼 2번(/api/answer, chain: true)과 8번(/api/chain)으로 보낸다. 개인용·기관용 모두 같은 카드 (팀 논의 포인트)
+    cards = [{k: s.get(k) for k in PUBLIC_FIELDS} for s in SCENARIOS.values() if s.get("practice")]
+    if not cards:
+        return bad("연습 카드가 없습니다.")
+    return jsonify({"scenarios": cards[:1]})
 
 
 @app.post("/api/answer")
@@ -352,10 +453,24 @@ def favicon():
     return "", 204
 
 
+def org_records(entries):
+    # 하는 일: 관리자 통계에 쓸 기록만 남긴다. 연쇄형 연습 기록과 개인용 기록을 뺀다 (A 11/19)
+    # 이유: 팀 결정 15번 (연습 기록은 비교 통계에서 뺌). 관리자 화면은 기관 직원 교육 결과라 개인용 기록을 섞지 않는다
+    # 참고: 예전 기록은 mode 칸이 없어서 그대로 기관용으로 본다. 개인용 통계는 따로 만든다 (11/20)
+    out = []
+    for e in entries:
+        r = e.get("record") if isinstance(e, dict) else None
+        if isinstance(r, dict) and (r.get("practice") or r.get("mode") == "personal"):
+            continue
+        out.append(e)
+    return out
+
+
 def first_round(entries):
     # 하는 일: 장부에서 1회차 기록만 남긴다 (round 칸이 없거나 1인 기록) (A 11/02)
     # 이유: 기존 통계(참여 인원, 직군별 오답률 등)는 1회차만으로 계산해 시범 운영 숫자와 같은 기준으로 비교하려고
-    return [e for e in entries if not (isinstance(e.get("record"), dict) and e["record"].get("round", 1) != 1)]
+    # 수정 (A 11/19): 연습 기록과 개인용 기록도 뺀다 (org_records)
+    return [e for e in org_records(entries) if not (isinstance(e.get("record"), dict) and e["record"].get("round", 1) != 1)]
 
 
 def retry_effect(entries):
@@ -422,6 +537,9 @@ def result():
         card = SCENARIOS.get(a.get("scenario_id")) if isinstance(a, dict) else None
         if card is None or a.get("choice") not in CHOICES:
             return bad("선택 목록이 올바르지 않습니다.")
+        # 수정 (A 11/19): 연쇄형 연습 카드는 점수에 넣지 않는다 (팀 결정 15번)
+        if card.get("practice") and data.get("mode") in MODES:
+            continue
         ok, o = grade(card, a["choice"])
         over += o
         if card.get("is_phishing"):
@@ -434,7 +552,9 @@ def result():
             for t in (card.get("case_type") or "").split("+"):
                 if t:
                     missed[t] = missed.get(t, 0) + 1
-    played = len(answers)
+    played = phishing + normal
+    if not played:
+        return bad("결과를 계산할 정보가 부족합니다.")
     correct = played - wrong
     if q1 >= 4 and wrong > 0:
         gap = f"자신 있다고 하셨지만 이번엔 {wrong}번 속으셨어요."
@@ -516,7 +636,7 @@ def admin_stats():
         # 수정 (A 11/02): 기존 통계는 1회차 기록만으로 계산하고, 다시 도전 효과(retry_effect)를 함께 보낸다
         entries = load_entries()
         out = compute_stats(first_round(entries))
-        out["retry_effect"] = retry_effect(entries)
+        out["retry_effect"] = retry_effect(org_records(entries))
         return jsonify(out)
     except Exception as e:  # noqa: BLE001
         # 참고: DB 주소가 로그에 남지 않게 오류 종류와 앞부분만 적는다
