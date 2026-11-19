@@ -6,507 +6,390 @@
 <title>캐치피싱 피싱 대응 체험</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* =====================================================================
+   캐치피싱 체험 화면 (A 11/19, docs/experience_draft.html 시안을 옮겨 서버에 연결)
+   하는 일: 개인용·기관용 체험. 사전 4문제 → 연쇄형 연습 → (개인용 게임 / 기관용 따라 쓰기) → 사후 4문제 → 전후 결과
+   참고: 겉모양은 A 11/14 시안 그대로. 해설·결과의 세부(형광펜, 실제였다면, 보안 대응 수준)는 예전 game.html에서 가져옴
+   ===================================================================== */
+
+/* ===== B가 고칠 곳 1: 색과 글자 (지금 game.html 색 그대로) ===== */
 :root {
   color-scheme: light;
-  --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
+  --navy: #16224A; --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
+  --accent: #4B53D6; --accent-soft: #EEF0FF; --focus: #2457C5;
   --danger: #B3261E; --danger-soft: #FCEBEA; --caution: #8A5A00; --caution-soft: #FFF3D6;
-  --safe: #1F6B4A; --safe-soft: #E4F3EB; --link: #1F56C9; --focus: #2457C5;
-  --bubble: #E9EEF3;
+  --safe: #1F6B4A; --safe-soft: #E4F3EB; --link: #1F56C9;
+  --bubble: #E9EEF3; --unread: #4B53D6;
   --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --radius-app: 18px;      /* 문자·메일 앱 테두리 */
+  --radius-btn: 12px;      /* 버튼 */
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+    --navy: #C9D3F5; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+    --accent: #9EA4FF; --accent-soft: #23264A; --focus: #8DB2FF;
     --danger: #FF8A80; --danger-soft: #3A1D1B; --caution: #F2C14E; --caution-soft: #3A2E14;
-    --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --focus: #8DB2FF; --bubble: #232D38;
+    --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --bubble: #232D38; --unread: #9EA4FF;
   }
 }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
-  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
-main { max-width: 34rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
-h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 .5rem; }
-h2 { font-size: 1.05rem; margin: 1.75rem 0 .5rem; }
-p { margin: 0 0 1rem; }
-.muted { color: var(--muted); }
-.progress { font-size: .875rem; color: var(--muted); margin-bottom: .75rem; }
-.bar { height: 4px; background: var(--line); border-radius: 2px; margin-bottom: 1.5rem; overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--ink); transition: width .2s; }
-.choices { display: grid; gap: .5rem; margin: 1rem 0; }
-.choices.scale { grid-template-columns: repeat(5, 1fr); }
-.choice { font: 400 1rem var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line);
-  border-radius: 10px; padding: .85rem 1rem; text-align: left; cursor: pointer; }
-.choices.scale .choice { text-align: center; padding: .85rem 0; }
-.choice[aria-pressed="true"] { border: 2px solid var(--ink); padding: calc(.85rem - 1px) calc(1rem - 1px); font-weight: 500; }
-.choices.scale .choice[aria-pressed="true"] { padding: calc(.85rem - 1px) 0; }
-.choice small { display: block; color: var(--muted); font-size: .825rem; margin-top: .15rem; font-weight: 400; }
-.scale-labels { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: -.5rem; }
-.nav { display: flex; gap: .5rem; margin-top: 1.5rem; }
-.primary, .secondary { font: 500 1rem var(--sans); border-radius: 10px; padding: .9rem 1.2rem; cursor: pointer; }
-.primary { flex: 1; color: var(--paper); background: var(--ink); border: 0; }
-.secondary { color: var(--ink); background: transparent; border: 1px solid var(--line); }
-.primary:disabled { opacity: .35; cursor: not-allowed; }
-button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-/* A 11/02: 해설의 [자세히 보기], 체험 안내, 완료 화면 (모양은 B가 다듬음) */
-.lead { font-size: 1.05rem; font-weight: 500; margin-top: 1rem; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-details.more { border-top: 1px solid var(--line); margin-top: 1.5rem; padding-top: .75rem; }
-details.more > summary { cursor: pointer; font-weight: 500; color: var(--muted); list-style: none; display: flex; align-items: center; gap: .4rem; padding: .25rem 0; }
-details.more > summary::-webkit-details-marker { display: none; }
-details.more > summary::before { content: "▸"; transition: transform .15s; }
-details.more[open] > summary::before { transform: rotate(90deg); }
-details.more > summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.intro-steps { padding-left: 1.2rem; margin: 0 0 1.5rem; }
-.intro-steps li { margin-bottom: .4rem; }
-/* 체험 시작 안내의 예시 그림 (B 11/03)
-   하는 일: 문제 화면이 어떻게 생겼는지 작게 그려 보여 주고, ① 메시지 ② 남은 시간 ③ 선택지 위치에 번호를 붙인다
-   이유: 처음 하는 사람이 화면 쓰는 법을 미리 알면 당황하지 않는다
-   참고: 화면 사용법만 알려 준다. "무엇을 보고 판단하라"는 말은 넣지 않는다 ([A 결정 11/02] 3번, 평소 모습을 재려고).
-         예시 메시지는 실제 문제와 겹치지 않는 가짜이고 채점하지 않는다. 그림 안 버튼은 눌러도 아무 일이 없다 */
-#intro-screen { word-break: keep-all; }
-.ex-box { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin: 0 0 1rem; background: var(--paper); }
-.ex-tag { display: inline-block; font-size: .75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: .05rem .55rem; margin-bottom: .75rem; }
-.ex-grid { display: grid; gap: .9rem; }
-@media (min-width: 30rem) { .ex-grid { grid-template-columns: 1fr 1fr; align-items: start; } }
-.ex-part { position: relative; }
-.ex-num { position: absolute; top: -.55rem; left: -.55rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #4B53D6; color: #FFFFFF;
-  display: grid; place-items: center; font-size: .8rem; font-weight: 700; z-index: 1; }
-.ex-msg { background: var(--field); border-radius: 12px; padding: .7rem .75rem; }
-.ex-msg .ex-from { font-size: .75rem; color: var(--muted); margin: 0 0 .35rem; }
-.ex-msg .ex-bubble { background: var(--bubble); border-radius: 12px; padding: .55rem .65rem; font-size: .82rem; line-height: 1.5; }
-.ex-time { font-size: .75rem; color: var(--muted); margin-bottom: .9rem; padding-left: 1.3rem; }
-.ex-time .tbar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: .25rem; }
-.ex-time .tbar i { display: block; height: 100%; width: 60%; background: var(--muted); }
-.ex-choice { font-size: .8rem; border: 1px solid var(--line); border-radius: 8px; padding: .45rem .6rem; margin-bottom: .35rem; color: var(--muted); background: var(--paper); }
-.ex-legend { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .45rem; font-size: .9rem; }
-.ex-legend li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: .5rem; align-items: start; }
-.ex-legend b { width: 1.4rem; height: 1.4rem; border-radius: 50%; background: #4B53D6; color: #FFFFFF; display: grid; place-items: center; font-size: .75rem; margin-top: .1rem; }
-.done-head { text-align: center; padding: 1rem 0 .5rem; }
-.done-head .done { font-size: 2rem; font-weight: 700; margin: 0; }
-/* A 11/02: 해설 화면에서 방금 본 메시지 위에 놓친 단서를 번호로 표시 */
-mark.clue { background: #FFE58A; color: inherit; border-radius: 3px; padding: 0 .15em; box-shadow: 0 0 0 2px #FFE58A; }
-.clue-wrap { outline: 2px solid #E0B400; outline-offset: 3px; border-radius: 6px; }
-.pin { display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; border-radius: 50%;
-  background: var(--danger); color: #FFFFFF; font: 700 .72rem var(--sans); vertical-align: super; margin-left: .15rem; line-height: 1; }
-.pin.safe { background: var(--safe); }
-.list .pin { vertical-align: middle; margin: 0 .4rem 0 0; }
-/* 참고: 첨부 파일 상자처럼 안쪽 span에 따로 모양이 있는 곳에서도 번호가 보이게 한다 */
-.clue-wrap > span.pin { display: inline-flex !important; color: #FFFFFF !important; font: 700 .72rem var(--sans) !important; width: 1.25rem !important; height: 1.25rem !important; margin-left: auto; align-self: center; }
-@media (prefers-color-scheme: dark) { mark.clue { background: #6B5A12; box-shadow: 0 0 0 2px #6B5A12; } .clue-wrap { outline-color: #C9A227; } }
-.harm-now { background: var(--danger-soft); color: var(--danger); border-radius: 10px; padding: .7rem .9rem; margin: .75rem 0 0; font-size: .95rem; }
-.harm { background: var(--danger-soft); color: var(--danger); border-radius: 12px; padding: 1rem 1.1rem; margin: 1rem 0; }
-.harm b { display: block; font-size: 1.05rem; margin-bottom: .35rem; }
-.harm ul { margin: 0; padding-left: 1.1rem; }
-.mylog .harm-line { color: var(--danger); }
-.cmp { margin: .5rem 0 1rem; }
-.copy { border-top: 1px solid var(--line); margin-top: 1.5rem; padding-top: .25rem; }
-.copy-src { font-size: 1.1rem; font-weight: 500; background: var(--field); border-radius: 10px; padding: .9rem 1rem; margin: .5rem 0 .75rem; }
-#copy-in { width: 100%; font: 400 1rem var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: .85rem 1rem; }
-#copy-in:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-#copy-in.ok { border-color: var(--safe); }
-.copy-msg { min-height: 1.5rem; margin: .5rem 0 0; font-size: .9rem; color: var(--muted); }
-.copy-msg.ok { color: var(--safe); font-weight: 500; }
-.again { background: var(--field); border-radius: 12px; padding: .9rem 1rem; margin: 1rem 0; }
-.again b { display: block; margin-bottom: .25rem; }
-.cmp-row { display: grid; grid-template-columns: 7.5rem 1fr 3rem; align-items: center; gap: .6rem; margin: .35rem 0; font-size: .9rem; }
-.cmp-row .track { height: 12px; background: var(--field); border-radius: 6px; overflow: hidden; }
-.cmp-row .fill { display: block; height: 100%; background: var(--muted); border-radius: 6px; }
-.cmp-row.me .fill { background: var(--ink); }
-.cmp-row .val { text-align: right; font-variant-numeric: tabular-nums; }
-.mylog { list-style: none; padding: 0; margin: 0; }
-.mylog li { display: flex; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid var(--line); }
-.mylog .mark { flex: 0 0 auto; font-weight: 700; width: 1.5rem; text-align: center; }
-.mylog .ok { color: var(--safe); } .mylog .bad { color: var(--danger); } .mylog .slow { color: var(--caution); }
-.mylog small { display: block; color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { details.more > summary::before { transition: none; } }
-/* 문제 화면 배치 (B 10/26: 왼쪽 메시지 화면, 오른쪽 질문·버튼)
-   하는 일: 넓은 화면에서는 메시지를 왼쪽, 답 고르기를 오른쪽에 나란히 둔다. 좁은 화면(폰)에서는 위아래로 쌓는다
-   이유: 실제로 메일·문자를 받은 화면을 크게 보면서 바로 옆에서 행동을 고르게 하려고
-   참고: main.wide는 문제 화면일 때만 붙는다 (show 함수). 다른 화면은 예전 폭 그대로 */
-main.wide { max-width: 78rem; }
-.game-grid { display: grid; gap: 1.5rem; }
-@media (min-width: 62rem) {
-  .game-grid { grid-template-columns: minmax(0, 1fr) 19rem; gap: 2rem; align-items: start; }
-  .answer-col { position: sticky; top: 1.5rem; }
-  .answer-col .question { margin-top: 0; }
-}
-/* 해설 화면 배치 (B 10/26: 해설에서도 메시지를 계속 보여 주기, 팀 결정)
-   하는 일: 넓은 화면에서는 왼쪽에 방금 본 메시지, 오른쪽에 해설을 둔다. 좁은 화면(폰)에서는 해설이 위, 메시지가 아래
-   이유: "수상한 점"을 메시지와 나란히 보면 어디가 이상했는지 바로 찾을 수 있다 (교육 효과)
-   참고: 폰에서는 해설 → 메시지 → 다음 버튼 순서. 결과를 먼저 보여 주고, 메시지를 본 뒤에 다음으로 넘어가게 하려고. 넓은 화면에서는 메시지가 화면에 붙어 있어서 해설을 내려 읽어도 메시지가 보인다 */
-.explain-grid { display: grid; gap: 1.5rem; }
-.explain-col { order: -1; word-break: keep-all; overflow-wrap: anywhere; }
-.next-col { order: 1; margin-top: 0; }
-@media (min-width: 62rem) {
-  /* 하는 일: 왼쪽 칸 전체에 메시지, 오른쪽 위에 해설, 오른쪽 아래에 다음 버튼 */
-  .explain-grid { grid-template-columns: minmax(0, 1fr) 26rem; grid-template-areas: "screen text" "screen next"; gap: 1.5rem 2rem; align-items: start; }
-  .explain-grid .screen-col { grid-area: screen; position: sticky; top: 1.5rem; }
-  .explain-col { grid-area: text; }
-  .next-col { grid-area: next; }
-}
-.screen-note { font-size: .78rem; color: var(--muted); margin: .5rem 0 0; text-align: center; }
-
-/* 메일: PC 브라우저에서 웹메일을 연 화면
-   하는 일: 창 제목 줄, 주소창, 메일함 목록(왼쪽), 읽기 화면(오른쪽)을 그린다
-   이유: 회사 PC에서 메일을 열어 본 모습과 비슷해야 실제처럼 판단한다
-   참고: 특정 회사의 로고·이름·색 배치는 쓰지 않았다 (지식재산권). 주소창 주소는 연습용 .example */
-.pc { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); box-shadow: 0 6px 24px rgba(0,0,0,.08); }
-.pc-title { display: flex; align-items: center; justify-content: space-between; background: var(--field); font-size: .78rem; color: var(--muted); padding-left: .9rem; }
-.pc-title .win { display: flex; }
-.pc-title .win span { width: 2.6rem; height: 2rem; display: grid; place-items: center; font-size: .8rem; }
-.pc-addr { display: flex; align-items: center; gap: .6rem; padding: .4rem .7rem; border-bottom: 1px solid var(--line); background: var(--field); }
-.pc-addr .nav-ico { color: var(--muted); font-size: .9rem; letter-spacing: .35rem; }
-.pc-addr .url { flex: 1; background: var(--paper); border-radius: 999px; padding: .25rem .9rem; font-size: .8rem; color: var(--muted); }
-.wm-top { display: flex; align-items: center; gap: 1rem; padding: .6rem 1rem; border-bottom: 1px solid var(--line); }
-.wm-top .brand { font-weight: 700; white-space: nowrap; }
-.wm-top .search { flex: 1; max-width: 30rem; background: var(--field); border-radius: 8px; padding: .45rem .9rem; font-size: .85rem; color: var(--muted); }
-.wm-body { display: grid; grid-template-columns: 11rem minmax(0, 1fr); }
-.wm-side { padding: .8rem .6rem; font-size: .88rem; border-right: 1px solid var(--line); }
-.wm-side .compose { display: inline-block; border: 1px solid var(--line); border-radius: 12px; padding: .6rem 1rem; margin-bottom: .8rem; font-weight: 500; }
-.wm-side div { padding: .3rem .7rem; border-radius: 0 999px 999px 0; display: flex; justify-content: space-between; }
-.wm-side .on { background: var(--bubble); font-weight: 700; }
-.wm-read { padding: .9rem 1.4rem 1.4rem; min-width: 0; }
-.wm-tools { color: var(--muted); font-size: .85rem; letter-spacing: .6rem; margin-bottom: .8rem; }
-.wm-subject { font-size: 1.35rem; font-weight: 400; line-height: 1.4; margin: 0 0 1rem; word-break: keep-all; }
-.wm-subject .tag { font-size: .72rem; background: var(--field); border-radius: 4px; padding: .1rem .4rem; vertical-align: middle; margin-left: .4rem; color: var(--muted); }
-.wm-from { display: flex; gap: .8rem; align-items: flex-start; }
-.wm-from .avatar { flex: none; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--bubble); display: grid; place-items: center; font-weight: 700; }
-.wm-from .meta { flex: 1; min-width: 0; line-height: 1.4; }
-.wm-from .addr { color: var(--muted); font-size: .85rem; overflow-wrap: anywhere; }
-.wm-from .to { display: block; color: var(--muted); font-size: .8rem; }
-.wm-from time { font-size: .78rem; color: var(--muted); white-space: nowrap; }
-.wm-text { margin: 1.2rem 0 0 3.3rem; font-size: .95rem; word-break: keep-all; overflow-wrap: anywhere; }
-.wm-file { display: inline-flex; gap: .7rem; align-items: center; margin: 1.2rem 0 0 3.3rem; border: 1px solid var(--line); border-radius: 8px; padding: .7rem .9rem; max-width: calc(100% - 3.3rem); }
-.wm-file .ico { flex: none; width: 1.6rem; height: 2rem; border: 1.5px solid var(--muted); border-radius: 3px 9px 3px 3px; }
-.wm-file b { display: block; font-family: var(--mono); font-weight: 500; font-size: .85rem; overflow-wrap: anywhere; }
-.wm-file span { font-size: .75rem; color: var(--muted); }
-.wm-reply { display: flex; gap: .5rem; margin: 1.4rem 0 0 3.3rem; }
-.wm-reply span { border: 1px solid var(--line); border-radius: 999px; padding: .4rem 1.1rem; font-size: .85rem; color: var(--muted); }
-@media (max-width: 44rem) {
-  .wm-side, .wm-top .search, .pc-addr .nav-ico { display: none; }
-  .wm-body { grid-template-columns: minmax(0, 1fr); }
-  .wm-read { padding: .9rem 1rem 1.2rem; }
-  .wm-text, .wm-file, .wm-reply { margin-left: 0; max-width: 100%; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --navy: #C9D3F5; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46;
+  --accent: #9EA4FF; --accent-soft: #23264A; --focus: #8DB2FF;
+  --danger: #FF8A80; --danger-soft: #3A1D1B; --caution: #F2C14E; --caution-soft: #3A2E14;
+  --safe: #7FD3A8; --safe-soft: #16302A; --link: #8DB2FF; --bubble: #232D38; --unread: #9EA4FF;
 }
 
-/* 문자: 휴대폰 문자 앱 화면
-   하는 일: 폰 테두리, 상태 표시줄, 보낸 번호, 날짜, 말풍선, 아래 입력칸을 그린다
-   이유: 직원이 폰으로 문자를 확인하는 모습과 비슷하게 하려고
-   참고: 특정 회사의 로고·이름은 쓰지 않았다. 입력칸은 꾸밈이라 눌러도 아무 일이 없다 */
-.phone { max-width: 21rem; margin: 0 auto; background: var(--paper); border: 9px solid var(--ink); border-radius: 40px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,.12); }
-.status { display: flex; justify-content: space-between; align-items: center; padding: .6rem 1.5rem .3rem; font-size: .8rem; font-weight: 700; }
-.status .icons { display: flex; gap: .35rem; align-items: center; }
-.sig { display: flex; gap: 2px; align-items: flex-end; height: 10px; }
-.sig i { width: 3px; background: var(--ink); border-radius: 1px; }
-.sig i:nth-child(1) { height: 4px; } .sig i:nth-child(2) { height: 6px; } .sig i:nth-child(3) { height: 8px; } .sig i:nth-child(4) { height: 10px; }
-.bat { width: 22px; height: 11px; border: 1.5px solid var(--ink); border-radius: 3px; padding: 1px; }
-.bat i { display: block; width: 70%; height: 100%; background: var(--ink); border-radius: 1px; }
-.sms-head { text-align: center; padding: .3rem 1rem .7rem; border-bottom: 1px solid var(--line); position: relative; }
-.sms-head .back { position: absolute; left: .9rem; top: .9rem; font-size: 1.6rem; line-height: 1; color: var(--link); }
-.sms-head .pic { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--bubble); margin: 0 auto .3rem; display: grid; place-items: center; color: var(--muted); }
-.sms-head .pic i { width: .9rem; height: .9rem; border-radius: 50%; background: var(--muted); box-shadow: 0 1rem 0 .35rem var(--muted); margin-top: -.6rem; }
-.sms-head b { font-size: .9rem; font-weight: 500; }
-.thread { padding: .9rem .8rem 1.4rem; min-height: 18rem; }
-.day { text-align: center; font-size: .72rem; color: var(--muted); margin: 0 0 .7rem; }
-.day b { font-weight: 700; }
-.msg .bubble { background: var(--bubble); border-radius: 18px; padding: .6rem .85rem; max-width: 80%; display: inline-block; font-size: .93rem; word-break: keep-all; overflow-wrap: anywhere; }
-.sms-input { display: flex; align-items: center; gap: .5rem; padding: .5rem .8rem 1rem; }
-.sms-input .plus { width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--field); display: grid; place-items: center; color: var(--muted); }
-.sms-input .box { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-size: .85rem; color: var(--muted); }
-.fake-link { color: var(--link); text-decoration: underline; word-break: normal; overflow-wrap: anywhere; }
-
-/* 답 고르기 버튼: 마우스를 올리면 테두리를 진하고 두껍게 (B 10/26)
-   하는 일: 마우스가 올라간 버튼의 테두리를 파란색 2px로 바꾸고 바탕을 살짝 칠한다
-   이유: 지금 어느 버튼을 누르려는지 잘 보이게 하려고
-   참고: box-shadow로 두께를 더해서 버튼 크기가 바뀌지 않는다 (글자가 흔들리지 않음). 마우스가 있는 기기에서만 동작 */
-@media (hover: hover) {
-  .choice:not(:disabled):hover { border-color: var(--focus); box-shadow: 0 0 0 1px var(--focus); background: var(--field); }
-}
-.choice:disabled { cursor: wait; opacity: .6; }
-/* 이 메시지에서 할 수 없는 행동 (A 10/30): 링크·첨부가 없거나 적힌 번호가 없을 때 흐리게 */
-.choice.na, .choice.na:disabled { opacity: .3; cursor: not-allowed; }
-.question { font-weight: 500; margin: 1.5rem 0 0; }
-/* 제한 시간 (A 10/30): 남은 시간 막대와 글자. 시간이 지나면 노란색으로 바뀐다 */
-.timer { margin: .6rem 0 0; font-size: .85rem; color: var(--muted); }
-.timer .tbar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: .3rem; }
-.timer .tbar i { display: block; height: 100%; background: var(--muted); width: 100%; transition: width 1s linear; }
-.timer.over { color: var(--caution); font-weight: 500; }
-.timer.over .tbar i { background: var(--caution); }
-/* 해설 */
-.banner { border-radius: 14px; padding: 1.1rem 1.25rem; font-weight: 700; font-size: 1.2rem; }
-.banner.danger { background: var(--danger-soft); color: var(--danger); }
-.banner.caution { background: var(--caution-soft); color: var(--caution); }
-.banner.safe { background: var(--safe-soft); color: var(--safe); }
-.banner small { display: block; font-weight: 400; font-size: .95rem; margin-top: .25rem; }
-ul.list { list-style: none; margin: 0; padding: 0; }
-ul.list li { padding: .7rem 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 1rem; }
-ul.list li:last-child { border-bottom: 1px solid var(--line); }
-.factor { font-weight: 500; display: block; }
-.text { color: var(--muted); font-size: .925rem; }
-.pts { font-weight: 700; white-space: nowrap; }
-.score-line { font-size: .95rem; margin: 0 0 .25rem; }
-.note { font-size: .875rem; color: var(--muted); margin-top: .75rem; }
-/* 결과 */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin: 1rem 0; }
-.stat { background: var(--field); border-radius: 12px; padding: .9rem .75rem; }
-.stat b { display: block; font-size: 1.6rem; line-height: 1.2; }
-.stat span { font-size: .8rem; color: var(--muted); }
-.gap { font-size: 1.15rem; font-weight: 700; margin: 1.25rem 0 .25rem; }
-.error { color: var(--danger); }
+/* ===== 기본 ===== */
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans);
+  font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 [hidden] { display: none !important; }
-@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
-/* 연쇄형 단계 화면 (A 10/29): 문자 다음에 이어지는 가짜 페이지·앱 화면 */
-.chain-page { padding: 1rem .9rem 1.4rem; min-height: 18rem; }
-.chain-url { font-size: .75rem; color: var(--muted); background: var(--field); border-radius: 999px; padding: .25rem .8rem; margin-bottom: .9rem; overflow-wrap: anywhere; }
-.chain-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 .6rem; }
-.chain-body { font-size: .93rem; word-break: keep-all; overflow-wrap: anywhere; margin: 0; }
-.chain-steps { font-size: .85rem; color: var(--muted); margin: .75rem 0 0; }
-/* 결과(완료) 화면 디자인 (B 11/03)
-   하는 일: A가 만든 결과 화면 구조(판정, 두 점수, 피해, 내가 한 일, 비교, 팁, 따라 쓰기, 버튼)에 모양만 입힌다
-   이유: 첫 화면과 같은 색(남색 제목, 보라 #4B53D6, 남색 #2A3A66)으로 맞추고, 끝났을 때 두 점수와 "내가 한 일"이 한눈에 들어오게 하려고
-   참고: 스크립트와 id는 A 담당이라 건드리지 않고, #s-result 안에서만 모양을 덮어쓴다 */
-#s-result { word-break: keep-all; }
-#s-result .done-head { padding: 1.5rem 0 .25rem; }
-#s-result .done-head .done { color: #16224A; font-size: 2.4rem; letter-spacing: -0.02em; }
-#s-result #result > h2:first-of-type { text-align: center; color: #16224A; font-size: 1.35rem; line-height: 1.45; margin: .75rem 0 .25rem; }
-#s-result #result > h2:first-of-type + p.muted { text-align: center; }
-#s-result .stats { gap: .6rem; }
-#s-result .stat { border-radius: 14px; padding: 1.1rem .9rem; text-align: center; background: var(--field); border: 1px solid var(--line); }
-#s-result .stat b { font-size: 2rem; letter-spacing: -0.02em; }
-#s-result .stat span { font-size: .85rem; }
-#s-result .stat:nth-child(1) { background: #4B53D6; border-color: #4B53D6; }
-#s-result .stat:nth-child(2) { background: #2A3A66; border-color: #2A3A66; }
-#s-result .stat:nth-child(1) b, #s-result .stat:nth-child(2) b { color: #FFFFFF; }
-#s-result .stat:nth-child(1) span { color: #E6E8FF; }
-#s-result .stat:nth-child(2) span { color: #D9DEF0; }
-#s-result .harm { border-left: 4px solid var(--danger); border-radius: 4px 12px 12px 4px; }
-#s-result .again { border: 1px solid var(--line); }
-#s-result #result h2 { color: #16224A; }
-@media (prefers-color-scheme: dark) {
-  #s-result .done-head .done, #s-result #result > h2:first-of-type, #s-result #result h2 { color: var(--ink); }
+h1, h2, h3, p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* ===== 배치: 폰 / 태블릿 / PC =====
+   기준 너비는 home.html과 같게 40rem, 72rem
+   - 링크 검사·대응 매뉴얼은 모든 화면에서 ☰ 메뉴 안에 (누르면 옆에서 나옴) */
+.site { min-height: 100vh; }
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .6rem;
+  padding: .55rem 1rem; padding-top: calc(.55rem + env(safe-area-inset-top, 0px));
+  background: var(--paper); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--paper); }
+.menu-btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
+.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; background: none; border: 0; padding: 0; }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper);
+  border-right: 1px solid var(--line); padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem;
+  transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35); }
+.side a, .side button { display: block; text-align: left; padding: .7rem .8rem; border-radius: 10px; color: var(--ink);
+  text-decoration: none; border: 0; background: none; width: 100%; }
+.side a:hover, .side button:hover { background: var(--field); }
+.side .side-head { font-size: .85rem; color: var(--muted); padding: .2rem .8rem .5rem; }
+.main { padding: 1.2rem 1rem 2rem; max-width: 70rem; margin: 0 auto; }
+@media (min-width: 72rem) { .main { padding: 2rem 2.5rem 3rem; max-width: 78rem; } }
+
+/* ===== 공통 화면 요소 ===== */
+.step { font-size: .85rem; color: var(--muted); margin-bottom: .3rem; }
+.title { font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem); color: var(--navy); line-height: 1.35; margin-bottom: .5rem; }
+.lead { color: var(--muted); max-width: 36rem; margin-bottom: 1.2rem; }
+.btn { border: 0; border-radius: var(--radius-btn); padding: .85rem 1.4rem; background: var(--accent); color: #fff; font-weight: 500; }
+.btn.sub { background: var(--field); color: var(--ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; }
+.ghost { border: 2px dashed var(--line); border-radius: 14px; padding: 1rem; color: var(--muted); font-size: .9rem; background: var(--field); }
+.ghost b { color: var(--ink); }
+.note { font-size: .82rem; color: var(--muted); margin-top: .8rem; }
+.pick { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); max-width: 40rem; }
+.pick button { border: 1.5px solid var(--line); background: var(--paper); border-radius: var(--radius-btn); padding: .9rem; text-align: left; }
+.pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 500; }
+.q { margin: 1.3rem 0 .6rem; font-weight: 500; }
+.field { width: 100%; max-width: 24rem; padding: .8rem 1rem; border: 1.5px solid var(--line); border-radius: var(--radius-btn); background: var(--paper); }
+
+/* ===== 첫 화면: 큰 버튼 3개 (C 제안) ===== */
+.home-title { font-size: clamp(1.6rem, 1.2rem + 2vw, 2.6rem); color: var(--navy); line-height: 1.3; margin: .5rem 0 .6rem; }
+.big3 { display: grid; gap: .8rem; margin-top: 1.6rem; }
+.big3 button { border: 0; border-radius: 20px; padding: 1.3rem 1.3rem 1.4rem; text-align: left; min-height: 7rem;
+  display: flex; flex-direction: column; justify-content: space-between; gap: .4rem; }
+.big3 b { font-size: 1.25rem; }
+.big3 span { font-size: .92rem; opacity: .85; }
+.big3 .p { background: var(--accent); color: var(--paper); }
+.big3 .o { background: var(--navy); color: var(--paper); }
+.big3 .f { background: var(--field); color: var(--ink); border: 1.5px solid var(--line); }
+@media (min-width: 40rem) { .big3 { grid-template-columns: repeat(3, 1fr); } .big3 button { min-height: 11rem; } }
+
+/* ===== 메시지 화면 배치 =====
+   폰: 메시지 → 아래 선택지 / 넓은 화면(56rem 이상): 메시지 | 오른쪽 선택지 */
+.stage { position: relative; display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .stage { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; } .choices { position: sticky; top: 5rem; } }
+
+/* ===== B가 고칠 곳 2: 문자 앱 틀 ===== */
+.sms { container-type: inline-size; max-width: 26rem; width: 100%; margin: 0 auto; border: 1px solid var(--line);
+  border-radius: var(--radius-app); overflow: hidden; background: var(--paper); display: flex; flex-direction: column; min-height: 26rem; }
+.sms-top { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); }
+.sms-top .back { font-size: 1.5rem; line-height: 1; color: var(--muted); }
+.avatar { width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--field); display: grid; place-items: center; color: var(--muted); font-weight: 700; flex: none; }
+.sms-top .who { font-weight: 500; }
+.sms-top .who small { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+.sms-thread { flex: 1; padding: 1rem .9rem; display: flex; flex-direction: column; gap: .5rem; }
+.day { text-align: center; font-size: .75rem; color: var(--muted); margin-bottom: .4rem; }
+.bubble-row { display: flex; align-items: flex-end; gap: .4rem; }
+.bubble { background: var(--bubble); border-radius: 18px 18px 18px 4px; padding: .65rem .85rem; max-width: 85%; font-size: .95rem; }
+.bubble .lnk { color: var(--link); text-decoration: underline; word-break: break-all; }
+.bubble-row time { font-size: .7rem; color: var(--muted); flex: none; }
+.sms-input { display: flex; gap: .5rem; align-items: center; padding: .6rem .8rem; border-top: 1px solid var(--line); color: var(--muted); }
+.sms-input .box { flex: 1; border: 1px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-size: .85rem; }
+
+/* ===== B가 고칠 곳 3: 메일 앱 틀 =====
+   좁을 때(34rem 미만): 받은편지함 목록 → 누르면 메일 전체 / 넓을 때: 왼쪽 목록 + 오른쪽 읽기 창
+   너비 기준은 화면 전체가 아니라 메일 틀의 너비 (컨테이너 쿼리) */
+.mail-wrap { container-type: inline-size; }
+.mail { border: 1px solid var(--line); border-radius: var(--radius-app); overflow: hidden; background: var(--paper); min-height: 28rem; display: flex; flex-direction: column; }
+.mail-bar { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-bottom: 1px solid var(--line); font-weight: 500; }
+.mail-bar .search { margin-left: auto; font-weight: 400; font-size: .8rem; color: var(--muted); background: var(--field); border-radius: 999px; padding: .25rem .8rem; }
+.mail-body { flex: 1; display: grid; }
+.mail-list { border-right: 0; }
+.mail-row { display: grid; grid-template-columns: auto 1fr auto; gap: .2rem .6rem; width: 100%; text-align: left; padding: .8rem .9rem;
+  border: 0; border-bottom: 1px solid var(--line); background: none; }
+.mail-row .dot { grid-row: span 2; width: .55rem; height: .55rem; border-radius: 50%; margin-top: .5rem; background: transparent; }
+.mail-row.new .dot { background: var(--unread); }
+.mail-row .nm { font-size: .95rem; }
+.mail-row.new .nm, .mail-row.new .sj { font-weight: 700; }
+.mail-row time { font-size: .75rem; color: var(--muted); }
+.mail-row .sj { grid-column: 2 / -1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row.old { opacity: .55; cursor: default; }
+.mail-row.on { background: var(--accent-soft); }
+.mail-read { padding: 1rem 1.1rem 1.3rem; display: none; }
+.mail[data-view="read"] .mail-read { display: block; }
+.mail[data-view="read"] .mail-list { display: none; }
+.mail-read .back { border: 0; background: none; color: var(--muted); padding: 0 0 .6rem; font-size: .9rem; }
+.mail-read h3 { font-size: 1.15rem; line-height: 1.4; margin-bottom: .8rem; }
+.from { display: flex; gap: .6rem; align-items: flex-start; }
+.from .meta { flex: 1; min-width: 0; }
+.from-name { border: 0; background: none; padding: 0; font-weight: 700; text-align: left; }
+.from-name::after { content: " ▾"; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.from-name[aria-expanded="true"]::after { content: " ▴"; }
+.from .to { display: block; font-size: .8rem; color: var(--muted); }
+.from time { font-size: .78rem; color: var(--muted); }
+.from-detail { margin-top: .5rem; background: var(--field); border-radius: 10px; padding: .6rem .8rem; font-size: .82rem; display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; }
+.from-detail dt { color: var(--muted); }
+.from-detail dd { margin: 0; word-break: break-all; }
+.mail-text { margin-top: 1.1rem; font-size: .95rem; white-space: pre-line; }
+.mail-text .lnk { color: var(--link); text-decoration: underline; word-break: break-all; }
+.attach { margin-top: 1rem; display: inline-flex; gap: .6rem; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: .55rem .8rem; font-size: .85rem; }
+.attach i { width: 1.6rem; height: 2rem; border-radius: 4px; background: var(--field); border: 1px solid var(--line); }
+.empty-read { display: none; }
+@container (min-width: 34rem) {
+  .mail-body { grid-template-columns: 15rem 1fr; }
+  .mail-list { border-right: 1px solid var(--line); }
+  .mail[data-view] .mail-list { display: block; }
+  .mail[data-view] .mail-read { display: block; }
+  .mail-read .back { display: none; }
+  .mail[data-view="list"] .mail-read > * { display: none; }
+  .mail[data-view="list"] .mail-read .empty-read { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: .9rem; }
 }
-/* 하는 일: "내가 한 일"을 한 줄씩 카드로, 표시(✓ △ ✕)를 색 동그라미로 */
-#s-result .mylog { display: grid; gap: .5rem; }
-#s-result .mylog li { border: 1px solid var(--line); border-radius: 12px; padding: .75rem .9rem; align-items: flex-start; }
-#s-result .mylog .mark { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-size: .85rem; color: #FFFFFF; margin-top: .05rem; }
-#s-result .mylog .mark.ok { background: var(--safe); } #s-result .mylog .mark.bad { background: var(--danger); } #s-result .mylog .mark.slow { background: var(--caution); }
-@media (prefers-color-scheme: dark) { #s-result .mylog .mark { color: var(--paper); } }
-#s-result .mylog small { margin-top: .15rem; }
-/* 하는 일: 직군 비교 막대에서 "나"를 보라색으로 */
-#s-result .cmp-row.me .fill { background: #4B53D6; }
-#s-result .cmp-row .track { height: 14px; }
-/* 하는 일: 따라 쓰기를 "마지막 단계" 상자로 구분 */
-#s-result .copy { border: 1px solid #B9BEF5; border-top: 4px solid #4B53D6; border-radius: 14px; padding: .75rem 1.1rem 1.1rem; margin-top: 1.75rem; background: var(--paper); }
-#s-result .copy h2 { color: #4B53D6; font-size: 1.1rem; }
-#s-result .copy-src { border-left: 4px solid #4B53D6; border-radius: 4px 10px 10px 4px; }
-@media (prefers-color-scheme: dark) { #s-result .copy { border-color: #3A3F7A; border-top-color: #8E96FF; } #s-result .copy h2 { color: #A8AEFF; } #s-result .copy-src { border-left-color: #8E96FF; } }
-/* 하는 일: 마지막 버튼. 체험 완료는 첫 화면 체험 상자와 같은 보라색, 다시 도전은 테두리 버튼 */
-#s-result .nav .primary { background: #4B53D6; color: #FFFFFF; }
-#s-result .nav .primary:not(:disabled):hover { background: #3B42C4; }
-#s-result .nav .secondary:not(:disabled):hover { border-color: #2A3A66; box-shadow: 0 0 0 1px #2A3A66; }
-#s-result .nav .secondary:disabled { opacity: .45; cursor: not-allowed; }
-#s-result .again .again-head { font-weight: 700; margin: .6rem 0 .2rem; }
-#s-result .again .again-tip { margin: 0; font-size: .92rem; }
-/* 하는 일: 다시 도전 안내 (A 11/03). 만점이 아니면 빨간 글씨로 다시 도전을 부드럽게 권한다 */
-#s-result .retry-note { color: #C5221F; font-size: .95rem; line-height: 1.6; margin: 1.25rem 0 0; }
-@media (prefers-color-scheme: dark) { #s-result .retry-note { color: #FF8A80; } }
-/* B 11/03 (피드백 반영) ------------------------------------------------------------
-   하는 일: 직군·문진표 제목, 선택 미리보기, 문제별 결과 제목, 결과 화면의 보안 의식 수준 상자 모양
-   참고: 이 아래 모양은 모두 새로 더한 칸에만 적용된다 */
-.screen-title { font-size: 1.6rem; line-height: 1.35; margin: 0 0 .5rem; color: #16224A; word-break: keep-all; }
-.screen-lead { color: var(--muted); margin: 0 0 1.5rem; word-break: keep-all; }
-@media (prefers-color-scheme: dark) { .screen-title { color: var(--ink); } }
-/* 하는 일: 선택지를 누르면 오른쪽 칸이 "내가 고른 행동이 진행되는 모습"으로 잠깐 바뀐다 */
-.answer-col.previewing > :not(.preview) { display: none; }
-.preview { border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.2rem 1.2rem; background: var(--paper); word-break: keep-all; }
-.preview .pv-label { font-size: .8rem; color: var(--muted); margin: 0 0 .2rem; }
-.preview .pv-choice { font-weight: 500; margin: 0 0 1rem; }
-.preview .pv-status { display: flex; align-items: center; gap: .6rem; font-size: 1.1rem; font-weight: 700; color: #16224A; }
-.preview .pv-dot { flex: none; width: .8rem; height: .8rem; border-radius: 50%; background: #4B53D6; animation: pvPulse 1s ease-in-out infinite; }
-.preview.wait .pv-dot { background: var(--caution); }
-.preview .pv-sub { color: var(--muted); margin: .4rem 0 1rem; overflow-wrap: anywhere; }
-.preview.wait .pv-sub b { color: var(--caution); }
-.preview .pv-bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.preview .pv-bar i { display: block; height: 100%; width: 0; background: #4B53D6; }
-.preview.run .pv-bar i { animation: pvFill var(--pv-ms, 2200ms) linear forwards; }
-.preview.wait .pv-bar i { background: var(--caution); }
-@keyframes pvPulse { 50% { transform: scale(.6); opacity: .5; } }
-@keyframes pvFill { to { width: 100%; } }
-@media (prefers-color-scheme: dark) { .preview .pv-status { color: var(--ink); } }
-@media (prefers-reduced-motion: reduce) { .preview .pv-dot { animation: none; } }
-/* 하는 일: 해설 화면 왼쪽 위 "문제 n번 결과" */
-#explain-progress { font-size: 1.15rem; font-weight: 700; color: #16224A; margin-bottom: 1rem; }
-@media (prefers-color-scheme: dark) { #explain-progress { color: var(--ink); } }
-/* 하는 일: 결과 화면 "나의 보안 의식 수준" 상자 (5칸 막대) */
-.level { border: 1px solid var(--line); border-left: 6px solid var(--lv); border-radius: 6px 14px 14px 6px; padding: 1rem 1.15rem 1.1rem; margin: 1.1rem 0 0; word-break: keep-all; }
-.level .lv-top { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .5rem; }
-.level .lv-name { font-size: .85rem; color: var(--muted); }
-.level .lv-meter { display: flex; gap: 4px; }
-.level .lv-meter i { width: 1.6rem; height: .5rem; border-radius: 2px; background: var(--line); }
-.level .lv-meter i.on { background: var(--lv); }
-.level h2 { margin: 0 0 .35rem !important; font-size: 1.2rem; color: #16224A; }
-.level p { margin: 0 0 .5rem; }
-.level ul { margin: .25rem 0 .6rem; padding-left: 1.2rem; }
-.level ul li { margin-bottom: .25rem; }
-.level .lv-note { font-size: .85rem; color: var(--muted); margin: .5rem 0 0; }
-@media (prefers-color-scheme: dark) { .level h2 { color: var(--ink); } }
+
+/* ===== B가 고칠 곳 4: 선택지 ===== */
+.choices { border: 1px solid var(--line); border-radius: var(--radius-app); padding: 1rem; background: var(--paper); }
+.choices h2 { font-size: 1.05rem; margin-bottom: .6rem; }
+.timer { height: 6px; border-radius: 3px; background: var(--field); overflow: hidden; margin-bottom: .3rem; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--accent); transition: width 1s linear; }
+.timer-txt { font-size: .78rem; color: var(--muted); margin-bottom: .8rem; }
+.timer.over i { background: var(--caution); }
+.opt { display: block; width: 100%; text-align: left; border: 1.5px solid var(--line); background: var(--paper); border-radius: var(--radius-btn); padding: .85rem .9rem; margin-bottom: .55rem; font-size: .95rem; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { opacity: .5; cursor: not-allowed; }
+.wait-open { font-size: .82rem; color: var(--muted); margin-bottom: .6rem; }
+
+/* 선택 미리보기 (B 11/09 방식 그대로, 2.2초) */
+.preview { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 92%, transparent); border-radius: var(--radius-app); }
+.preview .box { max-width: 24rem; width: calc(100% - 2rem); border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius-app); padding: 1.2rem; }
+.preview .lbl { font-size: .8rem; color: var(--muted); }
+.preview .ch { font-weight: 500; margin: .2rem 0 .8rem; }
+.preview .st { font-weight: 700; color: var(--navy); }
+.preview .st.wait { color: var(--caution); }
+.preview .bar { height: 4px; background: var(--field); border-radius: 2px; margin-top: .9rem; overflow: hidden; }
+.preview .bar i { display: block; height: 100%; width: 0; background: var(--accent); animation: fill 2.2s linear forwards; }
+@keyframes fill { to { width: 100%; } }
+
+/* ===== 해설 ===== */
+.explain { display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .explain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+.recap { border: 1px solid var(--line); border-radius: 14px; padding: 1rem; font-size: .9rem; }
+.recap .who { font-weight: 700; margin-bottom: .3rem; }
+.verdict { display: inline-block; border-radius: 999px; padding: .2rem .8rem; font-size: .85rem; font-weight: 500; margin-bottom: .7rem; }
+.verdict.good { background: var(--safe-soft); color: var(--safe); }
+.verdict.bad { background: var(--danger-soft); color: var(--danger); }
+.verdict.wait { background: var(--caution-soft); color: var(--caution); }
+.ex-box { border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.1rem; display: grid; gap: .8rem; }
+
+/* ===== 결과: 사전·사후 나란히 ===== */
+.result { display: grid; gap: 1rem; }
+@media (min-width: 56rem) { .result { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; } }
+.score { border: 1px solid var(--line); border-radius: 16px; padding: 1.1rem; }
+.score + .score { margin-top: .8rem; }
+.score h3 { font-size: 1rem; margin-bottom: .2rem; }
+.score p { font-size: .85rem; color: var(--muted); margin-bottom: .8rem; }
+.pp { display: grid; grid-template-columns: 3rem 1fr 3rem; gap: .5rem; align-items: center; font-size: .88rem; margin-top: .4rem; }
+.pp .track { height: .7rem; border-radius: 999px; background: var(--field); overflow: hidden; }
+.pp .track i { display: block; height: 100%; border-radius: 999px; background: var(--muted); }
+.pp.post .track i { background: var(--accent); }
+.pp b { text-align: right; }
+.more { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.more a { color: var(--link); }
+
+/* ===== B가 고칠 곳 5: 개인용 게임 (행동 문구, 시간 제한 없음) =====
+   폰 2열, 넓은 화면 4열. 카드 수는 같다 (8장) */
+.game { max-width: 52rem; }
+.game-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .8rem; }
+.game-head b { font-size: 1.3rem; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+@media (min-width: 48rem) { .grid { grid-template-columns: repeat(4, 1fr); } }
+.blk { position: relative; min-height: 5.5rem; border: 0; border-bottom: 3px solid var(--line); border-radius: 14px; background: var(--field);
+  padding: .8rem; text-align: left; font-size: .92rem; overflow: hidden; transition: transform .1s; }
+.blk:active { transform: translateY(2px); }
+.blk.ok { background: var(--safe-soft); color: var(--safe); border-bottom-color: var(--safe); }
+.blk.ng { background: var(--danger-soft); color: var(--danger); animation: shk .3s; }
+.blk .why { display: block; font-size: .8rem; margin-top: .3rem; }
+.blk .bd { position: absolute; right: .5rem; top: .5rem; font-size: .72rem; font-weight: 700; background: var(--caution-soft); color: var(--caution); border-radius: 999px; padding: 0 .5rem; }
+@keyframes shk { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+.data-tag { display: inline-block; font-size: .72rem; color: var(--caution); background: var(--caution-soft); border-radius: 6px; padding: 0 .4rem; margin-left: .3rem; vertical-align: middle; }
+
+/* ===== 중간안 (A 11/13): 지금 사이트 느낌 + 포스터 색·포인트 =====
+   흰 바탕, 납작한 카드, 글꼴은 지금 사이트(IBM Plex Sans KR) 그대로
+   포스터에서 가져온 것: 색(파랑·남색·노랑), 노란 숫자 동그라미, 노란 강조 띠, 카드 색 순서 */
+:root {
+  --navy: #0F1F45; --ink: #1B2A41; --accent: #2563C9; --accent-soft: #E3ECFA; --point: #FFE699;
+  --mascot: #3B7BE0; --link: #2563C9; --unread: #2563C9; --focus: #2563C9;
+}
+main:focus { outline: none; }
+.top { border-bottom: 1px solid var(--line); }
+.btn { background: var(--accent); color: #fff; }
+.step::before { content: ""; }
+.hero2 { display: grid; gap: 2rem; align-items: center; min-height: calc(100vh - 12rem); }
+.hero2 .mascot { width: 8.5rem; height: auto; display: block; animation: pop .9s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes pop { from { transform: translateY(30%); opacity: 0; } to { transform: none; opacity: 1; } }
+.hero2 h1 { font-size: clamp(2.1rem, 4.3vw, 3.6rem); line-height: 1.18; letter-spacing: -.025em; font-weight: 700; color: var(--navy); margin: .6rem 0 1rem; }
+.band { background: linear-gradient(transparent 50%, var(--point) 50%, var(--point) 94%, transparent 94%); font-weight: 700; color: var(--navy); font-size: clamp(1.02rem, .95rem + .4vw, 1.2rem); }
+.go3 { display: grid; gap: .8rem; }
+.go3 button { border: 0; border-radius: 14px; padding: 1.2rem 1.15rem 1.3rem; text-align: left; display: flex; flex-direction: column; gap: .2rem; transition: transform .12s; }
+.go3 button:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
+.go3 .p:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent); }
+.go3 svg { margin-bottom: .6rem; flex: none; }
+.go3 .num { width: 2rem; height: 2rem; border-radius: 50%; background: var(--point); color: var(--navy); display: grid; place-items: center; font-weight: 700; margin-bottom: .6rem; }
+.go3 b { font-size: 1.25rem; }
+.go3 .kw { font-size: .85rem; font-weight: 700; }
+.go3 .ds { font-size: .88rem; margin-top: .35rem; line-height: 1.55; opacity: .92; }
+.go3 .p { background: var(--accent); color: #fff; }
+.go3 .o { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--navy); }
+.go3 .o .kw { color: var(--accent); }
+.go3 .f { background: var(--navy); color: #fff; }
+.home-foot { font-size: .8rem; color: var(--muted); margin-top: 2rem; }
+@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(3, 1fr); } .go3 button { min-height: 13rem; } }
+@media (min-width: 72rem) { .hero2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+
+/* 나머지 화면도 같은 느낌으로 */
+.step { color: var(--accent); font-weight: 700; }
+.title { font-weight: 700; letter-spacing: -.02em; }
+.verdict.good { background: var(--accent-soft); color: var(--accent); }
+.pick button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.timer i { background: var(--accent); }
+.pp.post .track i { background: var(--accent); }
+.blk.ok { background: var(--accent-soft); color: var(--accent); border-bottom-color: var(--accent); }
+.blk .bd { background: var(--point); color: #0F1F45; }
+.data-tag { background: var(--point); color: #0F1F45; }
+.big-band { display: inline; }
+
+/* ===== 예전 game.html에서 가져온 해설·결과 부분 (A 11/19, 시안 테마에 맞춤) ===== */
+.logo { text-decoration: none; }
+.error { color: var(--danger); font-size: .9rem; margin-top: .8rem; }
+.choose2 { display: grid; gap: .8rem; margin-top: 1.4rem; }
+@media (min-width: 40rem) { .choose2 { grid-template-columns: repeat(2, 1fr); } .choose2 button { min-height: 11rem; } }
+.back-home { display: inline-block; margin-top: 1.2rem; color: var(--muted); font-size: .9rem; }
+
+/* 단서 형광펜과 번호 */
+mark.clue { background: var(--point); color: #0F1F45; border-radius: 3px; padding: 0 .1em; }
+.pin { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; border-radius: 50%; padding: 0 .2rem;
+  background: var(--danger); color: var(--paper); font-size: .72rem; font-weight: 700; line-height: 1; margin: 0 .15rem; vertical-align: middle; }
+.pin.safe { background: var(--safe); }
+.clue-wrap { outline: 2px solid var(--danger); outline-offset: 2px; border-radius: 6px; }
+
+/* 해설 오른쪽 상자 */
+.ex-box .short { font-weight: 500; }
+.ex-box h3 { font-size: .95rem; margin-top: .2rem; }
+.ex-box .hint { font-size: .85rem; color: var(--muted); margin-top: -.5rem; }
+.harm-now { background: var(--danger-soft); color: var(--danger); border-radius: 12px; padding: .7rem .9rem; font-size: .92rem; }
+.chain-steps { background: var(--field); border-radius: 12px; padding: .7rem .9rem; font-size: .9rem; }
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.list li { display: flex; justify-content: space-between; gap: .6rem; border: 1px solid var(--line); border-radius: 10px; padding: .6rem .75rem; font-size: .9rem; }
+.list .factor { font-weight: 700; display: flex; align-items: center; gap: .2rem; }
+.list .text { display: block; color: var(--muted); }
+.list .pts { color: var(--danger); font-weight: 700; flex: none; }
+details.detail { border-top: 1px solid var(--line); padding-top: .7rem; }
+details.detail > summary { cursor: pointer; font-weight: 500; color: var(--accent); }
+details.detail[open] > summary { margin-bottom: .6rem; }
+details.detail h4 { font-size: .9rem; margin: .9rem 0 .35rem; }
+details.detail p { font-size: .9rem; }
+.score-line { font-size: .9rem; margin-top: .4rem; }
+.explain .sms, .explain .mail-wrap { pointer-events: none; }
+.explain .mail .from-name::after { content: ""; }
+.explain .mail-read .back { display: none; }
+
+/* 결과 */
+.headline { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: .2rem; }
+.headline + .muted { color: var(--muted); font-size: .92rem; margin-bottom: 1rem; }
+.level { --lv: var(--accent); border: 1px solid var(--line); border-left: 6px solid var(--lv); border-radius: 16px; padding: 1rem 1.1rem; display: grid; gap: .5rem; }
+.lv-top { display: flex; justify-content: space-between; align-items: center; gap: .6rem; font-size: .88rem; }
+.lv-meter { display: flex; gap: .2rem; }
+.lv-meter i { width: 1.1rem; height: .45rem; border-radius: 2px; background: var(--field); }
+.lv-meter i.on { background: var(--lv); }
+.level h2 { font-size: 1.02rem; }
+.level p { font-size: .92rem; }
+.level ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.lv-note { font-size: .8rem; color: var(--muted); }
+.harm { background: var(--danger-soft); color: var(--danger); border-radius: 14px; padding: .9rem 1rem; font-size: .9rem; }
+.harm ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+.sub-h { font-size: 1rem; margin: 1.4rem 0 .6rem; }
+.mylog { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; }
+.mylog li { display: flex; gap: .6rem; align-items: flex-start; font-size: .92rem; }
+.mylog small { display: block; color: var(--muted); font-size: .82rem; }
+.mylog .harm-line { color: var(--danger); }
+.mark { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 700; }
+.mark.ok { background: var(--accent-soft); color: var(--accent); }
+.mark.slow { background: var(--caution-soft); color: var(--caution); }
+.mark.bad { background: var(--danger-soft); color: var(--danger); }
+.cmp { display: grid; gap: .4rem; max-width: 30rem; }
+.cmp-row { display: grid; grid-template-columns: 6.5rem 1fr 3rem; gap: .5rem; align-items: center; font-size: .88rem; }
+.cmp-row .track { height: .7rem; border-radius: 999px; background: var(--field); overflow: hidden; }
+.cmp-row .fill { display: block; height: 100%; background: var(--muted); }
+.cmp-row.me .fill { background: var(--accent); }
+.cmp-row .val { text-align: right; }
+.muted { color: var(--muted); }
+.slow-box { background: var(--caution-soft); color: var(--caution); border-radius: 14px; padding: .8rem 1rem; font-size: .9rem; }
+.copy-src { margin: 0; padding: 1rem; border-radius: 14px; background: var(--field); font-size: 1.05rem; max-width: 40rem; }
+.copy-in.ok { border-color: var(--safe); }
+.copy-msg { font-size: .88rem; margin-top: .4rem; color: var(--caution); }
+.copy-msg.ok { color: var(--safe); }
+
+/* 연쇄형: 단계마다 문자가 하나씩 늘어남 */
+.sms-thread .day + .bubble-row { margin-top: 0; }
+.sms-thread .day:not(:first-child) { margin-top: .8rem; }
 </style>
 </head>
 <body>
-<main>
+<div class="site">
+  <header class="top">
+    <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+    <a class="logo" href="/">캐치피싱</a>
+  </header>
+  <nav class="side" id="side" aria-label="메뉴">
+    <p class="side-head">메뉴</p>
+    <a href="/">첫 화면</a>
+    <a href="/check" target="_blank" rel="noopener">링크 검사</a>
+    <a href="/manual" target="_blank" rel="noopener">대응 매뉴얼</a>
+  </nav>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
 
-<!-- 화면 1. 시작 안내 -->
-<section id="s-start">
-  <p style="margin:0 0 1.5rem"><a href="/" style="color:inherit;font-size:.9rem">← 처음으로</a></p>
-  <!-- 수정 (B 11/03 피드백): 제목과 본문을 "간단한 문진을 시작합니다"로. 문진 결과가 결과 피드백(자신감과 실제 비교)에 쓰인다는 것을 알린다 -->
-  <h1 class="screen-title">간단한 문진을 시작합니다</h1>
-  <p class="screen-lead">체험 전 현재 내 보안 인식을 점검합니다. 결과 피드백에 내용이 반영됩니다.</p>
-  <p class="muted">이름은 저장하지 않고, 결과는 익명으로 모입니다.</p>
-  <h2>내 직군</h2>
-  <div class="choices" id="jobs"></div>
-  <div class="nav"><button class="primary" id="btn-start" disabled>시작하기</button></div>
-</section>
-
-<!-- 화면 2. 문진표 -->
-<section id="s-survey" hidden>
-  <!-- 수정 (B 11/03 피드백): 문진표 화면 제목 -->
-  <h1 class="screen-title">체험 전 사전질문</h1>
-  <div class="progress" id="survey-progress"></div>
-  <div class="bar"><i id="survey-bar"></i></div>
-  <p class="muted">정답이 있는 질문이 아닙니다. 평소 모습 그대로 답해 주세요. 답은 익명 번호로만 저장됩니다.</p>
-  <p class="question" id="survey-q"></p>
-  <div id="survey-choices"></div>
-  <div class="nav">
-    <button class="secondary" id="survey-prev">이전</button>
-    <button class="primary" id="survey-next" disabled>다음</button>
-  </div>
-  <p class="error" id="start-error" role="alert"></p>
-</section>
-
-<!-- 화면 2-1. 체험 시작 안내 (A 11/02 순서 연결, 문구·예시 화면은 B가 채움)
-     참고: id(intro-screen, intro-go)는 A의 스크립트가 쓰니 바꾸지 말아 주세요 -->
-<section id="intro-screen" hidden>
-  <h1>이제부터 체험을 시작합니다</h1>
-  <!-- 문장은 B의 시작 안내문(10/23 확정)을 줄인 것 (A 11/02). "보낸 곳과 요구하는 행동을 보세요"는 정답 힌트라 넣지 않는다 (평소 모습을 재려고) -->
-  <ul class="intro-steps">
-    <li>평소 업무 중이라고 생각하고, 실제로 할 행동을 골라 주세요.</li>
-    <li>진짜 업무 메시지도 섞여 있어요. 모든 메시지를 의심하면 업무가 늦어진 것으로 기록돼요.</li>
-    <li>행동을 고르면 그 행동이 어떻게 진행되는지 먼저 보여 주고, 이어서 해설이 나와요.</li>
-    <li id="limit-note">문자 15초, 메일 25초 제한이 있어요. 시간이 지나도 고를 수 있어요.</li>
-  </ul>
-  <!-- 예시 그림 (B 11/03). 그림 부분은 화면 낭독기에 설명 한 줄로 읽히고, 번호 설명은 아래 목록으로 읽힌다 -->
-  <div id="intro-example">
-    <!-- 수정 (B 11/03 피드백) -->
-    <p class="question" style="margin:1.25rem 0 .6rem">아래와 같은 방식으로 문제가 나와요.</p>
-    <div class="ex-box">
-      <span class="ex-tag">화면 예시 (실제 문제가 아니에요)</span>
-      <div class="ex-grid" role="img" aria-label="문제 화면 예시: 왼쪽에 받은 문자, 오른쪽에 남은 시간 막대와 선택지 세 개">
-        <div class="ex-part">
-          <span class="ex-num" aria-hidden="true">1</span>
-          <div class="ex-msg" aria-hidden="true">
-            <p class="ex-from">예시 문자</p>
-            <div class="ex-bubble">[예시] 오늘 오후 3시 2층 회의실 예약이 확정되었습니다.</div>
-          </div>
-        </div>
-        <div class="ex-part" aria-hidden="true">
-          <span class="ex-num">2</span>
-          <div class="ex-time">남은 시간<div class="tbar"><i></i></div></div>
-          <div class="ex-part">
-            <span class="ex-num" style="top:-.45rem">3</span>
-            <div class="ex-choice">선택지 하나</div>
-            <div class="ex-choice">선택지 둘</div>
-            <div class="ex-choice">선택지 셋</div>
-          </div>
-        </div>
-      </div>
-      <ol class="ex-legend">
-        <li><b aria-hidden="true">1</b><span>받은 메일이나 문자가 실제 화면처럼 나와요.</span></li>
-        <li><b aria-hidden="true">2</b><span>남은 시간이 줄어들어요. 시간이 지나도 고를 수 있어요.</span></li>
-        <li><b aria-hidden="true">3</b><span>실제로 할 행동을 하나 골라요. 고른 행동이 진행되는 모습을 본 뒤 해설이 나와요.</span></li>
-      </ol>
-    </div>
-  </div>
-  <div class="nav"><button class="primary" id="intro-go">체험 시작</button></div>
-</section>
-
-<!-- 화면 3-1. 게임: 문제 보기 -->
-<section id="s-game" hidden>
-  <div class="progress" id="game-progress"></div>
-  <div class="bar"><i id="game-bar"></i></div>
-  <div class="game-grid">
-    <div class="screen-col"><div id="card"></div></div>
-    <div class="answer-col">
-      <p class="question">이 메시지를 받았다면 어떻게 하시겠어요?</p>
-      <div class="timer" id="game-timer"><span id="timer-text" role="status"></span><div class="tbar" aria-hidden="true"><i id="timer-bar"></i></div></div>
-      <div class="choices">
-        <!-- 선택지 문구 (A 10/30): 세 버튼을 모두 "업무를 어떻게 처리할까" 말투로. "공식"이라는 말로 정답을 알아채지 않게 하고, 확인에는 시간이 든다는 현실을 보여 준다 -->
-        <button class="choice" data-choice="click">링크·첨부를 열어 바로 처리한다</button>
-        <button class="choice" data-choice="call">적힌 번호로 전화해 처리한다</button>
-        <button class="choice" data-choice="official">처리를 멈추고 따로 확인한다<small>대표번호·담당자, 시간이 걸려요</small></button>
-      </div>
-      <p class="error" id="game-error" role="alert"></p>
-      <!-- 선택 미리보기 (B 11/03 피드백): 선택지를 누르면 이 칸이 잠깐 보인 뒤 해설로 넘어간다 -->
-      <div class="preview" id="preview" hidden role="status" aria-live="polite"></div>
-    </div>
-  </div>
-</section>
-
-<!-- 화면 3-1-2. 연쇄형 단계 (A 10/29): 연쇄형 카드에서 링크를 열면 이어지는 화면. 문장은 B 확정(설계 B 2-1) -->
-<section id="s-chain" hidden>
-  <div class="progress" id="chain-progress"></div>
-  <div class="bar"><i id="chain-bar"></i></div>
-  <div class="game-grid">
-    <div class="screen-col"><div id="chain-card"></div></div>
-    <div class="answer-col">
-      <p class="question">다음 화면이 나왔어요. 어떻게 하시겠어요?</p>
-      <div class="choices">
-        <button class="choice" data-action="continue" id="chain-continue"></button>
-        <button class="choice" data-action="stop" id="chain-stop"></button>
-      </div>
-      <p class="error" id="chain-error" role="alert"></p>
-    </div>
-  </div>
-</section>
-
-<!-- 화면 3-2. 게임: 해설 (B 10/26: 왼쪽에 방금 본 메시지, 오른쪽에 해설) -->
-<section id="s-explain" hidden>
-  <div class="progress" id="explain-progress"></div>
-  <div class="explain-grid">
-    <div class="screen-col"><div id="explain-card"></div></div>
-    <div class="explain-col"><div id="explain"></div></div>
-    <div class="nav next-col"><button class="primary" id="btn-next">다음 문제</button></div>
-  </div>
-</section>
-
-<!-- 화면 4. 결과 -->
-<section id="s-result" hidden>
-  <h1 class="sr-only">내 결과</h1>
-  <div id="result"></div>
-  <!-- 수정 (A 11/02): 마지막에 대응 매뉴얼 문장 한 줄을 따라 써야 [체험 완료] 버튼이 켜진다. 링크 검사 버튼은 메인 화면에 있어 뺐다 -->
-  <div class="copy" id="copy-box">
-    <h2>마지막으로 한 줄 따라 쓰기</h2>
-    <p class="muted">대응 매뉴얼의 문장이에요. 그대로 입력해주세요. 띄어쓰기와 문장부호는 달라도 괜찮아요.</p>
-    <p class="copy-src" id="copy-src"></p>
-    <input id="copy-in" type="text" autocomplete="off" autocorrect="off" spellcheck="false" aria-labelledby="copy-src" placeholder="여기에 입력">
-    <p class="copy-msg" id="copy-msg" role="status"></p>
-  </div>
-  <!-- 수정 (A 11/03): 만점이 아니면 [체험 완료]는 잠그고 다시 도전만 열어 둔다 (1회차와 비교해 교육 효과를 보려고) -->
-  <p class="retry-note" id="retry-note" hidden>아쉬운 문제가 조금 있었어요! 방금 배운 내용을 내 것으로 만들 수 있게, 따라 쓰기를 마친 뒤 <b>처음 보는 새 문제</b>로 한 번만 더 도전해 주세요. 지난번보다 얼마나 나아졌는지 바로 보여 드릴게요.</p>
-  <div class="nav">
-    <button class="secondary" id="btn-retry" hidden disabled>새 문제로 다시 도전</button>
-    <button class="primary" id="btn-done" disabled>체험 완료, 메인 화면으로</button>
-  </div>
-</section>
-
-</main>
 <script>
-// 직군 (팀 결정, 임시)
-const JOBS = [["hr","인사"],["finance","재무·회계"],["sales","영업·고객"],["dev","개발·IT"],["office","일반 사무"]];
-// 문진표 (B 설계 3번)
+/* =====================================================================
+   정해 둔 값
+   ===================================================================== */
+
+// 직군 (팀 결정)
+const JOBS = [["hr", "인사"], ["finance", "재무·회계"], ["sales", "영업·고객"], ["dev", "개발·IT"], ["office", "일반 사무"]];
+// 문진표 (B 설계 3번 그대로). 기관용은 Q1~Q4, 개인용은 Q1만 (전시에서 짧게, A 11/14 시안)
 const SURVEY = [
   { id: "Q1", text: "수상한 메일이나 문자를 받으면 피싱인지 구분할 자신이 있다.", scale: true },
   { id: "Q2", text: "최근 1년 안에 피싱이 의심되는 메일·문자를 받아 본 적이 있나요?",
@@ -515,175 +398,228 @@ const SURVEY = [
     options: ["링크를 눌러 확인한다", "문자에 적힌 번호로 전화해 본다", "공식 앱이나 대표번호로 직접 확인한다", "무시한다"] },
   { id: "Q4", text: "최근 1년 안에 정보보안(피싱) 교육을 받은 적이 있나요?", options: ["있다", "없다", "기억나지 않는다"] }
 ];
+// 제한 시간 (팀 결정 4번). 시간이 지나도 고를 수 있고, 시간 안에 못 고른 수만 결과에 표시
+const LIMIT = { sms: 15, email: 25 };
+const PREVIEW_MS = 2200;   // 선택 미리보기 시간 (B 11/09)
 const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
+const DEFAULT_LABELS = { click: "안내대로 바로 처리한다", call: "적힌 연락처로 문의한다", official: "따로 확인한다" };
 
-// 참고: log는 완료 화면의 "내가 한 일"용 기록 (문제마다 고른 행동과 결과, A 11/02). 화면에만 쓰고 서버로 보내지 않는다
-const state = { job: null, survey: {}, q: 0, anon: null, cards: [], i: 0, answers: [], chain: null, chainResult: null, late: 0, log: [], round: 1, prev: null, last: null };
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// 받은편지함에 함께 보이는 지난 메일 (누를 수 없음, 목록을 실제처럼 보이게. A 11/14 시안)
+const OLD_MAIL = {
+  personal: [["학교 도서관", "대출 도서 반납일 안내", "어제"], ["동아리 회장", "이번 주 정기 모임 장소", "11월 10일"]],
+  org: [["총무팀", "이번 주 회의실 예약 현황", "어제"], ["경영지원팀", "11월 사내 소식지", "11월 10일"]]
+};
+// 문제마다 화면에 보일 받은 시각 (꾸밈용, 채점과 상관없음)
+const TIMES = ["오전 9:12", "오전 11:30", "오후 1:05", "오후 3:41"];
 
-function show(id) {
-  ["s-start", "s-survey", "intro-screen", "s-game", "s-chain", "s-explain", "s-result"].forEach(s => $(s).hidden = s !== id);
-  // 하는 일: 문제 화면과 해설 화면일 때만 넓은 배치를 쓴다 / 이유: 왼쪽 메시지 화면과 오른쪽 버튼·해설을 나란히 두려고
-  document.querySelector("main").classList.toggle("wide", id === "s-game" || id === "s-chain" || id === "s-explain");
-  window.scrollTo(0, 0);
-}
-async function post(url, body) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "서버에 연결하지 못했어요.");
-  return data;
-}
+// 개인용 게임 행동 문구 (A 11/14 시안 데이터. 위험한 행동이면 1)
+const ACTIONS = [
+  ["문자 속 번호로 전화해 문의하기", 1, "보낸 사람이 정한 번호라 그쪽 사람이 받아요"],
+  ["대표번호를 직접 찾아 문의하기", 0, "내가 찾은 번호라 진짜 기관으로 연결돼요"],
+  ["메일 속 주소로 들어가 로그인하기", 1, "가짜 로그인 화면일 수 있어요"],
+  ["앱을 직접 열어 알림 확인하기", 0, "공식 앱 안의 알림은 내가 연 경로라 안전해요"],
+  ["문자가 알려 준 앱 설치하기", 1, "설치 파일로 악성 앱이 깔릴 수 있어요"],
+  ["앱 장터에서 공식 앱 찾아 설치하기", 0, "공식 장터에서 직접 찾은 앱이에요"],
+  ["메일에 답장해 진짜인지 묻기", 1, "답장은 보낸 사람에게 가요. 가짜라면 가짜가 대답해요"],
+  ["담당자에게 따로 연락해 확인하기", 0, "내가 아는 연락처로 확인하는 방법이에요"]
+];
 
-// 화면 1
-$("jobs").innerHTML = JOBS.map(([v, t]) => `<button class="choice" data-job="${v}" aria-pressed="false">${t}</button>`).join("");
-$("jobs").addEventListener("click", e => {
-  const b = e.target.closest("[data-job]"); if (!b) return;
-  state.job = b.dataset.job;
-  $("jobs").querySelectorAll("[data-job]").forEach(x => x.setAttribute("aria-pressed", x === b));
-  $("btn-start").disabled = false;
-});
-$("btn-start").onclick = () => { state.q = 0; renderSurvey(); show("s-survey"); };
-
-// 화면 2
-function renderSurvey() {
-  const q = SURVEY[state.q], cur = state.survey[q.id];
-  $("survey-progress").textContent = `질문 ${state.q + 1}/${SURVEY.length}`;
-  $("survey-bar").style.width = `${(state.q + 1) / SURVEY.length * 100}%`;
-  $("survey-q").textContent = q.text;
-  if (q.scale) {
-    $("survey-choices").innerHTML = `<div class="choices scale">${[1,2,3,4,5].map(n => `<button class="choice" data-v="${n}" aria-pressed="${cur === n}">${n}</button>`).join("")}</div>
-      <div class="scale-labels"><span>전혀 아니다</span><span>매우 그렇다</span></div>`;
-  } else {
-    $("survey-choices").innerHTML = `<div class="choices">${q.options.map(o => `<button class="choice" data-v="${esc(o)}" aria-pressed="${cur === o}">${esc(o)}</button>`).join("")}</div>`;
-  }
-  // 수정 (B 11/03 피드백): 첫 질문에서도 [이전]을 보여 주고, 누르면 직군 선택 화면으로 돌아간다
-  $("survey-prev").style.visibility = "visible";
-  $("survey-next").textContent = state.q === SURVEY.length - 1 ? "체험 시작" : "다음";
-  $("survey-next").disabled = cur === undefined;
-}
-$("survey-choices").addEventListener("click", e => {
-  const b = e.target.closest("[data-v]"); if (!b) return;
-  const q = SURVEY[state.q];
-  state.survey[q.id] = q.scale ? Number(b.dataset.v) : b.dataset.v;
-  renderSurvey();
-});
-$("survey-prev").onclick = () => { if (state.q > 0) { state.q--; renderSurvey(); } else { show("s-start"); } };
-$("survey-next").onclick = async () => {
-  if (state.q < SURVEY.length - 1) { state.q++; renderSurvey(); return; }
-  $("survey-next").disabled = true; $("start-error").textContent = "";
-  try {
-    const d = await post("/api/start", { job: state.job, self_check: state.survey });
-    Object.assign(state, { anon: d.anon_id, cards: d.scenarios, i: 0, answers: [], late: 0, log: [], round: 1, prev: null, last: null });
-    // 하는 일: 문진표 다음에 바로 문제를 내지 않고 "이제부터 체험을 시작합니다" 안내를 먼저 보여 준다 (A 11/02)
-    // 이유: 참여자 의견 "문진표에서 갑자기 문제가 나와 화면 보는 법을 몰랐다". 제한 시간은 안내를 닫고 첫 문제가 뜰 때부터 센다
-    show("intro-screen");
-    $("survey-next").disabled = false;
-  } catch (err) { $("start-error").textContent = err.message; $("survey-next").disabled = false; }
+// 따라 쓰기 문장 (B의 대응 매뉴얼 문장 그대로, 예전 game.html)
+const COPY_LINES = {
+  call: "메일이나 문자에 적힌 번호로 전화하지 마세요.",
+  "기관 사칭": "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하세요.",
+  "도메인 위조": "주소를 한 글자씩 읽어 보세요. 한 글자만 달라도 가짜일 수 있어요.",
+  "심리 압박": "서두르게 하는 말이 보이면 일단 멈추세요. 급하다고 할수록 따로 확인할 이유예요.",
+  "연쇄형 공격": "앱 설치나 정보 입력을 요구하면 거기서 멈추세요.",
+  over: "돈, 개인정보, 로그인, 앱 설치를 요구하지 않는 평소 업무라면 바로 처리해도 돼요.",
+  all: "돈, 개인정보, 로그인, 앱 설치, 첨부 열기를 요구하면 처리를 멈추고 따로 확인해요."
 };
 
-$("intro-go").onclick = () => { renderCard(); show("s-game"); };
+/* =====================================================================
+   상태와 도우미
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const main = $("main");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+let S = {};
+let timer = null;
 
-// 화면 3-1 (B 10/25: 카드를 폰 문자·메일 화면 모양으로)
-// 하는 일: 문제마다 화면에 보일 시각. 문제 순서대로 하나씩 쓴다
-// 이유: 실제 폰 화면에는 받은 시각이 늘 보여서, 없으면 어색하다
-// 참고: 꾸밈용 가짜 시각이다. 채점·기록과는 상관없다
-const TIMES = ["오전 9:12", "오전 10:47", "오전 11:30", "오후 1:05", "오후 2:18", "오후 3:41", "오후 4:26", "오후 5:09", "오후 5:52"];
+function reset(mode) {
+  S = { mode, job: null, target: mode === "org" ? "worker" : null, revisit: null, survey: {},
+        anon: null, phase: "pre", round: 1, cards: [], idx: 0,
+        answers: { pre: [], post: [] }, log: { pre: [], post: [] }, late: { pre: 0, post: 0 }, res: { pre: null, post: null },
+        chainCard: null, chainSteps: [], chainResult: null };
+}
+// 하는 일: 서버로 보낼 때마다 붙는 공통 값 (서버 약속 1번 새 모양, 장부 새 칸)
+const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, target: S.target, revisit: S.revisit, self_check: S.survey });
 
-// 하는 일: 폰 맨 위 상태 표시줄(시각, 신호, 배터리)을 만든다
-// 참고: aria-hidden이라 화면 낭독기는 읽지 않는다 (꾸밈이라서)
-function statusBar(t) {
-  return `<div class="status" aria-hidden="true"><span>${t.replace(/^오[전후] /, "")}</span>
-    <span class="icons"><span class="sig"><i></i><i></i><i></i><i></i></span><span class="bat"><i></i></span></span></div>`;
+async function post(url, body) {
+  let res, data;
+  try {
+    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    data = await res.json();
+  } catch (e) { throw new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."); }
+  if (!res.ok) throw new Error(data.error || "서버에 연결하지 못했어요. 다시 눌러 주세요.");
+  return data;
+}
+function render(html) {
+  clearInterval(timer);
+  main.innerHTML = html;
+  window.scrollTo(0, 0);
+  main.focus({ preventScroll: true });
+}
+const phaseName = () => S.phase === "pre" ? "사전 체험" : "사후 체험";
+const modeName = () => S.mode === "org" ? "기관용" : "개인용";
+// 하는 일: 버튼을 누르면 서버를 기다리는 동안 잠그고, 실패하면 오류 문장을 보여 주고 다시 누를 수 있게 한다
+async function busy(btn, fn) {
+  btn.disabled = true;
+  main.querySelectorAll(".error").forEach(e => e.remove());
+  try { await fn(); }
+  catch (err) { btn.disabled = false; btn.insertAdjacentHTML("afterend", `<p class="error" role="alert">${esc(err.message)}</p>`); }
 }
 
-// 하는 일: 카드 1장을 화면 HTML 글자로 만들어 돌려준다 (메일은 PC 웹메일, 문자는 휴대폰 문자 앱)
-// 이유: 만드는 일과 넣는 일을 나누면, 미리보기에서 카드 9장을 한꺼번에 그려 볼 수 있다
-// 참고: 보낸 사람·제목·본문·링크·첨부는 scenarios.json에 적힌 글자를 그대로 쓴다 (esc로 안전하게만 바꿈)
-function cardHTML(c, i) {
-  const t = TIMES[i % TIMES.length];
-  // 하는 일: 링크 주소의 / 뒤에 <wbr>(줄을 바꿔도 되는 자리)를 넣는다. 눈에 보이는 글자는 그대로다
-  const link = c.link ? `<br><span class="fake-link">${esc(c.link).replace(/\/(?!\/)/g, "/<wbr>")}</span>` : "";
-  const note = c.link ? `<p class="screen-note">연습용 주소라 눌러도 열리지 않아요</p>` : "";
-  if (c.channel === "email") {
-    // 하는 일: "인사팀 <hr@...>"를 이름과 주소로 나눈다 (두 글자 모두 그대로 보여 준다)
-    const [name, addr] = (c.sender || "").split("<");
-    const nm = name.trim(), ad = addr ? addr.replace(">", "").trim() : "";
-    return `<div class="pc" role="group" aria-label="PC에서 연 메일">
-      <div class="pc-title" aria-hidden="true"><span>받은편지함 - 사내 메일</span><span class="win"><span>─</span><span>☐</span><span>✕</span></span></div>
-      <div class="pc-addr" aria-hidden="true"><span class="nav-ico">← → ↻</span><span class="url">mail.company.example/inbox</span></div>
-      <div class="wm-top" aria-hidden="true"><span class="brand">사내 메일</span><span class="search">메일 검색</span></div>
-      <div class="wm-body">
-        <nav class="wm-side" aria-hidden="true"><span class="compose">✎ 편지쓰기</span>
-          <div class="on"><span>받은편지함</span><span>3</span></div><div><span>별표편지함</span></div><div><span>보낸편지함</span></div><div><span>임시보관함</span></div></nav>
-        <div class="wm-read">
-          <div class="wm-tools" aria-hidden="true">← ▣ 🗑 ✉</div>
-          <h3 class="wm-subject">${esc(c.subject)}<span class="tag" aria-hidden="true">받은편지함</span></h3>
-          <div class="wm-from"><span class="avatar" aria-hidden="true">${esc(nm.charAt(0))}</span>
-            <div class="meta"><b>${esc(nm)}</b> ${ad ? `<span class="addr">&lt;${esc(ad)}&gt;</span>` : ""}<span class="to">받는 사람: 나 ▾</span></div>
-            <time>${t}</time></div>
-          <div class="wm-text">${esc(c.body)}${link}</div>
-          ${c.attachment ? `<div class="wm-file"><span class="ico" aria-hidden="true"></span><div><b>${esc(c.attachment)}</b><span>첨부파일 1개</span></div></div>` : ""}
-          <div class="wm-reply" aria-hidden="true"><span>↩ 답장</span><span>↪ 전달</span></div>
-        </div>
-      </div>
-    </div>${note}`;
-  }
-  // 하는 일: "건강보험 / 010-0000-0000"에서 번호를 꺼내 맨 위에 보여 준다 (10/24 기본안)
-  // 참고: 이름(건강보험 등)은 본문 맨 앞 [건강보험]에 그대로 들어 있다
+/* =====================================================================
+   1. 고르기 → 직군 → 사전질문
+   ===================================================================== */
+function choose() {
+  S = {};
+  render(`
+    <h1 class="title">어떤 체험을 할까요?</h1>
+    <p class="lead">문자와 메일을 받고 어떻게 할지 골라 보는 체험이에요. 이름은 저장하지 않고, 결과는 익명으로 모여요.</p>
+    <nav class="go3 choose2" aria-label="체험 고르기">
+      <button class="p" data-start="personal"><b>개인용</b><span class="kw">학생·일반인</span><span class="ds">생활 속 문자와 메일로 체험하고, 훈련 게임으로 연습해요</span></button>
+      <button class="o" data-start="org"><b>기관용</b><span class="kw">회사·기관 직원</span><span class="ds">직군별 업무 메시지로 체험하고, 대응 매뉴얼 문장을 따라 써요</span></button>
+    </nav>
+    <a class="back-home" href="/">처음으로</a>`);
+  main.querySelectorAll("[data-start]").forEach(b => b.onclick = () => start(b.dataset.start));
+}
+
+function start(mode) { reset(mode); mode === "org" ? job() : survey(); }
+
+function job() {
+  render(`
+    <p class="step">기관용 체험</p>
+    <h1 class="title">하는 일을 골라 주세요</h1>
+    <p class="lead">내 직군에게 자주 오는 메시지가 하나 섞여요.</p>
+    <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`);
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(".pick button").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; $("next").disabled = false;
+  });
+  $("next").onclick = survey;
+}
+
+function survey() {
+  // 하는 일: 개인용은 대상, 해 본 적 있는지, 자신감(Q1). 기관용은 해 본 적 있는지와 문진표 Q1~Q4
+  // 이유: 흐름 문서 1번. 대상과 해 본 적 있는지는 장부 새 칸(target, revisit)으로 들어가 관리자 통계에서 나눠 본다
+  const qs = [];
+  if (S.mode === "personal") qs.push(["target", "지금 어떤 분이세요?", [["student", "학생"], ["general", "일반인"]]]);
+  qs.push(["revisit", "캐치피싱을 해 본 적 있나요?", [["true", "있어요"], ["false", "처음이에요"]]]);
+  qs.push(["Q1", SURVEY[0].text, [1, 2, 3, 4, 5].map(n => [String(n), n === 1 ? "1 전혀 아니다" : n === 5 ? "5 매우 그렇다" : String(n)])]);
+  if (S.mode === "org") SURVEY.slice(1).forEach(q => qs.push([q.id, q.text, q.options.map(o => [o, o])]));
+  const ans = {};
+  render(`
+    <p class="step">${modeName()} 체험 · 시작 전</p>
+    <h1 class="title">체험 전 사전질문</h1>
+    <p class="lead">정답이 있는 질문이 아니에요. 평소 모습 그대로 답해 주세요. 결과 화면에서 내 생각과 실제 판단을 비교해 드려요.</p>
+    ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
+      <div class="pick" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false">${esc(t)}</button>`).join("")}</div>`).join("")}
+    <div class="row"><button class="btn" id="next" disabled>체험 시작</button></div>`);
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); ans[b.dataset.k] = b.dataset.v;
+    $("next").disabled = !qs.every(q => ans[q[0]] != null);
+  });
+  $("next").onclick = () => busy($("next"), async () => {
+    if (S.mode === "personal") S.target = ans.target;
+    S.revisit = ans.revisit === "true";
+    S.survey = { Q1: Number(ans.Q1) };
+    if (S.mode === "org") ["Q2", "Q3", "Q4"].forEach(k => S.survey[k] = ans[k]);
+    // 서버 약속 1번: 서버가 세트 A·B 중 하나를 무작위로 골라 4문제를 준다
+    const d = await post("/api/start", base());
+    Object.assign(S, { anon: d.anon_id, round: 1, phase: "pre", cards: d.scenarios, idx: 0 });
+    intro();
+  });
+}
+
+/* =====================================================================
+   2. 문자·메일 4개 (사전과 사후가 같은 화면)
+   ===================================================================== */
+function intro() {
+  // 참고: 팀 결정 5번. 시작 안내에는 정답 힌트("보낸 곳을 보세요" 등)를 넣지 않는다
+  const pre = S.phase === "pre";
+  const day = S.mode === "org" ? "평소 업무 중에" : "평소처럼 하루를 보내다";
+  render(`
+    <p class="step">${modeName()} 체험 · ${phaseName()}</p>
+    <h1 class="title">${pre ? "문자와 메일 4개가 도착해요" : "새 문자와 메일 4개가 도착해요"}</h1>
+    <p class="lead">${pre ? `${day} 받은 메시지라고 생각하고, 어떻게 할지 골라 주세요.` : "처음 보는 메시지예요. 배운 대로 골라 보세요."}</p>
+    <p class="note">문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.</p>
+    <div class="row"><button class="btn" id="next">시작하기</button></div>`);
+  $("next").onclick = message;
+}
+
+function smsParts(c) {
   const [name, num] = (c.sender || "").split(" / ");
-  return `<div class="phone" role="group" aria-label="휴대폰으로 받은 문자">${statusBar(t)}
-    <div class="sms-head"><span class="back" aria-hidden="true">‹</span><div class="pic" aria-hidden="true"><i></i></div><b>${esc(num || name)}</b></div>
-    <div class="thread"><p class="day"><b>문자 메시지</b><br>오늘 ${t}</p>
-      <div class="msg"><div class="bubble">${esc(c.body)}${link}</div></div></div>
-    <div class="sms-input" aria-hidden="true"><span class="plus">+</span><span class="box">문자 메시지</span></div>
-  </div>${note}`;
+  return { name, head: num || name };
+}
+function smsHTML(c, time, bubbles) {
+  const { head } = smsParts(c);
+  const link = c.link ? `<br><span class="lnk">${esc(c.link)}</span>` : "";
+  const thread = bubbles || `<p class="day">오늘</p><div class="bubble-row"><div class="bubble">${esc(c.body)}${link}</div><time>${time}</time></div>`;
+  return `<div class="sms" role="group" aria-label="휴대폰으로 받은 문자">
+    <div class="sms-top"><span class="back" aria-hidden="true">‹</span><span class="avatar" aria-hidden="true">?</span>
+      <span class="who">${esc(head)}<small>저장되지 않은 번호</small></span></div>
+    <div class="sms-thread">${thread}</div>
+    <div class="sms-input" aria-hidden="true"><span>＋</span><span class="box">문자 메시지</span></div>
+  </div>`;
+}
+// 하는 일: 메일 보낸 사람을 "표시 이름"과 "주소"로 나눈다
+// 참고: 새 카드(B 11/16)는 sender에 이름만, from에 "이름 <주소>". 예전 카드는 sender에 "이름 <주소>"
+function mailParts(c) {
+  const name = (c.sender || "").split("<")[0].trim();
+  const src = c.from || c.sender || "";
+  const m = src.match(/<([^>]+)>/);
+  return { name, addr: m ? m[1] : (src.includes("@") ? src.trim() : "") };
+}
+function mailHTML(c, time, open) {
+  // 하는 일: 처음엔 받은편지함 목록. 메일을 누르면 열리고, 표시 이름을 누르면 보낸 주소와 답장 주소가 펼쳐진다
+  const { name, addr } = mailParts(c);
+  const old = OLD_MAIL[S.mode].map(([n, s, t]) => `<div class="mail-row old" aria-disabled="true"><span class="dot"></span><span class="nm">${n}</span><time>${t}</time><span class="sj">${s}</span></div>`).join("");
+  const link = c.link ? `\n\n<span class="lnk">${esc(c.link)}</span>` : "";
+  return `<div class="mail-wrap"><div class="mail" id="mail" data-view="${open ? "read" : "list"}" role="group" aria-label="메일 앱">
+    <div class="mail-bar"><span>받은편지함</span><span class="search">메일 검색</span></div>
+    <div class="mail-body">
+      <div class="mail-list">
+        <button class="mail-row ${open ? "on" : "new"}" id="openMail"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(name)}</span><time>${time}</time><span class="sj">${esc(c.subject)}</span></button>
+        ${old}
+      </div>
+      <div class="mail-read">
+        <p class="empty-read">메일을 눌러 열어 보세요</p>
+        <button class="back" id="backList">‹ 받은편지함</button>
+        <h3>${esc(c.subject)}</h3>
+        <div class="from"><span class="avatar" aria-hidden="true">${esc(name.charAt(0))}</span>
+          <div class="meta"><button class="from-name" id="fromBtn" aria-expanded="${open ? "true" : "false"}" aria-controls="fromDetail">${esc(name)}</button>
+            <span class="to">받는 사람: 나</span>
+            <dl class="from-detail" id="fromDetail" ${open ? "" : "hidden"}>
+              <dt>보낸 사람</dt><dd class="addr">${esc(addr || "주소 없음")}</dd>
+              ${c.reply_to ? `<dt>답장 주소</dt><dd class="reply">${esc(c.reply_to)}</dd>` : ""}
+              <dt>받는 사람</dt><dd>나</dd></dl></div>
+          <time>${time}</time></div>
+        <div class="mail-text">${esc(c.body)}${link}</div>
+        ${c.attachment ? `<div class="attach"><i aria-hidden="true"></i><span><b>${esc(c.attachment)}</b><br>첨부파일 1개</span></div>` : ""}
+      </div>
+    </div></div></div>`;
+}
+function cardHTML(c, open) {
+  const t = TIMES[S.idx % TIMES.length];
+  return c.channel === "email" ? mailHTML(c, t, open) : smsHTML(c, t);
 }
 
-// 제한 시간 (A 10/30)
-// 하는 일: 문제가 뜨면 문자 15초, 메일 25초를 센다. 시간이 지나도 답은 고를 수 있고, 시간 안에 못 고른 문제 수만 결과 화면에 따로 보여 준다
-// 이유: 실제 업무 중에는 메시지 하나를 오래 들여다볼 시간이 없다. 바쁜 상황에서도 판단할 수 있는지 스스로 보게 하려고
-// 참고: 화면에서만 세는 숫자라 채점(정답·오답)과 장부 기록, 관리자 통계에는 들어가지 않는다. 연쇄형은 첫 문자(1단계)에만 적용
-const LIMIT = { sms: 15, email: 25 };
-// 하는 일: 시작 안내문의 제한 시간 숫자를 위 LIMIT에서 가져와 채운다 (B 11/02)
-// 이유: 시간을 바꿀 때 LIMIT 한 곳만 고치면 안내문도 저절로 맞게 하려고
-// 참고: 안내문에는 같은 문장이 미리 적혀 있어서, 이 줄이 실행되지 않아도 문장은 보인다
-// 수정 (A 11/02): 안내문이 "체험 시작 안내" 화면으로 옮겨 가면서 문장을 줄였다. id는 그대로
-$("limit-note").textContent = `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`;
-const timer = { id: null, left: 0, over: false };
-function startTimer(c) {
-  clearInterval(timer.id);
-  const total = c.channel === "email" ? LIMIT.email : LIMIT.sms;
-  Object.assign(timer, { left: total, over: false });
-  $("game-timer").classList.remove("over");
-  const draw = () => {
-    $("timer-bar").style.width = `${Math.max(timer.left, 0) / total * 100}%`;
-    if (timer.left > 0) { $("timer-text").textContent = `남은 시간 ${timer.left}초`; return; }
-    timer.over = true; clearInterval(timer.id);
-    $("game-timer").classList.add("over");
-    $("timer-text").textContent = "시간이 지났어요. 그래도 답을 골라 주세요";
-  };
-  draw();
-  timer.id = setInterval(() => { timer.left--; draw(); }, 1000);
-}
-
-// 하는 일: 이 메시지에서 할 수 없는 행동 버튼을 흐리게 하고 누를 수 없게 한다 (A 10/30)
-// 이유: 링크·첨부가 없는 메일에 "링크·첨부를 열어", 번호가 없는 메일에 "적힌 번호로 전화"가 나오면 어색하다
-// 참고: 화면에 보이는 글자(링크, 첨부, 보낸 사람, 본문)만 보고 정한다. 채점은 서버가 그대로 한다
-const PHONE = /\d{2,3}-\d{3,4}-\d{4}/;
-// 수정 (A 11/02): 버튼을 흐리게 하지 않는다. 메시지에 없는 수단은 choiceLabel이 같은 뜻의 다른 행동으로 바꿔 보여 준다
-function setChoices(c, busy) {
-  document.querySelectorAll("#s-game [data-choice]").forEach(x => { x.classList.remove("na"); x.disabled = busy; });
-}
-
-// 하는 일: 시나리오마다 선택지 문구를 바꿔 보여 준다 (A 11/02)
-// 이유: 11/02 할 일 "시나리오에 맞게 선택지 수정". 같은 세 행동이라도 상황에 맞는 말로 보여 주려고
-// 참고: 문구는 B가 scenarios.json의 choice_labels에 쓴다. 없으면 아래 기본 문구. 채점은 data-choice(click·call·official)로 해서 그대로다
-const DEFAULT_LABELS = { click: "링크·첨부를 열어 바로 처리한다", call: "적힌 번호로 전화해 처리한다", official: "처리를 멈추고 따로 확인한다" };
-// 하는 일: 메시지에 없는 수단(번호가 없는데 전화, 링크·첨부가 없는데 열기)이면 같은 뜻의 다른 행동으로 바꿔 보여 준다 (A 11/02)
-// 이유: 전에는 이런 버튼을 흐리게 했는데, 고를 수 있는 행동이 줄어 답이 쉬워졌다. 채점 뜻은 그대로다
-//       call = 메시지가 알려 준 연락처로 문의(전화든 답장이든), click = 메시지가 시키는 대로 바로 처리
-// 참고: 시나리오 문구가 이미 맞는 말이면(전화·링크 말이 없으면) 그 문구를 그대로 쓴다
+// 하는 일: 메시지에 없는 수단의 선택지는 같은 뜻의 행동으로 바꾼다 (팀 결정 6번, 예전 game.html 그대로)
 const PHONE_RE = /\d{2,3}-\d{3,4}-\d{4}/;
 const noPhone = c => !PHONE_RE.test(`${c.sender || ""} ${c.body || ""}`);
 const noOpen = c => !c.link && !c.attachment;
@@ -694,174 +630,113 @@ function choiceLabel(c, k) {
   if (k === "click" && c && noOpen(c)) return own && !/주소|링크|첨부|열어/.test(own) ? own : `${where} 안내대로 바로 처리한다`;
   return own || DEFAULT_LABELS[k];
 }
-function setLabels(c) {
-  document.querySelectorAll("#s-game [data-choice]").forEach(x => {
-    const k = x.dataset.choice;
-    // 참고: 시나리오 문구에 확인할 곳(사내 연락처 등)이 이미 적혀 있으면 작은 글씨는 "시간이 걸려요"만
-    const own = c && c.choice_labels && c.choice_labels.official;
-    x.innerHTML = esc(choiceLabel(c, k)) + (k === "official" ? `<small>${own ? "시간이 걸려요" : "대표번호·담당자, 시간이 걸려요"}</small>` : "");
-  });
+
+function message() {
+  const c = S.cards[S.idx];
+  const keys = shuffle(["click", "call", "official"]);   // 하는 일: 보이는 순서만 섞는다. 서버로 보내는 값은 그대로 (흐름 문서 6번)
+  const isMail = c.channel === "email";
+  render(`
+    <p class="step">${phaseName()} · ${S.idx + 1} / ${S.cards.length}</p>
+    <div class="stage" id="stage">
+      ${cardHTML(c, false)}
+      <aside class="choices" aria-label="행동 고르기">
+        <h2>이 메시지, 어떻게 할까요?</h2>
+        <div class="timer" id="tbar"><i></i></div><p class="timer-txt" id="ttxt"></p>
+        ${isMail ? `<p class="wait-open" id="waitOpen">메일을 열면 고를 수 있어요</p>` : ""}
+        ${keys.map(k => `<button class="opt" data-k="${k}" ${isMail ? "disabled" : ""}>${esc(choiceLabel(c, k))}</button>`).join("")}
+        <div id="msgErr"></div>
+      </aside>
+    </div>`);
+  if (isMail) {
+    const mail = $("mail");
+    $("openMail").onclick = () => {
+      mail.dataset.view = "read"; $("openMail").classList.add("on"); $("openMail").classList.remove("new");
+      main.querySelectorAll(".opt").forEach(b => b.disabled = false); $("waitOpen").hidden = true;
+    };
+    $("backList").onclick = () => mail.dataset.view = "list";
+    $("fromBtn").onclick = e => { const open = e.currentTarget.getAttribute("aria-expanded") === "true";
+      e.currentTarget.setAttribute("aria-expanded", String(!open)); $("fromDetail").hidden = open; };
+  }
+  startTimer(LIMIT[c.channel] || LIMIT.sms);
+  main.querySelectorAll(".opt").forEach(b => b.onclick = () => pickAction(c, b.dataset.k));
 }
 
-function renderCard() {
-  const c = state.cards[state.i], n = state.cards.length;
-  setLabels(c);
-  $("game-progress").textContent = `문제 ${state.i + 1}/${n}`;
-  $("game-bar").style.width = `${(state.i + 1) / n * 100}%`;
-  $("card").innerHTML = cardHTML(c, state.i);
-  $("game-error").textContent = "";
-  hidePreview();
-  setChoices(c, false);
-  startTimer(c);
+function startTimer(sec) {
+  let left = sec; const bar = $("tbar"), txt = $("ttxt");
+  S.over = false;
+  const draw = () => { bar.firstElementChild.style.width = Math.max(0, left / sec * 100) + "%";
+    txt.textContent = left > 0 ? `남은 시간 ${left}초` : "시간이 지났어요. 그래도 고를 수 있어요"; bar.classList.toggle("over", left <= 0); };
+  draw(); timer = setInterval(() => { left--; draw(); if (left <= 0) { S.over = true; clearInterval(timer); } }, 1000);
 }
-// 하는 일: 선택지를 누르면 해설 전에 "고른 행동이 진행되는 모습"을 잠깐 보여 준다 (B 11/03 피드백)
-// 이유: 고르자마자 정답이 나오면 결과만 보고 넘어가기 쉽다. "링크로 이동 중", "전화 거는 중", "확인하느라 업무가 지연되는 중"을 먼저 겪게 해서
-//       내 행동이 실제로 무엇으로 이어지는지 느끼게 하려고
-// 참고: 정답·오답은 알려 주지 않는다 (해설에서 알려 줌). 문장은 고른 버튼과 메시지에 있는 것(첨부·링크·번호)으로만 정한다
-const PREVIEW_MS = 2200;
+
 function previewText(c, k) {
   const num = (`${c.sender || ""} ${c.body || ""}`.match(PHONE_RE) || [])[0];
   if (k === "click") {
-    if (c.attachment) return ["첨부 파일을 여는 중이에요", `${esc(c.attachment)} 파일을 열고 있어요.`, false];
-    if (c.link) return ["링크로 이동하는 중이에요", `${esc(c.link)} 에 접속하고 있어요.`, false];
-    return ["메일 안내대로 처리하는 중이에요", "안내받은 내용대로 업무를 진행하고 있어요.", false];
+    if (c.attachment) return ["첨부 파일을 여는 중이에요", false];
+    if (c.link) return ["링크로 이동하는 중이에요", false];
+    return ["안내대로 처리하는 중이에요", false];
   }
-  if (k === "call") {
-    if (num) return [`${esc(num)}로 전화를 거는 중이에요`, "신호가 가고 있어요. 곧 상대가 전화를 받아요.", false];
-    return ["답장을 보내는 중이에요", "메일을 보낸 쪽으로 답장이 전달되고 있어요.", false];
-  }
-  return ["따로 확인하는 중이에요", "담당 부서에 연결하고 있어요. <b>그동안 업무가 지연되고 있어요.</b>", true];
+  if (k === "call") return [num ? `${num}로 전화를 거는 중이에요` : "답장을 보내는 중이에요", false];
+  return ["따로 확인하는 중이에요", true];
 }
-function showPreview(c, k) {
-  const [title, sub, wait] = previewText(c, k);
-  const el = $("preview");
-  el.className = "preview" + (wait ? " wait" : "");
-  el.style.setProperty("--pv-ms", PREVIEW_MS + "ms");
-  el.innerHTML = `<p class="pv-label">내가 고른 행동</p><p class="pv-choice">${esc(choiceLabel(c, k))}</p>
-    <div class="pv-status"><span class="pv-dot" aria-hidden="true"></span><span>${title}</span></div>
-    <p class="pv-sub">${sub}</p><div class="pv-bar" aria-hidden="true"><i></i></div>`;
-  el.hidden = false;
-  document.querySelector("#s-game .answer-col").classList.add("previewing");
-  void el.offsetWidth; el.classList.add("run");
-}
-function hidePreview() {
-  $("preview").hidden = true;
-  document.querySelector("#s-game .answer-col").classList.remove("previewing");
-}
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-document.querySelectorAll("#s-game [data-choice]").forEach(b => b.onclick = async () => {
-  const c = state.cards[state.i];
-  document.querySelectorAll("#s-game [data-choice]").forEach(x => x.disabled = true);
-  clearInterval(timer.id);
+async function pickAction(c, k) {
+  clearInterval(timer);
+  main.querySelectorAll(".opt").forEach(b => b.disabled = true);
   // 참고: 서버 오류로 다시 누를 때 두 번 세지 않도록 문제마다 한 번만 센다
-  if (timer.over && c.lateCounted !== true) { state.late++; c.lateCounted = true; }
+  if (S.over && !c.lateCounted) { S.late[S.phase]++; c.lateCounted = true; }
+  const [st, wait] = previewText(c, k);
+  const pv = document.createElement("div");
+  pv.className = "preview";
+  pv.innerHTML = `<div class="box" role="status"><p class="lbl">내가 고른 행동</p><p class="ch">${esc(choiceLabel(c, k))}</p>
+    <p class="st ${wait ? "wait" : ""}">${esc(st)}</p>${wait ? `<p class="note">그동안 ${S.mode === "org" ? "업무가" : "할 일이"} 미뤄지고 있어요</p>` : ""}<div class="bar"><i></i></div></div>`;
+  $("stage").appendChild(pv);
   try {
-    
-    // 참고: chain: true는 "연쇄형 단계 화면을 보여 줄 수 있다"는 표시. 연쇄형 카드에서 링크를 열면 서버가 해설 대신 2단계 화면을 보낸다 (A 10/29)
-    // 수정 (B 11/03): 미리보기를 보여 주는 동안 서버 채점을 함께 기다린다 (둘 다 끝나야 다음 화면)
-    showPreview(c, b.dataset.choice);
-    const [r] = await Promise.all([post("/api/answer", { anon_id: state.anon, scenario_id: c.scenario_id, choice: b.dataset.choice, job: state.job, self_check: state.survey, chain: true, round: state.round }), sleep(PREVIEW_MS)]);
-    hidePreview();
-    state.answers.push({ scenario_id: c.scenario_id, choice: b.dataset.choice });
-    if (r.chain_step) { renderChain(r.chain_step); show("s-chain"); return; }
-    if (r.stopped_step !== undefined) state.chainResult = { step: r.stopped_step, call: b.dataset.choice === "call", titles: r.chain_titles };
-    const harm = fullyFooled(r) ? harmOf(c, b.dataset.choice, r) : null;
-    addLog(r, choiceLabel(c, b.dataset.choice), harm);
-    afterAnswer(r, harm);
-  } catch (err) { hidePreview(); $("game-error").textContent = err.message; }
-  finally { setChoices(c, false); }
-});
-
-// 화면 3-1-2. 연쇄형 단계 (A 10/29)
-// 하는 일: 서버가 보낸 단계 화면(제목·본문·버튼 문구)을 휴대폰 화면에 그리고, 계속/멈춤 버튼을 단다
-// 이유: 연쇄형(D)은 한 번 누르면 다음 함정으로 이어진다는 걸 직접 겪게 하려고 (사례조사 사례 5)
-// 참고: 문장은 B가 확정한 scenarios.json의 chain 칸 그대로. 해설은 서버가 체험이 끝날 때만 보낸다
-function renderChain(st) {
-  state.chain = st;
-  const c = state.cards[state.i], n = state.cards.length;
-  $("chain-progress").textContent = `문제 ${state.i + 1}/${n} · 연쇄형 ${st.step}단계`;
-  $("chain-bar").style.width = `${(state.i + 1) / n * 100}%`;
-  const url = st.step === 2 && c.link ? `<div class="chain-url" aria-hidden="true">${esc(c.link)}</div>` : "";
-  $("chain-card").innerHTML = `<div class="phone" role="group" aria-label="연쇄형 ${st.step}단계 화면">${statusBar(TIMES[state.i % TIMES.length])}
-    <div class="chain-page">${url}<p class="chain-title">${esc(st.title)}</p><p class="chain-body">${esc(st.body)}</p></div>
-  </div><p class="screen-note">연습용 화면이라 실제로 설치되거나 열리지 않아요</p>`;
-  $("chain-continue").textContent = st.continue_label;
-  $("chain-stop").textContent = st.stop_label;
-  $("chain-error").textContent = "";
-  // 하는 일: 새 단계 화면이 뜬 뒤 0.8초 동안 버튼을 잠근다
-  // 이유: 앞 화면의 '링크 열기' 버튼과 같은 자리에 '계속' 버튼이 있어서, 빠르게 두 번 누르면 읽지도 않고 다음 단계로 넘어갈 수 있다
-  const btns = document.querySelectorAll("#s-chain [data-action]");
-  btns.forEach(x => x.disabled = true);
-  setTimeout(() => btns.forEach(x => x.disabled = false), 800);
-}
-document.querySelectorAll("#s-chain [data-action]").forEach(b => b.onclick = async () => {
-  const st = state.chain;
-  document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = true);
-  try {
-    const r = await post("/api/chain", { anon_id: state.anon, scenario_id: st.scenario_id, step: st.step, action: b.dataset.action, job: state.job, self_check: state.survey, round: state.round });
-    if (r.chain_step) { renderChain(r.chain_step); return; }   // renderChain이 0.8초 뒤에 버튼을 다시 켠다
-    state.chainResult = { step: r.stopped_step, call: false, titles: r.chain_titles };
-    const harm = fullyFooled(r) ? harmOf(state.cards[state.i], "click", r) : null;
-    addLog(r, `링크를 열고 ${r.stopped_step ? r.stopped_step + "단계에서 멈춤" : "끝까지 진행"}`, harm);
-    afterAnswer(r, harm);
-    document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = false);
+    // 서버 약속 2번: 채점은 서버가 한다. 미리보기를 보여 주는 동안 함께 기다린다
+    const [r] = await Promise.all([
+      post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: k, round: S.round }),
+      sleep(reduced() ? 600 : PREVIEW_MS)]);
+    S.answers[S.phase][S.idx] = { scenario_id: c.scenario_id, choice: k };
+    const harm = fullyFooled(r) ? harmOf(c, k, r) : null;
+    addLog(c, r, choiceLabel(c, k), harm);
+    explain(c, r, harm);
   } catch (err) {
-    $("chain-error").textContent = err.message;
-    document.querySelectorAll("#s-chain [data-action]").forEach(x => x.disabled = false);
+    pv.remove();
+    main.querySelectorAll(".opt").forEach(b => b.disabled = false);
+    $("msgErr").innerHTML = `<p class="error" role="alert">${esc(err.message)}</p>`;
   }
-});
-
-// 하는 일: 연쇄형에서 몇 단계에서 멈췄는지를 한 줄로 만든다 (해설·결과 화면에서 같이 씀)
-// 수정 (A 11/02): 참여자 의견 "'1단계(문자)에서 멈췄어요'가 무슨 말인지 모르겠다". 단계 번호 대신 어느 화면에서 무엇을 했는지로 쓴다
-function chainLine(cr) {
-  // 수정 (A 11/03): 연쇄형이 S06 하나가 아니게 되어(B 11/03 S11 택배), 단계 이름을 카드의 단계 제목(chain_titles)에서 가져온다
-  if (!cr) return "";
-  const t = cr.titles || [];
-  if (cr.step === 1) return "첫 문자에서 링크를 열지 않고 멈췄어요. 다음 함정으로 이어지지 않았어요. 가장 안전한 선택이에요.";
-  if (cr.step >= 2) return `링크는 열었지만, '${t[cr.step - 2] || cr.step + "단계"}' 화면에서 멈췄어요. 첫 문자에서 멈추면 더 안전해요.`;
-  return cr.call ? "문자에 적힌 번호로 전화했어요. 그 번호는 사기범에게 연결돼요." : "링크를 열고 마지막 화면까지 진행했어요. 실제였다면 입력한 정보가 공격자에게 넘어갔을 거예요.";
 }
 
-// 하는 일: 피싱에 속었을 때 "실제였다면 일어났을 피해"를 정한다 (A 11/02)
-// 이유: 참여자 의견 "내가 무슨 짓을 한 거지?". 숫자보다 무슨 일이 일어났을지가 기억에 남는다. 고른 행동과 메시지에 있던 것(첨부·링크·번호)으로 피해를 고른다
-// 참고: 시나리오에 consequence {title, detail}가 있으면 그 문구가 먼저다. 연쇄형 2·3단계에서 멈춘 경우와 정상 메시지는 여기 오지 않는다
+/* ----- 해설 (예전 game.html의 형광펜·실제였다면·자세히 보기를 그대로 가져옴) ----- */
+const fullyFooled = r => r.is_phishing && !r.is_correct && !(r.stopped_step === 2 || r.stopped_step === 3);
+// 하는 일: 피싱에 속었을 때 "실제였다면 일어났을 피해" (카드의 consequence가 먼저, A 11/02)
 function harmOf(c, choice, r) {
   if (r.consequence && r.consequence.title) return r.consequence;
+  const org = S.mode === "org";
   if (choice === "call" && noPhone(c)) return { title: "답장이 공격자에게 전달됐어요", detail: "보낸 주소와 답장 주소는 공격자가 정한 곳이에요. 이어진 대화에서 개인정보나 송금을 요구해요." };
   if (choice === "click" && noOpen(c)) return { title: "공격자가 시킨 대로 처리했어요", detail: "메시지가 요구한 처리(송금, 정보 전달)가 그대로 공격자에게 가요." };
-  if (choice === "call") return { title: "사기범과 통화가 연결됐어요", detail: "상대는 기관이나 회사 직원처럼 말하며 개인정보, 인증번호, 송금을 요구해요." };
+  if (choice === "call") return { title: "사기범과 통화가 연결됐어요", detail: `상대는 ${org ? "기관이나 회사 직원" : "기관이나 학교 직원"}처럼 말하며 개인정보, 인증번호, 송금을 요구해요.` };
   if (r.stopped_step === 0) return { title: "휴대폰 정보가 빠져나가고 있어요", detail: "설치한 가짜 앱이 문자, 화면, 저장된 정보를 몰래 보내요." };
-  if (c.attachment) return { title: "회사 PC에서 악성 프로그램이 실행됐어요", detail: `문서처럼 보인 '${c.attachment}'은 실제로는 프로그램이었어요. 사내 네트워크로 퍼질 수 있어요.` };
-  if (c.channel === "email") return { title: "사내 계정 비밀번호가 넘어갔어요", detail: "가짜 로그인 화면에 입력한 아이디와 비밀번호가 공격자에게 전송돼요. 회사 메일과 문서가 모두 열려요." };
+  if (c.attachment) return { title: `${org ? "회사 PC" : "내 컴퓨터"}에서 악성 프로그램이 실행됐어요`, detail: `문서처럼 보인 '${c.attachment}'은 실제로는 프로그램이었어요.` };
+  if (c.channel === "email") return { title: `${org ? "사내 " : ""}계정 비밀번호가 넘어갔어요`, detail: "가짜 로그인 화면에 입력한 아이디와 비밀번호가 공격자에게 전송돼요." };
   return { title: "개인정보가 넘어갔어요", detail: "가짜 사이트에 입력한 이름, 전화번호, 인증번호가 공격자에게 전송돼요." };
 }
-const fullyFooled = r => r.is_phishing && !r.is_correct && !(r.stopped_step === 2 || r.stopped_step === 3);
-// 하는 일: 답한 뒤 해설 화면을 보여 준다. 속었으면 해설 맨 위에 "실제였다면" 한 줄이 함께 나온다 (A 11/02)
-// 참고: 처음에는 화면 전체를 덮는 경고를 만들었지만, 회사 교육에서 놀라게 하는 방식은 맞지 않아 차분한 한 줄로 바꿨다 (A 11/02 결정)
-function afterAnswer(r, harm) { renderExplain(r, harm); show("s-explain"); }
-
-// 하는 일: 완료 화면의 "내가 한 일" 목록에 이번 문제를 한 줄 남긴다 (A 11/02)
-// 참고: 같은 문제를 서버 오류로 다시 눌러도 한 번만 남도록 문제 번호로 덮어쓴다
-function addLog(r, did, harm) {
-  const c = state.cards[state.i];
-  const what = c.channel === "email" ? (c.subject || "메일") : `${(c.sender || "").split(" / ")[0]} 문자`;
+// 하는 일: 결과 화면 "내가 한 일"에 이번 문제를 한 줄 남긴다 (화면에만 쓰고 서버로 보내지 않음)
+function addLog(c, r, did, harm) {
+  const tag = ((c.body || "").match(/^\[([^\]]+)\]/) || [])[1];   // 문자 맨 앞 [보낸 곳] (번호만 있는 문자도 무슨 문자였는지 알 수 있게)
+  const what = c.channel === "email" ? (c.subject || "메일") : `${tag || smsParts(c).name} 문자`;
   const kind = r.is_correct ? (r.over_suspicion ? "slow" : "ok") : "bad";
-  state.log[state.i] = { what, did, kind, phishing: r.is_phishing, harm: harm ? harm.title : "" };
+  S.log[S.phase][S.idx] = { what, did, kind, phishing: r.is_phishing, harm: harm ? harm.title : "", call: did && c.choice_labels && did === choiceLabel(c, "call") };
 }
 
-// 하는 일: 해설 화면 왼쪽의 메시지 위에 단서 위치를 형광펜과 번호로 표시한다 (A 11/02)
-// 이유: 참여자 의견 "내가 무슨 짓을 한 거지?". 놀라게 하는 대신, 방금 보고도 놓친 단서를 눈앞에서 보여 줘 "아, 여기였구나"를 느끼게 하려고.
-//       우리 목표(보낸 곳과 요구하는 행동을 보고 판단하기)를 그대로 연습시킨다
-// 참고: 단서 이름(factor)과 내용(text)으로 표시할 곳을 고른다. 시나리오를 고치지 않아도 되고, 표시할 곳을 못 찾은 단서는 목록에만 나온다
+// 하는 일: 해설 화면 왼쪽 메시지 위에 단서 위치를 형광펜과 번호로 표시한다 (A 11/02, 새 화면 틀에 맞춰 이름표만 바꿈)
 function annotate(root, clues, phishing) {
   const pin = n => { const p = document.createElement("span"); p.className = "pin" + (phishing ? "" : " safe"); p.textContent = n; p.setAttribute("aria-hidden", "true"); return p; };
-  const box = (el, n) => { if (!el) return false; el.classList.add("clue-wrap"); el.appendChild(pin(n)); return true; };   // 같은 곳에 단서가 둘이면 번호를 나란히 단다
-  const body = root.querySelector(".wm-text, .bubble");
-  // 하는 일: 본문 글자 안에서 낱말을 찾아 형광펜(mark)으로 감싼다. 링크 글자는 건드리지 않는다
+  const box = (el, n) => { if (!el) return false; el.classList.add("clue-wrap"); el.appendChild(pin(n)); return true; };
+  const body = root.querySelector(".mail-text, .bubble");
   const markWord = (word, n) => {
     if (!body || !word) return false;
-    const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, { acceptNode: t => t.parentElement.closest(".fake-link, mark") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, { acceptNode: t => t.parentElement.closest(".lnk, mark") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
     let t;
     while ((t = walk.nextNode())) {
       const i = t.data.indexOf(word); if (i < 0) continue;
@@ -876,282 +751,346 @@ function annotate(root, clues, phishing) {
   (clues || []).forEach((c, k) => {
     const n = k + 1, f = c.factor || "", tx = c.text || "";
     const ws = words(tx);
-    if (ws.length) {   // 따옴표로 적힌 낱말 ("오늘 중", "불이익")은 본문에서 찾아 표시
+    if (ws.length) {
       let done = false;
       ws.forEach(w => { if (markWord(w, n)) done = true; else if (!done) { const last = w.split(" ").pop(); if (last.length >= 2) done = markWord(last, n); } });
       if (done) return;
     }
-    // 하는 일: "무엇을 하라고 요구하는지"가 단서면 링크·번호가 아니라 본문의 요구 문장에 표시한다 (A 11/02, A 지적: 앱 설치 유도는 "앱을 설치"에)
-    // 참고: 앞에 있는 낱말부터 찾고, 본문에 없으면 다음 낱말로. 다 없으면 아래 규칙(링크·보낸 곳)으로 넘어간다
     const ASK = [[/설치/, ["앱을 설치", "설치"]], [/재로그인|로그인 유도/, ["재로그인", "본인 확인"]], [/계좌/, ["새 계좌로 보내", "새 계좌"]],
       [/비밀번호를 묻지/, ["비밀번호를 회신하실 필요는 없습니다"]], [/공식 경로/, ["[내 정보 > 비밀번호 변경]"]],
       [/지원금|미끼/, ["[정부24] 민생 지원금", "지원금"]], [/링크 없이도/, ["사내 포털에서 볼 수 있습니다"]]];
     const ask = ASK.find(([re]) => re.test(f));
     if (ask && ask[1].some(w => markWord(w, n))) return;
-    if (/확장자|첨부/.test(f)) { box(root.querySelector(".wm-file"), n); return; }
-    if (/답장/.test(f)) return;   // 답장 주소는 화면에 보이지 않아 목록에만 둔다
-    if (/발신|보낸 주소|기관 사칭|회사 번호|주소만으로/.test(f)) { box(root.querySelector(".wm-from .addr") || root.querySelector(".sms-head b"), n); return; }
-    if (/전화/.test(f) && body) { const m = (body.textContent.match(/\d{2,3}-\d{3,4}-\d{4}/) || [])[0]; if (m && markWord(m, n)) return; }
-    if (/주소|도메인|링크|로그인|설치|경로/.test(f)) { box(root.querySelector(".fake-link"), n); return; }
+    if (/확장자|첨부/.test(f)) { box(root.querySelector(".attach"), n); return; }
+    if (/답장/.test(f)) { box(root.querySelector(".from-detail .reply"), n); return; }   // 새 화면은 답장 주소가 보여서 표시한다
+    if (/발신|보낸 주소|기관 사칭|회사 번호|주소만으로|표시 이름/.test(f)) { box(root.querySelector(".from-detail .addr") || root.querySelector(".sms-top .who"), n); return; }
+    if (/전화/.test(f) && body) { const m = (body.textContent.match(PHONE_RE) || [])[0]; if (m && markWord(m, n)) return; }
+    if (/주소|도메인|링크|로그인|설치|경로/.test(f)) { box(root.querySelector(".lnk"), n); return; }
   });
 }
 
-// 화면 3-2 (배너 문구는 B 설계 그대로)
-function renderExplain(r, harm) {
-  let cls, head;
-  if (r.is_phishing) [cls, head] = r.is_correct ? ["safe", "잘 막았어요"] : ["danger", "속았어요"];
-  else [cls, head] = r.over_suspicion ? ["caution", "안전하지만 확인이 조금 지나쳤어요 (과잉 의심)"] : ["safe", "정상 메시지였어요. 괜찮아요"];
-  let sub = `이 메시지는 ${r.is_phishing ? "피싱" : "정상"}입니다`;
-  // 하는 일: 연쇄형 카드에서 2·3단계에 멈췄으면 빨간 "속았어요" 대신 노란 "중간에 멈췄어요" 배너를 보여 준다 (B 10/29)
-  // 이유: 멈춘 행동을 인정해 "단계마다 멈춰라"를 가르치려고. 빨간 "속았어요"와 "3단계에서 멈췄어요"가 함께 나오면 헷갈린다
-  // 참고: 화면 글자만 바뀐다. 채점(is_correct)과 장부 기록은 그대로다 (1단계 공식 확인만 정답, 결과 화면의 속은 횟수에도 들어감)
-  if (r.is_phishing && !r.is_correct && (r.stopped_step === 2 || r.stopped_step === 3)) {
-    [cls, head] = ["caution", "중간에 멈췄어요"];
-    sub = "이 메시지는 피싱입니다. 첫 문자에서 멈춰야 가장 안전해요";
-  }
-  // 하는 일: 요점 한 줄과 수상한 점을 먼저 보여 주고, 긴 해설과 탐지 엔진 분석은 [자세히 보기]를 눌러야 열리게 한다 (A 11/02)
-  // 이유: 참여자 의견 "해설 글이 많고 어렵다". 체험자가 꼭 알아야 할 것만 먼저 읽게 하려고
-  // 참고: 요점 한 줄(explanation_short)은 B가 scenarios.json에 쓴다. 없으면 서버가 해설 첫 문장을 보낸다
-  let html = `<div class="banner ${cls}">${head}<small>${sub}</small></div>`;
-  if (harm) html += `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>`;
-  // 하는 일: 연쇄형 카드면 맨 위에 "몇 단계에서 멈췄는지"를 보여 준다 (A 10/29)
-  if (r.stopped_step !== undefined) html += `<p class="chain-steps"><b>연쇄형 체험</b> · ${esc(["문자", ...(r.chain_titles || [])].join(" → "))}<br>${esc(chainLine(state.chainResult))}</p>`;
-  html += `<p class="lead">${esc(r.explanation_short || r.explanation)}</p>
-    <h2>${r.is_phishing ? "수상한 점" : "확인한 점"}</h2>
-    <p class="muted" style="margin:0 0 .25rem">${r.is_phishing ? "왼쪽 메시지에 번호로 표시했어요. 어디를 봤으면 막을 수 있었는지 확인해 보세요." : "왼쪽 메시지에 번호로 표시했어요."}</p>
-    <ul class="list">${r.clues.map((c, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(c.factor)}</span><span class="text">${esc(c.text)}</span></div></li>`).join("")}</ul>
-    <details class="more"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>
-    <h2>해설</h2><p>${esc(r.explanation)}</p>`;
+function engineHTML(r) {
   const a = r.analysis;
-  html += `<h2>탐지 엔진 분석</h2>`;
-  if (a) {
-    html += `<p class="score-line">${a.type === "email" ? "메일" : "링크"} 위험 점수 <b>${a.score}</b> / 100</p>`;
-    if (a.reasons.length) html += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
-    else html += `<p class="muted">링크에서 위험 신호를 찾지 못했어요.</p>`;
-    if (a.unavailable.length) html += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
-    // 하는 일: AI 모델 확률을 한 줄로 보여 준다. 60% 이상만 숫자, 아래는 "구별하기 어려워요" (A 10/29 결정, 링크 검사 화면과 같은 기준)
-    // 이유: 신청서의 머신러닝 약속. 의미 없는 작은 차이를 숫자로 보여 주지 않으려고
-    // 참고: 링크 카드에만 값이 있고 메일 카드는 null이라 이 줄이 나오지 않는다. 위험 점수에는 더하지 않는다
-    if (typeof a.model_probability === "number") html += a.model_probability >= 0.6
-      ? `<p class="score-line">AI 판단: 주소 모양이 피싱과 비슷해요 (${Math.round(a.model_probability * 100)}%)</p>`
-      : `<p class="score-line">AI 판단: 주소 모양만으로는 구별하기 어려워요</p>`;
-    // 하는 일: 문자 본문에서 찾은 압박 문구를 점수와 따로 보여 준다 (A 10/29)
-    // 이유: 링크 엔진은 주소만 보므로, 심리 압박(C 유형) 단서를 엔진 분석에서도 짚어 주려고
-    // 참고: 이메일 엔진과 같은 단어 목록. 링크 점수에는 더하지 않는다
-    if (r.text_clues && r.text_clues.length) html += `<p class="score-line">문자 본문에서 찾은 압박 문구: <b>${r.text_clues.map(w => "'" + esc(w) + "'").join(", ")}</b></p><p class="note">위 링크 점수에는 들어가지 않아요. 서두르게 만드는 말이 보이면 잠깐 멈추고 공식 경로로 확인하세요.</p>`;    
-    if (r.is_phishing && a.score < 30) html += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
-  } else {
-    html += `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
-  }
-  html += `</details>`;
-  $("explain").innerHTML = html;
-  // 하는 일: 방금 답한 메시지를 해설 화면 왼쪽에 다시 그린다
-  // 이유: 해설의 수상한 점을 메시지와 나란히 보며 확인하게 하려고
-  // 참고: 문제 화면과 같은 cardHTML을 써서 글자와 모양이 똑같다
-  $("explain-card").innerHTML = cardHTML(state.cards[state.i], state.i);
-  annotate($("explain-card"), r.clues, r.is_phishing);
-  // 수정 (B 11/03 피드백): 해설 화면 왼쪽 위에 "문제 n번 결과"
-  $("explain-progress").textContent = `문제 ${state.i + 1}번 결과`;
-  $("btn-next").textContent = state.i === state.cards.length - 1 ? "결과 보기" : "다음 문제";
-}
-$("btn-next").onclick = async () => {
-  if (state.i < state.cards.length - 1) { state.i++; renderCard(); show("s-game"); return; }
-  $("btn-next").disabled = true;
-  try {
-    const r = await post("/api/result", { anon_id: state.anon, job: state.job, self_check: state.survey, answers: state.answers });
-    renderResult(r); show("s-result");
-  } catch (err) { $("explain").insertAdjacentHTML("beforeend", `<p class="error">${esc(err.message)}</p>`); }
-  finally { $("btn-next").disabled = false; }
-};
-
-// 화면 4
-// 하는 일: 결과 맨 위 판정 한 줄과 기준 한 줄 (A 10/30)
-// 이유: "모두 확인하면 만점"이 아니라 "요구하는 행동을 보고 근거 있게 의심하면 만점"임을 알려 주려고
-// 참고: 피싱에서 확인한 것은 업무 지연으로 세지 않는다. 문장만 고칠 때는 이 함수만 바꾸면 된다
-function verdict(r) {
-  const missedP = r.phishing_total - r.phishing_blocked, stuck = r.normal_total - r.normal_handled;
-  if (!missedP && !stuck) return ["안전하게, 일도 놓치지 않았어요", "요구하는 행동을 보고 판단하는 습관이 잘 잡혀 있어요."];
-  if (!missedP) return ["안전하지만 업무가 멈췄어요", ""];   // 설명은 아래 노란 상자가 한다
-  if (!stuck) return [`일은 처리했지만 ${missedP}번 속았어요`, "돈·개인정보·앱 설치를 요구하면 시간이 걸려도 멈추고 확인하세요."];
-  return [`${missedP}번 속았고, 업무도 ${stuck}건 멈췄어요`, "요구하는 행동을 보세요. 위험한 요구에는 확인, 안전한 요구는 바로 처리가 정답이에요."];
+  if (!a) return `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
+  let h = `<p class="score-line">${a.type === "email" ? "메일" : "링크"} 위험 점수 <b>${a.score}</b> / 100</p>`;
+  if (a.reasons.length) h += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
+  else h += `<p class="muted">위험 신호를 찾지 못했어요.</p>`;
+  if (a.unavailable.length) h += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+  // AI 모델 확률: 60% 이상만 숫자, 아래는 "구별하기 어려워요" (A 10/29 결정)
+  if (typeof a.model_probability === "number") h += a.model_probability >= 0.6
+    ? `<p class="score-line">AI 판단: 주소 모양이 피싱과 비슷해요 (${Math.round(a.model_probability * 100)}%)</p>`
+    : `<p class="score-line">AI 판단: 주소 모양만으로는 구별하기 어려워요</p>`;
+  if (r.text_clues && r.text_clues.length) h += `<p class="score-line">문자 본문에서 찾은 압박 문구: <b>${r.text_clues.map(w => "'" + esc(w) + "'").join(", ")}</b></p><p class="note">위 링크 점수에는 들어가지 않아요.</p>`;
+  if (r.is_phishing && a.score < 30) h += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
+  return h;
 }
 
-// 하는 일: 두 점수로 "나의 보안 의식 수준"을 5단계로 정하고, 보완할 부분을 알려 준다 (B 11/03, 교수님 피드백 "사내 교육 프로그램 취지 강조")
-// 이유: 점수 숫자만 보면 무엇을 고쳐야 하는지 알기 어렵다. 회사 보안 교육답게 지금 수준과 보완할 행동을 함께 보여 준다
-// 참고: 피싱을 놓친 것이 더 위험해서 먼저 보고, 정상 업무를 멈춘 것은 그다음에 본다. 문장만 고칠 때는 LEVELS만 바꾸면 된다
-const LEVELS = {
-  // 수정 (B 11/09 피드백 "문구가 너무 날카롭다"): 사내 교육 자리에서 그대로 보여 줘도 괜찮게, 사람을 평가하는 말 대신
-  //   "지금 대응이 어떤지"와 "함께 살펴볼 점"을 부드러운 말투로 쓴다. 단계 이름도 "높음·낮음" 대신 우수·양호·보통·보완 권장·집중 연습 권장
-  5: { name: "우수", color: "var(--safe)", head: "보안 대응이 아주 안정적이에요",
-       body: "피싱은 모두 멈추고, 진짜 업무는 바로 처리하셨어요. 보낸 곳과 요구하는 행동을 보고 판단하는 습관이 잘 자리 잡혀 있어요. 이 기준을 동료분들과도 나눠 주세요." },
-  4: { name: "양호", color: "#4B53D6", head: "피싱은 모두 막으셨어요. 업무 판단을 조금만 더 다듬어 보세요",
-       body: "피싱은 모두 막으셨고, 진짜 업무 {stuck}건은 확인하느라 잠시 멈췄어요. 요구하는 행동이 안전한 메시지는 바로 처리하셔도 괜찮아요." },
-  3: { name: "보통", color: "var(--caution)", head: "기본적인 대응은 잘하고 계세요. 몇 가지만 더 챙기면 좋아요",
-       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. 실제 업무에서는 한 번의 클릭이 회사 계정이나 자료와 이어질 수 있어서, 아래 내용을 함께 살펴보시면 좋아요." },
-  2: { name: "보완 권장", color: "var(--caution)", head: "몇 가지 대응 습관을 함께 보완해 보면 좋겠어요",
-       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. 비슷한 메시지는 실제로도 자주 오니, 아래 내용을 한 번 확인해 보세요." },
-  1: { name: "집중 연습 권장", color: "var(--danger)", head: "이번 체험을 계기로 대응 방법을 차근차근 익혀 보세요",
-       body: "이번에는 피싱을 막지 못하셨어요. 처음에는 누구나 헷갈릴 수 있어요. 아래 내용을 확인하시면 다음에는 훨씬 쉽게 가려내실 수 있어요." }
-};
-// 하는 일: 많이 속은 유형(서버 이름)마다 보완할 행동 한 줄 (대응 매뉴얼 문장과 같은 뜻)
-const FIX = [[/기관|사칭/, "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하기"],
-  [/도메인|주소/, "주소를 한 글자씩 읽고 진짜 주소와 비교하기"],
-  [/압박|심리/, "'오늘 중', '불이익'처럼 서두르게 하는 말이 보이면 일단 멈추기"],
-  [/연쇄/, "앱 설치나 정보 입력을 요구하면 첫 단계에서 멈추기"]];
-function levelHTML(r) {
-  const pt = r.phishing_total, pb = r.phishing_blocked, missed = pt - pb, stuck = r.normal_total - r.normal_handled;
-  const lv = missed === 0 ? (stuck === 0 ? 5 : 4) : pb === 0 ? 1 : pb / pt >= 0.5 ? 3 : 2;
-  const L = LEVELS[lv];
-  let body = L.body.replace("{stuck}", stuck).replace("{ptotal}", pt).replace("{missed}", missed);
-  if (lv <= 3 && stuck > 0) body += ` 진짜 업무 ${stuck}건은 확인하느라 잠시 멈췄어요.`;
-  const fixes = [];
-  (r.weak_types || []).forEach(t => { const f = FIX.find(([re]) => re.test(t)); if (f && !fixes.includes(f[1])) fixes.push(f[1]); });
-  if (missed > 0 && !fixes.length) fixes.push("돈·개인정보·로그인·앱 설치를 요구하면 시간이 걸려도 멈추고 확인하기");
-  if (stuck > 0) fixes.push("돈·개인정보·로그인·앱 설치를 요구하지 않는 평소 업무는 바로 처리하기");
-  const meter = [1, 2, 3, 4, 5].map(n => `<i class="${n <= lv ? "on" : ""}"></i>`).join("");
-  return `<section class="level" style="--lv:${L.color}" aria-label="나의 보안 대응 수준 ${L.name}">
-    <div class="lv-top"><span class="lv-name">나의 보안 대응 수준: <b>${L.name}</b></span><span class="lv-meter" aria-hidden="true">${meter}</span></div>
-    <h2>${esc(L.head)}</h2><p>${esc(body)}</p>` +
-    (fixes.length ? `<p><b>함께 살펴볼 부분</b></p><ul>${fixes.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : "") +
-    `<p class="lv-note">이 결과는 이름 없이 익명으로 모여, 회사가 직군별로 약한 부분을 찾아 다음 보안 교육에 반영하는 데 쓰여요.</p></section>`;
+function explain(c, r, harm) {
+  let v;
+  if (r.is_phishing) v = r.is_correct ? ["good", "피싱을 막았어요"] : ["bad", "속았어요"];
+  else v = r.over_suspicion ? ["wait", `정상 메시지였어요. ${S.mode === "org" ? "업무가" : "할 일이"} 늦어졌어요`] : ["good", "정상 메시지였어요. 잘 처리했어요"];
+  const last = S.idx === S.cards.length - 1;
+  render(`
+    <p class="step">${phaseName()} · 문제 ${S.idx + 1}번 결과</p>
+    <div class="explain">
+      <div id="exCard">${cardHTML(c, true)}</div>
+      <div>
+        <span class="verdict ${v[0]}">${v[1]}</span>
+        <div class="ex-box">
+          ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
+          <p class="short">${esc(r.explanation_short || r.explanation)}</p>
+          <h3>${r.is_phishing ? "수상한 점" : "확인한 점"}</h3>
+          <p class="hint">왼쪽 메시지에 번호로 표시했어요.</p>
+          <ul class="list">${(r.clues || []).map((x, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div></li>`).join("")}</ul>
+          <details class="detail"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>
+            <h4>해설</h4><p>${esc(r.explanation)}</p>
+            <h4>탐지 엔진 분석</h4>${engineHTML(r)}
+          </details>
+        </div>
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="next">${last ? "다음" : "다음 메시지"}</button></div>`);
+  annotate($("exCard"), r.clues, r.is_phishing);
+  $("next").onclick = () => { if (!last) { S.idx++; message(); } else afterPhase($("next")); };
 }
 
-function renderResult(r) {
-  // 수정 (A 11/02): 참여자 의견 "결과 화면 글이 많고 끝났을 때 임팩트가 없다", "끝났다는 표시가 없다", "내가 뭘 한 건지 보이게"
-  // 하는 일: 맨 위에 체험 완료와 판정, 두 점수, 문제별로 내가 한 일, 직군 평균 그래프만 보여 주고, 나머지는 [자세히 보기] 안에 넣는다
-  // 참고: 서버가 두 점수를 보내지 않으면(배포 직후 옛 서버) 예전처럼 맞힌 문제를 보여 준다
-  const two = typeof r.phishing_total === "number";
-  const [head, rule] = two ? verdict(r) : [r.gap_message, ""];
-  // 수정 (A 11/02): 맨 위는 "결과". 아래 따라 쓰기를 마쳐야 체험 완료 (A 결정)
-  let html = `<div class="done-head"><p class="done">결과</p>
-    <p class="muted">업무 메일·문자 ${r.played}개를 직접 판단했어요.${state.round > 1 ? ` (${state.round}번째 도전)` : ""}</p></div>
-    <h2 style="margin-top:0">${esc(head)}</h2>${rule ? `<p class="muted">${esc(rule)}</p>` : ""}
-    <div class="stats" style="margin-top:1rem">` +
-    (two ? `<div class="stat"><b>${r.phishing_blocked}/${r.phishing_total}</b><span>막은 피싱</span></div>
-      <div class="stat"><b>${r.normal_handled}/${r.normal_total}</b><span>처리한 업무</span></div>`
-         : `<div class="stat"><b>${r.correct}/${r.played}</b><span>맞힌 문제</span></div>`) +
-    `<div class="stat"><b>${r.wrong}</b><span>속은 횟수</span></div></div>`;
-  // 수정 (B 11/03 피드백): 두 점수 바로 아래에 보안 의식 수준과 보완할 부분
-  if (two) html += levelHTML(r);
-  // 하는 일: 다시 도전한 판이면 지난번과 두 점수를 나란히 보여 준다 (A 11/02, 교수님 피드백 "플레이한 뒤 결과가 달라지는 것을 보여 주기")
-  // 참고: 같은 화면(새로고침 전)에서 다시 도전한 경우만 비교한다. 2회차는 1회차에 안 본 문제라 외워서 맞힐 수 없다
-  const pv = state.prev;
-  if (pv && two) {
-    const better = r.phishing_blocked > pv.blocked || r.normal_handled > pv.handled, worse = r.phishing_blocked < pv.blocked || r.normal_handled < pv.handled;
-    html += `<div class="again"><b>지난번과 비교 (이번엔 처음 보는 문제)</b>막은 피싱 ${pv.blocked}/${pv.ptotal} → <b style="display:inline">${r.phishing_blocked}/${r.phishing_total}</b> · 처리한 업무 ${pv.handled}/${pv.ntotal} → <b style="display:inline">${r.normal_handled}/${r.normal_total}</b>
-      ${(([h, t]) => `<p class="again-head">${esc(h)}</p><p class="muted again-tip">${esc(t)}</p>`)(againLine(pv, r, better, worse))}</div>`;
-  }
-  // 하는 일: 속은 문제가 있으면 "실제였다면 일어났을 피해"를 모아 두 점수 바로 아래 크게 보여 준다 (A 11/02)
-  // 이유: 결과 화면에서 다시 한 번 "헉" 하게. 몇 번 틀렸다는 숫자보다 무슨 일이 일어났을지가 더 오래 남는다
-  const harms = state.log.filter(l => l && l.harm).map(l => l.harm);
-  if (harms.length) html += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
-  // 하는 일: 진짜 업무 메시지까지 의심한 횟수를 "업무 지연"으로 보여 준다 (과잉 의심 반영, A 10/28)
-  if (r.over_suspicion > 0) html += `<div class="banner caution" style="margin-top:1rem">확인하느라 업무가 ${r.over_suspicion}번 늦어졌어요<small>보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</small></div>`;
-  // 하는 일: 문제마다 내가 고른 행동과 결과를 한 줄씩 보여 준다 (A 11/02, 참여자 의견 "문제별로 내가 고른 것과 정답 비교")
-  const log = state.log.filter(Boolean);
-  if (log.length) html += `<h2>내가 한 일</h2><ul class="mylog">${log.map(l => {
-    const [m, t] = l.kind === "ok" ? ["✓", l.phishing ? "막았어요" : "바로 처리했어요"] : l.kind === "slow" ? ["△", "정상인데 멈춰서 업무가 늦어졌어요"] : ["✕", "속았어요"];
-    return `<li><span class="mark ${l.kind}" aria-hidden="true">${m}</span><div>${esc(l.what)}<small>내 선택: ${esc(l.did)} · ${t}</small>${l.harm ? `<small class="harm-line">→ ${esc(l.harm)}</small>` : ""}</div></li>`;
-  }).join("")}</ul>`;
-  // 하는 일: 같은 직군 평균 오답률과 내 오답률을 막대 두 개로 비교한다 (A 11/02, 참여자 의견 "그래프에서 내가 어느 위치인지")
-  // 참고: 서버가 같은 직군 3명 이상일 때만 job_compare를 보낸다 (A 10/30). 없으면 그래프를 그리지 않는다
-  const jc = r.job_compare;
-  if (jc && typeof jc.avg === "number" && typeof jc.mine === "number") {
-    const avg = Math.round(jc.avg * 100), mine = Math.round(jc.mine * 100);
-    const bar = (label, v, me) => `<div class="cmp-row${me ? " me" : ""}"><span>${label}</span><span class="track"><i class="fill" style="width:${Math.max(v, 1)}%"></i></span><span class="val">${v}%</span></div>`;
-    html += `<h2>같은 직군과 비교한 오답률</h2><div class="cmp" role="img" aria-label="같은 직군 평균 오답률 ${avg}%, 내 오답률 ${mine}%">${bar("같은 직군 평균", avg, false)}${bar("나", mine, true)}</div>
-      <p class="muted">${mine < avg ? "같은 직군 평균보다 덜 속았어요." : mine > avg ? "같은 직군 평균보다 더 속았어요. 아래 팁을 확인해 보세요." : "같은 직군 평균과 같아요."}</p>`;
-  }
-  // 하는 일: 맞춤 피드백(C의 feedback.py)을 보여 준다 (A 10/30)
-  if ((r.tips || []).length) html += `<h2>이렇게 해 보세요</h2><ul class="list">${r.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
-  // 하는 일: 자세한 기록은 [자세히 보기]를 눌러야 열린다 (A 11/02)
-  html += `<details class="more"><summary>자세히 보기</summary>
-    <p class="gap">${esc(r.gap_message)}</p>
-    <p class="muted">자신감 ${r.confidence}점</p>
-    <p class="muted">제한 시간(문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초) 안에 고른 문제 ${state.cards.length - state.late}/${state.cards.length}</p>` +
-    (r.weak_types.length ? `<p>많이 속은 유형: ${r.weak_types.map(esc).join(", ")}</p>` : "") +
-    (state.chainResult ? `<p>연쇄형 체험: ${esc(chainLine(state.chainResult))}</p>` : "") +
-    `<p class="note">익명 번호 ${esc(state.anon)}</p></details>`;
-  $("result").innerHTML = html;
-  // 하는 일: 따라 쓸 문장을 고르고 입력 칸을 비운다. 다시 도전은 속았거나 정상까지 멈춘 판에만 보여 준다 (A 11/02)
-  // 이유: 만점자의 시간을 아끼려고. 정상까지 멈춘 것(과잉 의심)도 고쳐야 할 습관이라 다시 도전 대상에 넣었다
-  state.last = two ? { blocked: r.phishing_blocked, ptotal: r.phishing_total, handled: r.normal_handled, ntotal: r.normal_total } : null;
-  $("copy-src").textContent = copyLine(r);
-  $("copy-in").value = ""; $("copy-in").classList.remove("ok"); $("copy-msg").textContent = ""; $("copy-msg").classList.remove("ok");
-  $("btn-done").disabled = true;
-  // 수정 (A 11/02): 다시 도전은 1회차에만, 따라 쓰기를 마쳐야 켜진다 (1·2회차 사이에 매뉴얼 문장을 읽게 하려고)
-  const canRetry = state.round === 1 && (r.wrong > 0 || r.over_suspicion > 0);
-  $("btn-retry").hidden = !canRetry; $("btn-retry").disabled = true; $("retry-note").hidden = !canRetry;
-  // 수정 (A 11/03): 만점이 아니면 [체험 완료]를 잠그고 다시 도전을 주 버튼(보라색)으로 바꾼다
-  state.mustRetry = canRetry;
-  $("btn-retry").className = canRetry ? "primary" : "secondary";
-  $("btn-done").className = canRetry ? "secondary" : "primary";
+/* =====================================================================
+   3. 사전이 끝난 뒤: 기관용 따라 쓰기 → 연쇄형 / 개인용 연쇄형 → 게임
+   ===================================================================== */
+function afterPhase(btn) {
+  busy(btn, async () => {
+    // 서버 약속 3번: 이번 단계 답을 보내 서버가 다시 채점한 결과를 받는다
+    const r = await post("/api/result", { ...base(), anon_id: S.anon, answers: S.answers[S.phase] });
+    S.res[S.phase] = r;
+    if (S.phase === "post") return result();
+    S.mode === "org" ? copyLine() : practice();
+  });
 }
 
-// 하는 일: 지난번과 비교해 칭찬 한 줄 + 격려·다음 할 일 한 줄을 돌려준다 (A 11/02, 11/03 수정)
-// 이유: 숫자 비교만 있으면 아쉽게 느껴지고, 같거나 낮아진 사람은 실망하고 끝난다. 결과는 그대로 보여 주되, 실제로 잘한 것을 찾아 칭찬한다
-// 참고: 칭찬은 실제 점수에서만 고른다 (없는 일을 칭찬하지 않음). 다시 도전은 한 번뿐이라 2회차는 결과와 관계없이 체험 완료로 끝난다
-function againLine(pv, r, better, worse) {
-  const allOk = r.phishing_blocked === r.phishing_total && r.normal_handled === r.normal_total;
-  const good = r.phishing_blocked > 0 ? `처음 보는 피싱 ${r.phishing_blocked}개를 막아 냈어요.`
-             : r.normal_handled > 0 ? `진짜 업무 ${r.normal_handled}개는 망설이지 않고 처리했어요.` : "끝까지 두 번 체험한 것만으로도 큰 연습이 됐어요.";
-  if (allOk) return [better ? "만점! 지난번보다 확실히 나아졌어요." : "이번에도 만점이에요!", "처음 보는 문제에서도 배운 판단 기준을 그대로 썼어요. 실제 업무에서도 이렇게 멈추고 확인하면 돼요."];
-  if (better && !worse) return [`지난번보다 나아졌어요! ${good}`, "남은 문제는 아래 \"내가 한 일\"에서 한 번만 더 살펴보면 충분해요."];
-  if (worse && !better) return [`이번 문제가 더 까다로웠나 봐요. 그래도 ${good}`, "새 수법은 누구에게나 어려워요. 속은 문제의 해설에서 번호 표시만 다시 봐 두면 다음엔 막을 수 있어요."];
-  if (r.phishing_blocked > pv.blocked) return ["피싱은 지난번보다 더 막았어요!", "다만 진짜 업무도 더 멈췄어요. 돈·개인정보·로그인·앱 설치를 요구하지 않는 평소 업무는 바로 처리해도 돼요."];
-  if (r.normal_handled > pv.handled) return ["업무는 지난번보다 빠르게 처리했어요!", "다만 피싱을 더 놓쳤어요. 돈·개인정보·로그인·앱 설치를 요구하면 멈추고 따로 확인하세요."];
-  return [`지난번과 같은 결과예요. ${good}`, "처음 보는 문제라 쉽지 않았을 거예요. 속은 문제의 해설에서 번호 표시만 다시 봐 두세요."];
-}
-
-// 하는 일: 결과에 맞는 대응 매뉴얼 문장 하나를 고른다 (A 11/02)
-// 참고: 문장은 B의 대응 매뉴얼(manual.html) 그대로. 매뉴얼 문장을 바꾸면 여기도 같이 바꾼다
-//       순서: 적힌 번호로 전화함 → 가장 많이 속은 유형 → 정상까지 멈춤 → 만점
-const COPY_LINES = {
-  call: "메일이나 문자에 적힌 번호로 전화하지 마세요.",
-  "기관 사칭": "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하세요.",
-  "도메인 위조": "주소를 한 글자씩 읽어 보세요. 한 글자만 달라도 가짜일 수 있어요.",
-  "심리 압박": "서두르게 하는 말이 보이면 일단 멈추세요. 급하다고 할수록 따로 확인할 이유예요.",
-  "연쇄형 공격": "앱 설치나 정보 입력을 요구하면 거기서 멈추세요.",
-  over: "돈, 개인정보, 로그인, 앱 설치를 요구하지 않는 평소 업무라면 바로 처리해도 돼요.",
-  all: "돈, 개인정보, 로그인, 앱 설치, 첨부 열기를 요구하면 처리를 멈추고 따로 확인해요."
-};
-function copyLine(r) {
-  if (state.answers.some((a, i) => a.choice === "call" && state.log[i] && state.log[i].kind === "bad")) return COPY_LINES.call;
+function pickCopyLine(r) {
+  if (S.log.pre.some(l => l && l.kind === "bad" && l.call)) return COPY_LINES.call;
   const t = (r.weak_types || []).find(x => COPY_LINES[x]);
   if (t) return COPY_LINES[t];
   if (r.over_suspicion > 0) return COPY_LINES.over;
   return COPY_LINES.all;
 }
-// 하는 일: 입력한 글자가 문장과 같으면 [체험 완료] 버튼을 켠다. 띄어쓰기·문장부호는 비교하지 않는다
-// 참고: 한글은 조합 중인 글자가 있어 compositionend에서도 다시 비교한다. 붙여 넣기는 막는다 (직접 읽고 쓰게 하려고)
-const bare = t => (t || "").replace(/[\s.,!?·'"‘’“”…~-]/g, "");
-function checkCopy() {
-  const ok = bare($("copy-in").value) === bare($("copy-src").textContent);
-  $("copy-in").classList.toggle("ok", ok);
-  $("copy-msg").classList.toggle("ok", ok);
-  $("copy-msg").textContent = ok ? (state.mustRetry ? "잘 입력했어요. 이제 새 문제로 다시 도전해 주세요." : "잘 입력했어요. 체험을 마무리해 주세요.") : "";
-  $("btn-done").disabled = !ok || state.mustRetry;
-  $("btn-retry").disabled = !ok;
+function copyLine() {
+  // 하는 일: 사전 체험 결과에 맞는 대응 매뉴얼 문장을 직접 따라 쓴다 (기관용, 팀 결정 8번). 붙여 넣기는 막는다
+  const line = pickCopyLine(S.res.pre);
+  const bare = t => (t || "").replace(/[\s.,!?·'"‘’“”…~-]/g, "");
+  render(`
+    <p class="step">기관용 체험 · 배우기</p>
+    <h1 class="title">대응 매뉴얼 문장을 따라 써 보세요</h1>
+    <p class="lead">방금 체험 결과에 맞는 문장이에요. 직접 읽고 쓰면 오래 기억에 남아요.</p>
+    <p class="copy-src">${esc(line)}</p>
+    <textarea class="field copy-in" id="copy" rows="3" style="max-width:40rem;margin-top:.8rem;resize:vertical" aria-label="따라 쓰기"></textarea>
+    <p class="copy-msg" id="copyMsg" role="status"></p>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`);
+  const t = $("copy");
+  t.onpaste = e => { e.preventDefault(); $("copyMsg").classList.remove("ok"); $("copyMsg").textContent = "붙여 넣기 대신 직접 입력해 주세요."; };
+  const check = () => { const ok = bare(t.value) === bare(line); t.classList.toggle("ok", ok); $("copyMsg").classList.toggle("ok", ok);
+    $("copyMsg").textContent = ok ? "잘 입력했어요." : ""; $("next").disabled = !ok; };
+  t.oninput = check; t.addEventListener("compositionend", check);
+  $("next").onclick = practice;
 }
-$("copy-in").addEventListener("input", checkCopy);
-$("copy-in").addEventListener("compositionend", checkCopy);
-$("copy-in").addEventListener("paste", e => { e.preventDefault(); $("copy-msg").classList.remove("ok"); $("copy-msg").textContent = "붙여 넣기 대신 직접 입력해 주세요."; });
-$("btn-done").onclick = () => { location.href = "/"; };
-// 하는 일: 같은 직군·문진표로 다시 체험한다. 결과 화면에서 지난번과 비교한다 (A 11/02)
-// 참고: 안내 화면은 이미 읽었으니 건너뛰고 첫 문제로 간다. 같은 익명 번호에 round: 2로 기록되어 관리자 화면에서 1회차와 비교된다
-$("btn-retry").onclick = async () => {
-  $("btn-retry").disabled = true;
+
+/* ----- 연쇄형 연습 (서버 약속 9번, 점수에 안 들어감) ----- */
+async function practice() {
+  render(`<p class="step">연습 · 연쇄형 체험</p><p class="lead">문자를 불러오는 중이에요.</p>`);
   try {
-    // 참고: 1회차 답을 함께 보내면 서버가 안 본 문제와 속은 유형을 찾아 2회차 문제를 고른다. 익명 번호는 그대로
-    const d = await post("/api/start", { job: state.job, self_check: state.survey, retry: { anon_id: state.anon, answers: state.answers } });
-    Object.assign(state, { prev: state.last, round: d.round || 2, anon: d.anon_id, cards: d.scenarios, i: 0, answers: [], chain: null, chainResult: null, late: 0, log: [] });
-    renderCard(); show("s-game");
+    const d = await post("/api/practice", {});
+    S.chainCard = d.scenarios[0]; S.chainSteps = []; S.chainResult = null;
+    chainScreen();
   } catch (err) {
-    // 수정 (A 11/03): 서버 오류로 다시 도전을 못 하면 갇히지 않게 [체험 완료]를 연다
-    $("copy-msg").textContent = err.message; state.mustRetry = false; $("btn-done").disabled = false;
+    render(`<p class="step">연습 · 연쇄형 체험</p><p class="error" role="alert">${esc(err.message)}</p>
+      <div class="row"><button class="btn" id="again">다시 불러오기</button></div>`);
+    $("again").onclick = practice;
   }
-  finally { $("btn-retry").disabled = false; }
+}
+function chainThread() {
+  const c = S.chainCard;
+  const link = c.link ? `<br><span class="lnk">${esc(c.link)}</span>` : "";
+  let h = `<p class="day">오늘</p><div class="bubble-row"><div class="bubble">${esc(c.body)}${link}</div><time>오후 2:14</time></div>`;
+  S.chainSteps.forEach(st => { h += `<p class="day">${esc(st.title)}</p><div class="bubble-row"><div class="bubble">${esc(st.body)}</div><time>오후 3:02</time></div>`; });
+  return h;
+}
+function chainScreen() {
+  const c = S.chainCard, st = S.chainSteps[S.chainSteps.length - 1];
+  const step = st ? st.step : 1;
+  const opts = st ? shuffle([["continue", st.continue_label], ["stop", st.stop_label]]) : shuffle(["click", "call", "official"]).map(k => [k, choiceLabel(c, k)]);
+  render(`
+    <p class="step">연습 · 연쇄형 체험 ${step}단계 <span class="data-tag">점수에 안 들어가요</span></p>
+    <div class="stage">
+      ${smsHTML(c, "", chainThread())}
+      <aside class="choices" aria-label="행동 고르기"><h2>${st ? "이어서 어떻게 할까요?" : "이 문자, 어떻게 할까요?"}</h2>
+        ${opts.map(([k, t]) => `<button class="opt" data-k="${k}">${esc(t)}</button>`).join("")}
+        <div id="msgErr"></div></aside>
+    </div>`);
+  const btns = main.querySelectorAll(".opt");
+  // 하는 일: 새 단계가 뜬 뒤 0.8초 동안 버튼을 잠근다 (읽지도 않고 연달아 누르는 것을 막으려고, 예전 game.html)
+  if (st) { btns.forEach(b => b.disabled = true); setTimeout(() => btns.forEach(b => b.disabled = false), 800); }
+  btns.forEach(b => b.onclick = async () => {
+    btns.forEach(x => x.disabled = true);
+    try {
+      const r = st
+        ? await post("/api/chain", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, step: st.step, action: b.dataset.k })
+        : await post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: b.dataset.k, chain: true });
+      if (r.chain_step) { S.chainSteps.push(r.chain_step); return chainScreen(); }
+      S.chainResult = { step: r.stopped_step, call: !st && b.dataset.k === "call", titles: r.chain_titles };
+      chainDone(r);
+    } catch (err) {
+      btns.forEach(x => x.disabled = false);
+      $("msgErr").innerHTML = `<p class="error" role="alert">${esc(err.message)}</p>`;
+    }
+  });
+}
+function chainLine(cr) {
+  // 하는 일: 어디서 멈췄는지를 한 줄로 (단계 이름은 카드의 단계 제목에서 가져온다)
+  const t = cr.titles || [];
+  if (cr.step === 1) return "첫 문자에서 멈추고 따로 확인했어요.";
+  if (cr.step >= 2) return `'${t[cr.step - 2] || cr.step + "단계"}'에서 멈췄어요.`;
+  return cr.call ? "문자에 적힌 번호로 전화했어요." : "마지막 단계까지 따라갔어요.";
+}
+function chainDone(r) {
+  const cr = S.chainResult;
+  const harm = cr.step === 0 ? harmOf(S.chainCard, cr.call ? "call" : "click", r) : null;
+  render(`
+    <p class="step">연습 · 연쇄형 체험 결과 <span class="data-tag">점수에 안 들어가요</span></p>
+    <h1 class="title">${esc(chainLine(cr))}</h1>
+    <p class="chain-steps">${esc(["첫 문자", ...(cr.titles || [])].join(" → "))}</p>
+    <div class="ex-box" style="margin-top:1rem;max-width:44rem">
+      ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
+      <p class="short">${esc(r.explanation_short)}</p>
+      <p>${esc(r.explanation)}</p>
+    </div>
+    <div class="row"><button class="btn" id="next">${S.mode === "personal" ? "게임으로 훈련하기" : "사후 체험 시작"}</button></div>`);
+  $("next").onclick = () => S.mode === "personal" ? game() : beginPost($("next"));
+}
+
+/* ----- 개인용 게임: 위험한 행동만 골라 누르기 (시간 제한 없음, 팀 결정 19번) ----- */
+function game() {
+  const cards = shuffle(ACTIONS);
+  const total = cards.filter(a => a[1]).length;
+  let found = 0;
+  render(`
+    <section class="game">
+      <p class="step">개인용 체험 · 게임 훈련</p>
+      <h1 class="title">위험한 행동만 골라 눌러요</h1>
+      <p class="lead">시간 제한은 없어요. 위험한 행동을 다 찾으면 끝나요.</p>
+      <div class="game-head"><span>찾은 위험한 행동</span><b id="found" role="status">0 / ${total}</b></div>
+      <div class="grid" id="grid">${cards.map((a, i) => `<button class="blk" data-i="${i}">${esc(a[0])}</button>`).join("")}</div>
+    </section>`);
+  main.querySelectorAll(".blk").forEach(b => b.onclick = () => {
+    if (b.dataset.done) return;
+    const a = cards[b.dataset.i];
+    if (a[1]) {
+      b.dataset.done = 1; b.classList.add("ok"); found++;
+      b.insertAdjacentHTML("beforeend", `<span class="bd">위험</span><span class="why">${esc(a[2])}</span>`);
+      $("found").textContent = `${found} / ${total}`;
+      if (found === total) setTimeout(gameEnd, 900);
+    } else {
+      b.classList.remove("ng"); void b.offsetWidth; b.classList.add("ng");
+      if (!b.querySelector(".why")) b.insertAdjacentHTML("beforeend", `<span class="why">안전한 행동이에요. ${esc(a[2])}</span>`);
+    }
+  });
+}
+function gameEnd() {
+  render(`
+    <p class="step">개인용 체험 · 게임 훈련 끝</p>
+    <h1 class="title">위험한 행동을 모두 찾았어요</h1>
+    <p class="copy-src">메시지가 알려 준 길(링크, 번호, 답장)이 아니라, 내가 직접 찾은 길로 확인해요.</p>
+    <div class="row"><button class="btn" id="next">사후 체험 시작</button></div>`);
+  $("next").onclick = () => beginPost($("next"));
+}
+
+/* ----- 사후 체험: 모두, 처음과 반대 세트 (팀 결정 3·8번) ----- */
+function beginPost(btn) {
+  busy(btn, async () => {
+    // 참고: 사전에 푼 카드 번호를 보내면 서버가 그 세트를 확인하고 반대 세트를 준다. 익명 번호는 그대로
+    const d = await post("/api/start", { ...base(), retry: { anon_id: S.anon, answers: S.answers.pre } });
+    Object.assign(S, { phase: "post", round: d.round || 2, cards: d.scenarios, idx: 0 });
+    intro();
+  });
+}
+
+/* =====================================================================
+   4. 결과: 사전·사후 나란히
+   ===================================================================== */
+// 하는 일: 두 점수로 보안 대응 수준을 5단계로 정한다 (B 11/03·11/09, 예전 game.html 그대로)
+const LEVELS = {
+  5: { name: "우수", color: "var(--safe)", head: "보안 대응이 아주 안정적이에요",
+       body: "피싱은 모두 멈추고, 진짜 {work}는 바로 처리하셨어요. 보낸 곳과 요구하는 행동을 보고 판단하는 습관이 잘 자리 잡혀 있어요. 이 기준을 {people}과도 나눠 주세요." },
+  4: { name: "양호", color: "var(--accent)", head: "피싱은 모두 막으셨어요. 판단을 조금만 더 다듬어 보세요",
+       body: "피싱은 모두 막으셨고, 진짜 {work} {stuck}건은 확인하느라 잠시 멈췄어요. 요구하는 행동이 안전한 메시지는 바로 처리하셔도 괜찮아요." },
+  3: { name: "보통", color: "var(--caution)", head: "기본적인 대응은 잘하고 계세요. 몇 가지만 더 챙기면 좋아요",
+       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. {risk} 아래 내용을 함께 살펴보시면 좋아요." },
+  2: { name: "보완 권장", color: "var(--caution)", head: "몇 가지 대응 습관을 함께 보완해 보면 좋겠어요",
+       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. 비슷한 메시지는 실제로도 자주 오니, 아래 내용을 한 번 확인해 보세요." },
+  1: { name: "집중 연습 권장", color: "var(--danger)", head: "이번 체험을 계기로 대응 방법을 차근차근 익혀 보세요",
+       body: "이번에는 피싱을 막지 못하셨어요. 처음에는 누구나 헷갈릴 수 있어요. 아래 내용을 확인하시면 다음에는 훨씬 쉽게 가려내실 수 있어요." }
 };
+const FIX = [[/기관|사칭/, "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하기"],
+  [/도메인|주소/, "주소를 한 글자씩 읽고 진짜 주소와 비교하기"],
+  [/압박|심리/, "'오늘 중', '불이익'처럼 서두르게 하는 말이 보이면 일단 멈추기"],
+  [/연쇄/, "앱 설치나 정보 입력을 요구하면 첫 단계에서 멈추기"]];
+function levelHTML(r) {
+  const org = S.mode === "org";
+  const pt = r.phishing_total, pb = r.phishing_blocked, missed = pt - pb, stuck = r.normal_total - r.normal_handled;
+  const lv = missed === 0 ? (stuck === 0 ? 5 : 4) : pb === 0 ? 1 : pb / pt >= 0.5 ? 3 : 2;
+  const L = LEVELS[lv], work = org ? "업무" : "메시지";
+  let body = L.body.replace("{stuck}", stuck).replace("{ptotal}", pt).replace("{missed}", missed).replace("{work}", work)
+    .replace("{people}", org ? "동료분들" : "주변 사람들")
+    .replace("{risk}", org ? "실제 업무에서는 한 번의 클릭이 회사 계정이나 자료와 이어질 수 있어서," : "실제로는 한 번의 클릭이 계정이나 돈과 이어질 수 있어서,");
+  if (lv <= 3 && stuck > 0) body += ` 진짜 ${work} ${stuck}건은 확인하느라 잠시 멈췄어요.`;
+  const fixes = [];
+  (r.weak_types || []).forEach(t => { const f = FIX.find(([re]) => re.test(t)); if (f && !fixes.includes(f[1])) fixes.push(f[1]); });
+  if (missed > 0 && !fixes.length) fixes.push("돈·개인정보·로그인·앱 설치를 요구하면 시간이 걸려도 멈추고 확인하기");
+  if (stuck > 0) fixes.push(`돈·개인정보·로그인·앱 설치를 요구하지 않는 ${org ? "평소 업무" : "평범한 메시지"}는 바로 처리하기`);
+  const meter = [1, 2, 3, 4, 5].map(n => `<i class="${n <= lv ? "on" : ""}"></i>`).join("");
+  return `<section class="level" style="--lv:${L.color}" aria-label="나의 보안 대응 수준 ${L.name}">
+    <div class="lv-top"><span>나의 보안 대응 수준: <b>${L.name}</b></span><span class="lv-meter" aria-hidden="true">${meter}</span></div>
+    <h2>${esc(L.head)}</h2><p>${esc(body)}</p>` +
+    (fixes.length ? `<p><b>함께 살펴볼 부분</b></p><ul>${fixes.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : "") +
+    (org ? `<p class="lv-note">이 결과는 이름 없이 익명으로 모여, 회사가 직군별로 약한 부분을 찾아 다음 보안 교육에 반영하는 데 쓰여요.</p>` : "") + `</section>`;
+}
+// 하는 일: 사전과 비교해 칭찬 한 줄 + 다음 할 일 한 줄 (A 11/02·11/03, 예전 game.html). 칭찬은 실제 점수에서만 고른다
+function againLine(pv, r) {
+  const better = r.phishing_blocked > pv.phishing_blocked || r.normal_handled > pv.normal_handled;
+  const worse = r.phishing_blocked < pv.phishing_blocked || r.normal_handled < pv.normal_handled;
+  const work = S.mode === "org" ? "업무" : "메시지";
+  const allOk = r.phishing_blocked === r.phishing_total && r.normal_handled === r.normal_total;
+  const good = r.phishing_blocked > 0 ? `처음 보는 피싱 ${r.phishing_blocked}개를 막아 냈어요.`
+             : r.normal_handled > 0 ? `진짜 ${work} ${r.normal_handled}개는 망설이지 않고 처리했어요.` : "끝까지 두 번 체험한 것만으로도 큰 연습이 됐어요.";
+  if (allOk) return [better ? "만점! 사전보다 확실히 나아졌어요." : "사후에도 만점이에요!", "처음 보는 문제에서도 배운 판단 기준을 그대로 썼어요. 실제로도 이렇게 멈추고 확인하면 돼요."];
+  if (better && !worse) return [`사전보다 나아졌어요! ${good}`, "남은 문제는 아래 \"내가 한 일\"에서 한 번만 더 살펴보면 충분해요."];
+  if (worse && !better) return [`이번 문제가 더 까다로웠나 봐요. 그래도 ${good}`, "새 수법은 누구에게나 어려워요. 속은 문제의 해설에서 번호 표시만 다시 봐 두면 다음엔 막을 수 있어요."];
+  if (r.phishing_blocked > pv.phishing_blocked) return ["피싱은 사전보다 더 막았어요!", `다만 진짜 ${work}도 더 멈췄어요. 돈·개인정보·로그인·앱 설치를 요구하지 않으면 바로 처리해도 돼요.`];
+  if (r.normal_handled > pv.normal_handled) return [`${work}는 사전보다 빠르게 처리했어요!`, "다만 피싱을 더 놓쳤어요. 돈·개인정보·로그인·앱 설치를 요구하면 멈추고 따로 확인하세요."];
+  return [`사전과 같은 결과예요. ${good}`, "처음 보는 문제라 쉽지 않았을 거예요. 속은 문제의 해설에서 번호 표시만 다시 봐 두세요."];
+}
+
+function result() {
+  const a = S.res.pre, b = S.res.post;
+  const row = (lbl, n, t, cls) => `<div class="pp ${cls}"><span>${lbl}</span><span class="track"><i style="width:${t ? n / t * 100 : 0}%"></i></span><b>${n}/${t}</b></div>`;
+  const [head, tip] = againLine(a, b);
+  const work = S.mode === "org" ? "업무" : "메시지";
+  const harms = [...S.log.pre, ...S.log.post].filter(l => l && l.harm).map(l => l.harm);
+  const logs = [["사전", S.log.pre], ["사후", S.log.post]];
+  const late = S.late.pre + S.late.post, all = S.answers.pre.length + S.answers.post.length;
+  const jc = S.mode === "org" ? a.job_compare : null;   // 같은 직군 비교는 사전(1회차) 기준 (관리자 통계와 같은 기준)
+  let side = levelHTML(b);
+  if (harms.length) side += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+  if (b.over_suspicion > 0) side += `<p class="slow-box">사후 체험에서 확인하느라 ${work}가 ${b.over_suspicion}번 늦어졌어요. 보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</p>`;
+  render(`
+    <p class="step">${modeName()} 체험 · 결과</p>
+    <h1 class="title">체험을 모두 마쳤어요</h1>
+    <p class="headline">${esc(head)}</p><p class="muted">${esc(tip)}</p>
+    <div class="result">
+      <div>
+        <section class="score"><h3>막은 피싱</h3><p>피싱을 잘 멈췄나요?</p>
+          ${row("사전", a.phishing_blocked, a.phishing_total, "pre")}${row("사후", b.phishing_blocked, b.phishing_total, "post")}</section>
+        <section class="score"><h3>처리한 업무</h3><p>정상 메시지까지 의심하지 않고 잘 처리했나요?</p>
+          ${row("사전", a.normal_handled, a.normal_total, "pre")}${row("사후", b.normal_handled, b.normal_total, "post")}</section>
+      </div>
+      <div style="display:grid;gap:.8rem">${side}</div>
+    </div>
+    <h2 class="sub-h">내가 한 일</h2>
+    ${logs.map(([n, list]) => `<p class="muted" style="font-size:.85rem;margin:.6rem 0 .3rem">${n} 체험</p><ul class="mylog">${list.filter(Boolean).map(l => {
+      const [m, t] = l.kind === "ok" ? ["✓", l.phishing ? "막았어요" : "바로 처리했어요"] : l.kind === "slow" ? ["△", `정상인데 멈춰서 ${work === "업무" ? "업무가" : "할 일이"} 늦어졌어요`] : ["✕", "속았어요"];
+      return `<li><span class="mark ${l.kind}" aria-hidden="true">${m}</span><div>${esc(l.what)}<small>내 선택: ${esc(l.did)} · ${t}</small>${l.harm ? `<small class="harm-line">→ ${esc(l.harm)}</small>` : ""}</div></li>`;
+    }).join("")}</ul>`).join("")}
+    ${jc && typeof jc.avg === "number" && typeof jc.mine === "number" ? (() => {
+      const avg = Math.round(jc.avg * 100), mine = Math.round(jc.mine * 100);
+      const bar = (label, v, me) => `<div class="cmp-row${me ? " me" : ""}"><span>${label}</span><span class="track"><i class="fill" style="width:${Math.max(v, 1)}%"></i></span><span class="val">${v}%</span></div>`;
+      return `<h2 class="sub-h">같은 직군과 비교한 오답률 (사전 체험)</h2><div class="cmp" role="img" aria-label="같은 직군 평균 오답률 ${avg}%, 내 오답률 ${mine}%">${bar("같은 직군 평균", avg, false)}${bar("나", mine, true)}</div>
+        <p class="muted" style="font-size:.88rem;margin-top:.4rem">${mine < avg ? "같은 직군 평균보다 덜 속았어요." : mine > avg ? "같은 직군 평균보다 더 속았어요." : "같은 직군 평균과 같아요."}</p>`;
+    })() : ""}
+    ${(b.tips || []).length ? `<h2 class="sub-h">이렇게 해 보세요</h2><ul class="list">${b.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>` : ""}
+    <details class="detail" style="margin-top:1.2rem"><summary>자세히 보기</summary>
+      <p>${esc(a.gap_message)}</p>
+      <p class="muted">자신감 ${a.confidence}점 (사전질문)</p>
+      <p class="muted">제한 시간(문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초) 안에 고른 문제 ${all - late}/${all}</p>
+      ${S.chainResult ? `<p>연쇄형 연습: ${esc(chainLine(S.chainResult))}</p>` : ""}
+      <p class="note">익명 번호 ${esc(S.anon)}</p>
+    </details>
+    <div class="more"><span>더 알아보기:</span>
+      <a href="/check" target="_blank" rel="noopener">링크 검사</a>
+      <a href="/manual" target="_blank" rel="noopener">대응 매뉴얼</a></div>
+    <div class="row"><a class="btn sub" href="/" style="text-decoration:none">처음으로</a></div>`);
+}
+
+/* =====================================================================
+   메뉴, 시작
+   ===================================================================== */
+const side = $("side"), menuBtn = $("menuBtn");
+const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
+menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
+document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+
+// 하는 일: 주소 끝 꼬리표로 어느 체험인지 정한다 (흐름 문서 6번: game?mode=personal / game?mode=org). 없으면 고르기 화면
+const qm = new URLSearchParams(location.search).get("mode");
+["personal", "org"].includes(qm) ? start(qm) : choose();
 </script>
 </body>
 </html>
