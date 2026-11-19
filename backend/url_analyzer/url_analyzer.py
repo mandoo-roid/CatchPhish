@@ -37,7 +37,8 @@ GOV_WORDS = ["gov", "minwon"]
 
 # 공공기관을 뜻하는 단어: 기관명 불일치(15점)에 씀 (임시, 팀 논의로 늘리기)
 # nhis = 국민건강보험공단, health = 건강보험·건강검진 사칭, police = 경찰, tax = 세금
-ORG_WORDS = ["gov", "minwon", "nhis", "health", "police", "tax", "court"]
+ORG_WORDS = ["gov", "minwon", "nhis", "health", "police", "tax", "court"]  
+# court 추가 (A 11/19, B 부탁: S10 법원 사칭이 짝 S01과 같은 점수가 되게)
 
 # 인증·로그인을 유도하는 단어: 키워드(10점)에 씀
 KEYWORDS = ["verify", "login", "signin", "account", "secure", "update", "confirm", "check"]
