@@ -6,110 +6,125 @@
 <title>캐치피싱</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-/* 첫 화면 (A 11/19, docs/experience_draft.html 시안의 첫 화면을 옮김)
-   하는 일: 큰 버튼 3개(개인용 / 기관용 / 자유 훈련). 링크 검사와 대응 매뉴얼은 ☰ 메뉴 안에 (C 제안, 팀 결정 14번)
-   이유: 첫 화면에서 바로 내 체험으로 들어가게 하려고. 개인용은 /game?mode=personal, 기관용은 /game?mode=org (흐름 문서 6번)
-   참고: 바탕은 기기의 어두운 모드와 상관없이 흰색 (B 11/02 결정 그대로). 마스코트 그림과 튀어 오르는 움직임은 B 11/12 그대로 */
+/* 첫 화면 (A 11/19): 제목 + 큰 버튼 3개(개인용 / 기관용 / 자유 훈련). 링크 검사와 대응 매뉴얼은 ☰ 메뉴 안에 (팀 결정 14번)
+   문구와 아이콘은 그전 첫 화면 그대로, 겉모양만 포스터 테마로. 학교·팀 이름 줄은 시범 운영 링크가 퍼질 것을 생각해 뺌 (A 결정) */
+/* ===== 포스터 테마 (A 11/19, 포스터 2장 색·글꼴·카드 모양을 사이트에 옮김) =====
+   색: 포스터 파일에서 뽑은 값 (A 개인 메모 5번). 글꼴: 제목 주아체(Jua), 본문 본고딕(Noto Sans KR), 둘 다 OFL (B 11/16)
+   카드: 흰 바탕 + 남색 두꺼운 테두리 + 오른쪽 아래 진한 그림자 (포스터 "이런 걸 할 수 있어요" 카드) */
 :root {
   color-scheme: light;
-  --navy: #0F1F45; --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3;
-  --accent: #2563C9; --accent-soft: #E3ECFA; --focus: #2563C9; --point: #FFE699;
-  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --bg: #E7ECF4; --dot: #CBD5E5; --paper: #FFFFFF; --field: #F2F5FA; --line: #D3DCEA;
+  --navy: #0F1F45; --ink: #1B2A41; --muted: #56657D; --blue: #2563C9; --blue-soft: #E3ECFA; --circle: #CFDCF0;
+  --point: #FFE699; --mascot: #3B7BE0; --shadow: #B8C4D8;
+  --danger: #C62828; --danger-soft: #FDECEC; --caution: #8A5A00; --caution-soft: #FFF3D1; --safe: #1E7A4E; --safe-soft: #E3F4EA;
+  --title: "Jua", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-card: 22px; --r-btn: 14px; --bw: 2.5px;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-/* ===== 기본 ===== */
 *, *::before, *::after { box-sizing: inherit; }
 html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
-body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans);
-  font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
-button, input { font: inherit; color: inherit; }
+body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
+  word-break: keep-all; overflow-wrap: anywhere;
+  background: var(--bg) radial-gradient(var(--dot) 1.3px, transparent 1.5px) 0 0 / 20px 20px; }
+button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 [hidden] { display: none !important; }
 h1, h2, h3, p { margin: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-/* ===== 배치: 폰 / 태블릿 / PC =====
-   기준 너비는 home.html과 같게 40rem, 72rem
-   - 링크 검사·대응 매뉴얼은 모든 화면에서 ☰ 메뉴 안에 (누르면 옆에서 나옴) */
-.site { min-height: 100vh; }
-.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .6rem;
-  padding: .55rem 1rem; padding-top: calc(.55rem + env(safe-area-inset-top, 0px));
-  background: var(--paper); border-bottom: 1px solid var(--line); }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--paper); }
-.menu-btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; width: 2.6rem; height: 2.6rem; font-size: 1.2rem; }
-.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; background: none; border: 0; padding: 0; }
-.draft-tag { margin-left: auto; font-size: .78rem; color: var(--caution); background: var(--caution-soft); border-radius: 999px; padding: .1rem .7rem; }
-.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper);
-  border-right: 1px solid var(--line); padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem;
-  transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
-.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35); }
-.side a, .side button { display: block; text-align: left; padding: .7rem .8rem; border-radius: 10px; color: var(--ink);
-  text-decoration: none; border: 0; background: none; width: 100%; }
-.side a:hover, .side button:hover { background: var(--field); }
-.side .side-head { font-size: .85rem; color: var(--muted); padding: .2rem .8rem .5rem; }
-.main { padding: 1.2rem 1rem 2rem; max-width: 70rem; margin: 0 auto; }
-@media (min-width: 72rem) { .main { padding: 2rem 2.5rem 3rem; max-width: 78rem; } }
-
+/* 머리줄과 메뉴 */
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem; padding-top: calc(.6rem + env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+.menu-btn { width: 2.7rem; height: 2.7rem; border-radius: 12px; border: var(--bw) solid var(--navy); background: var(--paper);
+  box-shadow: 3px 3px 0 var(--shadow); font-size: 1.15rem; line-height: 1; color: var(--navy); }
+.logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: var(--navy); font-family: var(--title); font-size: 1.45rem; line-height: 1; }
+.logo .app { width: 2.3rem; height: 2.3rem; border-radius: 10px; background: var(--blue); display: grid; place-items: center; box-shadow: 2px 3px 0 var(--navy); }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper); border-right: var(--bw) solid var(--navy);
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem; transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(15, 31, 69, .4); }
+.side a { display: block; padding: .75rem .9rem; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.side a:hover { background: var(--blue-soft); }
+.side .side-head { font-family: var(--title); font-size: 1.2rem; color: var(--navy); padding: .2rem .9rem .5rem; }
+.main { padding: 1rem 1rem 2.5rem; max-width: 72rem; margin: 0 auto; }
 main:focus { outline: none; }
-.logo { font-weight: 700; color: var(--navy); font-size: 1.1rem; text-decoration: none; }
-.hero2 { display: grid; gap: 2rem; align-items: center; min-height: calc(100vh - 12rem); }
-.hero2 .mascot { width: 8.5rem; height: auto; display: block; animation: pop .9s cubic-bezier(.2,.8,.3,1) both; }
-@keyframes pop { from { transform: translateY(30%); opacity: 0; } to { transform: none; opacity: 1; } }
-.hero2 h1 { font-size: clamp(2.1rem, 4.3vw, 3.6rem); line-height: 1.18; letter-spacing: -.025em; font-weight: 700; color: var(--navy); margin: .6rem 0 1rem; }
-.band { background: linear-gradient(transparent 50%, var(--point) 50%, var(--point) 94%, transparent 94%); font-weight: 700; color: var(--navy); font-size: clamp(1.02rem, .95rem + .4vw, 1.2rem); }
-.facts { color: var(--muted); font-size: .92rem; margin-top: 1rem; max-width: 30rem; }
-.go3 { display: grid; gap: .8rem; }
-.go3 a { border-radius: 14px; padding: 1.2rem 1.15rem 1.3rem; text-decoration: none; display: flex; flex-direction: column; gap: .2rem; }
-.go3 a:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--navy); }
-.go3 .p:hover { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--accent); }
-.go3 svg { margin-bottom: .6rem; flex: none; }
-.go3 b { font-size: 1.25rem; }
-.go3 .kw { font-size: .85rem; font-weight: 700; }
-.go3 .ds { font-size: .88rem; margin-top: .35rem; line-height: 1.55; opacity: .92; }
-.go3 .p { background: var(--accent); color: #fff; }
-.go3 .o { background: #fff; color: var(--navy); box-shadow: inset 0 0 0 1.5px var(--navy); }
-.go3 .o .kw { color: var(--accent); }
-.go3 .f { background: var(--navy); color: #fff; }
-footer { font-size: .8rem; color: var(--muted); margin-top: 2rem; }
-@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(3, 1fr); } .go3 a { min-height: 13rem; } }
-@media (min-width: 72rem) { .hero2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); } }
+
+/* 공통 조각 */
+.card { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); }
+.h-sec { font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); color: var(--navy); line-height: 1.25; }
+.band { background: linear-gradient(transparent 46%, var(--point) 46%, var(--point) 92%, transparent 92%); }
+.num { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--point); border: var(--bw) solid var(--navy); color: var(--navy);
+  display: grid; place-items: center; font-family: var(--title); font-size: 1.35rem; line-height: 1; flex: none; }
+.chip { display: inline-flex; align-items: center; border: var(--bw) solid var(--navy); background: var(--paper); border-radius: 999px; padding: .3rem 1rem;
+  font-weight: 700; color: var(--navy); font-size: .92rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: var(--bw) solid var(--navy); border-radius: var(--r-btn);
+  padding: .8rem 1.5rem; background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; box-shadow: 4px 4px 0 var(--navy); transition: transform .08s, box-shadow .08s; }
+.btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--navy); }
+.btn.sub { background: var(--paper); color: var(--navy); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ===== 첫 화면: 제목 + 큰 버튼 3개만 (간결하게) ===== */
+.hero { display: grid; gap: 2.2rem; align-items: center; min-height: calc(100vh - 6rem); padding: 1rem 0 2rem; }
+.mascot-big { width: 8rem; display: block; animation: pop .9s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes pop { from { transform: translateY(25%); opacity: 0; } to { transform: none; opacity: 1; } }
+.hero h1 { font-family: var(--title); font-weight: 400; color: var(--navy); font-size: clamp(2.3rem, 1.5rem + 3.6vw, 4rem); line-height: 1.2; margin: .5rem 0 1rem; }
+.say { font-weight: 700; color: var(--navy); font-size: clamp(1.02rem, .95rem + .4vw, 1.25rem); }
+.go3 { display: grid; gap: 1.1rem; }
+.go { position: relative; display: flex; flex-direction: column; gap: .2rem; padding: 1.2rem 1.2rem 1.1rem; text-decoration: none; color: var(--navy);
+  border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); transition: transform .12s, box-shadow .12s; }
+.go:hover { transform: translate(-2px, -3px); box-shadow: 8px 10px 0 var(--shadow); }
+.go:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--shadow); }
+.go svg { width: 2.4rem; height: 2.4rem; padding: .35rem; border-radius: 12px; margin-bottom: .8rem; flex: none; }
+.go.p svg { background: rgba(255,255,255,.18); }
+.go.o svg { background: var(--blue-soft); color: var(--blue); }
+.go.f svg { background: rgba(255,255,255,.12); color: var(--point); }
+.go .kw { font-weight: 700; font-size: .9rem; }
+.go.o .kw { color: var(--blue); }
+.go.f .kw { color: var(--point); }
+.facts { color: var(--muted); font-size: .92rem; margin-top: 1rem; }
+.go b { font-family: var(--title); font-weight: 400; font-size: 1.7rem; line-height: 1.2; }
+.go .ds { margin-top: .3rem; font-size: .93rem; line-height: 1.55; }
+.go.p { background: var(--blue); color: #fff; }
+.go.o { background: var(--paper); }
+.go.f { background: var(--navy); color: #fff; }
+@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(3, 1fr); } .go { min-height: 13rem; } }
+@media (min-width: 72rem) { .hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); } }
 </style>
 </head>
 <body>
-<div class="site">
-  <header class="top">
-    <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
-    <a class="logo" href="/">캐치피싱</a>
-  </header>
-  <nav class="side" id="side" aria-label="메뉴">
-    <p class="side-head">메뉴</p>
-    <a href="/">첫 화면</a>
-    <a href="/check">링크 검사</a>
-    <a href="/manual">대응 매뉴얼</a>
-  </nav>
-  <main class="main" id="main">
-    <section class="hero2">
-      <div>
-        <svg class="mascot" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">   <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">       <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>   <g transform="rotate(-9 100 108)">     <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>     <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>     <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>     <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>     <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>   </g>   <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>   <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>   <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/> </svg>
-        <h1>오늘 받은 그 메일,<br>진짜였을까요?</h1>
-        <p><span class="band">모두 의심하지 말고, 요구하는 행동을 보세요</span></p>
-        <p class="facts">이름은 저장하지 않고, 기록은 익명 번호로만 남아요.</p>
-      </div>
-      <nav class="go3" aria-label="시작하기">
-        <a class="p" href="/game?mode=personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></a>
-        <a class="o" href="/game?mode=org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></a>
+<header class="top">
+  <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+  <a class="logo" href="/"><span class="app"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="4" fill="#fff"/><path d="M5 9l9 6 9-6" fill="none" stroke="#2563C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>캐치피싱</a>
+</header>
+<nav class="side" id="side" aria-label="메뉴">
+  <p class="side-head">메뉴</p>
+  <a href="/">첫 화면</a>
+  <a href="/check">링크 검사</a>
+  <a href="/manual">대응 매뉴얼</a>
+</nav>
+<main class="main" id="main">
+  <section class="hero">
+    <div>
+      <svg class="mascot-big" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200" aria-hidden="true">   <g stroke="#2B5FB8" stroke-width="4.5" stroke-linecap="round">       <line x1="34" y1="34" x2="20" y2="20"/><line x1="52" y1="26" x2="48" y2="8"/><line x1="26" y1="52" x2="8" y2="48"/></g>   <g transform="rotate(-9 100 108)">     <rect x="34" y="52" width="136" height="104" rx="18" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/>     <path d="M42 62 L102 104 L162 62" fill="none" stroke="#DCE8FB" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>     <ellipse cx="80" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <ellipse cx="122" cy="122" rx="12" ry="14" fill="#FFFFFF" stroke="#2B5FB8" stroke-width="2"/>     <circle cx="87" cy="125" r="5.5" fill="#1B2E5E"/><circle cx="129" cy="125" r="5.5" fill="#1B2E5E"/>     <circle cx="89" cy="122.5" r="1.6" fill="#FFFFFF"/><circle cx="131" cy="122.5" r="1.6" fill="#FFFFFF"/>     <path d="M66 104 L92 107" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M110 100 Q122 86 136 96" fill="none" stroke="#1B2E5E" stroke-width="4.5" stroke-linecap="round"/>     <path d="M94 144 L112 140" stroke="#1B2E5E" stroke-width="4" stroke-linecap="round"/>   </g>   <line x1="168" y1="150" x2="150" y2="176" stroke="#2B5FB8" stroke-width="10" stroke-linecap="round"/>   <circle cx="182" cy="126" r="28" fill="#DCE8FB" fill-opacity="0.55" stroke="#2B5FB8" stroke-width="6"/>   <path d="M168 114 Q174 106 184 106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/> </svg>
+      <h1>오늘 받은 그 메일,<br>진짜였을까요?</h1>
+      <p class="say"><span class="band">모두 의심하지 말고, 요구하는 행동을 보세요</span></p>
+      <p class="facts">이름은 저장하지 않고, 기록은 익명 번호로만 남아요.</p>
+    </div>
+    <nav class="go3" aria-label="시작하기">
+        <a class="go p" href="/game?mode=personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></a>
+        <a class="go o" href="/game?mode=org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></a>
         <!-- 참고: 자유 훈련 게임은 아직 사이트 안에 없어서 게임 시안(GitHub Pages)으로 연결한다. 사이트에 게임을 만들면 주소를 바꾼다 (A 11/19) -->
-        <a class="f" href="https://mandoo-roid.github.io/CatchPhish/game_draft.html"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 4h10v6a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 6H5v2a4 4 0 0 0 4 4M19 6h4v2a4 4 0 0 1-4 4M14 15v4M10 23h8M11 19h6v4h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b>자유 훈련</b><span class="kw">순위표</span><span class="ds">체험 없이 바로 게임! 별명으로 순위표에 도전해요</span></a>
+        <a class="go f" href="https://mandoo-roid.github.io/CatchPhish/game_draft.html"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M9 4h10v6a5 5 0 0 1-10 0z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 6H5v2a4 4 0 0 0 4 4M19 6h4v2a4 4 0 0 1-4 4M14 15v4M10 23h8M11 19h6v4h-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg><b>자유 훈련</b><span class="kw">순위표</span><span class="ds">체험 없이 바로 게임! 별명으로 순위표에 도전해요</span></a>
       </nav>
-    </section>
-    <footer>배화여자대학교 소프트웨어공학과 피시앤칩스(Phish&amp;Chips) 캡스톤디자인</footer>
-  </main>
-</div>
+  </section>
+</main>
 <script>
 // 하는 일: ☰ 메뉴 열고 닫기 (바깥을 누르거나 Esc를 누르면 닫힘)
 const side = document.getElementById("side"), menuBtn = document.getElementById("menuBtn");
