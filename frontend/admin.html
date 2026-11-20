@@ -174,13 +174,14 @@ const barWidth = x => (typeof x === "number" ? `${Math.round(x * 100)}%` : "0%")
 
 // 하는 일: 성취도 집계 (A 11/20, 교수님 피드백 "사전과 사후의 차이를 성취도로, 기관별 또는 개인별로 모아서")
 // 참고: 성취도 = 사후 맞힌 수 - 사전 맞힌 수 (맞힌 수 = 막은 피싱 + 처리한 업무, 4문제 중). 사전·사후를 다 푼 사람만.
-//       [처음 참여만 보기]를 켜면 "해 본 적 있어요"라고 답한 사람을 뺀다 (같은 사람이 여러 번 해서 숫자가 부푸는 것을 막으려고)
+//       [처음 참여만 보기]를 켜면 "해 본 적 있어요"라고 답한 사람과 같은 기기에서 다시 한 사람을 뺀다 (같은 사람이 여러 번 해서 숫자가 부푸는 것을 막으려고)
 let LAST = null, FIRST_ONLY = false;
 const TARGET = { student: "학생", general: "일반인", worker: "직원" };
 const sign = v => (v > 0 ? "+" : "") + v;
 function achievementHTML(ach) {
   if (!ach) return "";
-  const rows = (ach.people || []).filter(p => !FIRST_ONLY || p.revisit === false);
+  // 수정 (A 11/20): "처음 참여"는 본인이 "처음이에요"라고 답했고, 같은 기기에서 다시 한 표시(device_repeat)도 없는 사람
+  const rows = (ach.people || []).filter(p => !FIRST_ONLY || (p.revisit === false && !p.device_repeat));
   const grp = (items) => { const n = items.length; if (!n) return null; const av = k => Math.round(items.reduce((t, x) => t + x[k], 0) / n * 100) / 100; return { n, pre: av("pre"), post: av("post"), gain: av("gain") }; };
   const table = (title, groups) => groups.length ? `<div class="table-wrap"><table><thead><tr><th>${title}</th><th>인원</th><th>사전 평균</th><th>사후 평균</th><th>평균 성취도</th></tr></thead><tbody>` +
     groups.map(([name, g]) => `<tr><td>${esc(name)}</td><td>${g.n}</td><td>${g.pre} / 4</td><td>${g.post} / 4</td><td><b>${sign(g.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 사전·사후를 모두 마친 사람이 없어요.</p>`;
@@ -195,7 +196,7 @@ function achievementHTML(ach) {
   h += `<h2>기관별 성취도 (기관용)</h2>` + table("기관", Object.entries(orgs).map(([c, items]) => [(ach.org_names || {})[c] ? `${(ach.org_names || {})[c]} (${c})` : c, grp(items)]));
   h += `<h2>학생·일반인별 성취도 (개인용)</h2>` + table("대상", Object.entries(tg).map(([t, items]) => [TARGET[t] || t, grp(items)]));
   h += `<h2>개인별 성취도</h2>` + (rows.length ? `<div class="table-wrap"><table><thead><tr><th>익명 번호</th><th>체험</th><th>대상·기관</th><th>처음?</th><th>사전</th><th>사후</th><th>성취도</th></tr></thead><tbody>` +
-    rows.map(p => `<tr><td>${esc(p.anon_id)}</td><td>${p.mode === "org" ? "기관용" : "개인용"}</td><td>${esc(p.mode === "org" ? (p.org_code || "") : (TARGET[p.target] || ""))}</td><td>${p.revisit === false ? "처음" : "다시"}</td><td>${p.pre}/4</td><td>${p.post}/4</td><td><b>${sign(p.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 없어요.</p>`);
+    rows.map(p => `<tr><td>${esc(p.anon_id)}</td><td>${p.mode === "org" ? "기관용" : "개인용"}</td><td>${esc(p.mode === "org" ? (p.org_code || "") : (TARGET[p.target] || ""))}</td><td>${p.device_repeat ? "다시 (같은 기기)" : p.revisit === false ? "처음" : "다시"}</td><td>${p.pre}/4</td><td>${p.post}/4</td><td><b>${sign(p.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 없어요.</p>`);
   return h;
 }
 function trainHTML(t) {
