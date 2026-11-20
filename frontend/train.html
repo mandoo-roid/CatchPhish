@@ -297,6 +297,7 @@ function uniq(a) { return [...new Map(a.map(d => [d[0] + d[1], d])).values()]; }
 function end() {
   run = false; clearInterval(iv); $("cb").style.opacity = 0; [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
   const acc = taps ? Math.round(okc / taps * 100) : 0; const rd = retry.filter(x => x.st !== 0), rok = rd.filter(x => x.st === 1).length;
+  sendLog({ score: sc, caught: caught.length, lost: lost.length, wrong: wrong.length, taps, retry_total: rd.length, retry_ok: rok, best_combo: best });
   const top = uniq(wrong.concat(lost)).slice(0, 3);
   const lessons = top.length ? top.map(d => `<p class="it"><b>${esc(d[0])} · ${esc(d[1])}</b> (${d[2] ? "피싱" : "정상"})<br>${esc(d[4])}</p>`).join("") : `<p class="it">헷갈린 문자가 없었어요!</p>`;
   const by = {}; caught.forEach(d => { by[d[5]] = (by[d[5]] || 0) + 1; });
@@ -316,6 +317,25 @@ function end() {
       <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
     </div>`;
   show("res"); $("again").onclick = start;
+}
+// 하는 일: 한 판이 끝나면 숫자만 서버에 보낸다 (서버 약속 10번, 장부와 다른 표, A 11/20)
+// 이유: 게임의 교육 효과(틀렸다가 다시 나온 문자를 맞힌 비율, 판을 거듭할수록 정확도)를 시범 운영 숫자로 보여 주려고
+// 참고: 이 기기에서만 쓰는 익명 게임 번호(G+6자리)와 몇 번째 판인지를 브라우저에 남긴다. 이름·별명은 보내지 않는다.
+//       저장이 안 되는 브라우저(사생활 보호 모드 등)에서는 번호를 판마다 새로 만들고, 보내기가 실패해도 화면은 그대로
+function sendLog(nums) {
+  let player = null, playNo = 1;
+  try {
+    player = localStorage.getItem("cp_game_player");
+    if (!/^G[0-9A-F]{6}$/.test(player || "")) { player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase(); localStorage.setItem("cp_game_player", player); }
+    playNo = Math.min(1000, (parseInt(localStorage.getItem("cp_game_plays") || "0", 10) || 0) + 1);
+    localStorage.setItem("cp_game_plays", String(playNo));
+  } catch (e) {
+    player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+  try {
+    fetch("/api/train-log", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ player, play_no: playNo, ...nums }) }).catch(() => {});
+  } catch (e) { /* 보내기 실패는 무시 */ }
 }
 // 하는 일: 게임 중에 나가기. 점수는 아직 어디에도 저장하지 않아서 중간에 나가도 기록 문제는 없다
 $("quit").onclick = () => {
