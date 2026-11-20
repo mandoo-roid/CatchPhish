@@ -264,6 +264,28 @@ details.detail h4 { font-size: .92rem; margin: .9rem 0 .35rem; color: var(--navy
 details.detail p { font-size: .9rem; }
 .score-line { font-size: .9rem; margin-top: .4rem; }
 
+/* 체험 시작 안내와 화면 예시 (B 10/23 안내문, B 11/03 예시 그림을 새 테마로) */
+.intro-steps { padding-left: 1.2rem; margin: .4rem 0 1rem; max-width: 46rem; }
+.intro-steps li { margin-bottom: .45rem; }
+.ex-wrap { padding: 1.1rem 1.2rem 1.2rem; margin-top: .4rem; }
+.ex-tag { display: inline-block; font-size: .8rem; font-weight: 700; color: var(--navy); background: var(--point); border: 2px solid var(--navy); border-radius: 999px; padding: 0 .7rem; margin-bottom: 1rem; }
+.ex-grid { display: grid; gap: 1.2rem; }
+@media (min-width: 40rem) { .ex-grid { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+.ex-msg, .ex-time, .ex-choices { position: relative; }
+.ex-msg { border: 2px solid var(--line); border-radius: 18px; padding: .9rem; background: var(--field); }
+.ex-from { font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
+.ex-bubble { background: var(--paper); border: 1.5px solid var(--line); border-radius: 16px 16px 16px 5px; padding: .6rem .8rem; font-size: .9rem; }
+.ex-side { display: grid; gap: 1rem; }
+.ex-time { font-size: .85rem; color: var(--muted); font-weight: 700; }
+.ex-time .timer { margin-top: .35rem; }
+.ex-time, .ex-choices { padding-left: 1.6rem; }
+.ex-side .ex-num { left: 0; top: -.15rem; }
+.ex-choice { border: 2px solid var(--navy); border-radius: 12px; padding: .45rem .8rem; font-size: .88rem; margin-bottom: .45rem; background: var(--paper); }
+.ex-num { position: absolute; left: -.7rem; top: -.7rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--point); border: 2px solid var(--navy); color: var(--navy); font-family: var(--title); display: grid; place-items: center; font-size: .9rem; line-height: 1; }
+.ex-legend { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid; gap: .55rem; }
+.ex-legend li { display: flex; gap: .6rem; align-items: baseline; font-size: .93rem; }
+.ex-legend b { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--point); border: 2px solid var(--navy); color: var(--navy); font-family: var(--title); font-weight: 400; display: grid; place-items: center; font-size: .85rem; }
+
 /* 배우기: 따라 쓰기, 게임 끝 문장 */
 .copy-src { margin: 0; padding: 1.1rem 1.2rem; border: var(--bw) solid var(--navy); border-radius: var(--r-card); background: var(--point); color: var(--navy); font-weight: 700; font-size: 1.05rem; max-width: 42rem; box-shadow: 5px 6px 0 var(--shadow); }
 .copy-in { max-width: 42rem !important; margin-top: 1rem; resize: vertical; }
@@ -537,15 +559,41 @@ function survey() {
    ===================================================================== */
 function intro() {
   // 참고: 팀 결정 5번. 시작 안내에는 정답 힌트("보낸 곳을 보세요" 등)를 넣지 않는다
+  // 수정 (A 11/20): 11/19 새 화면으로 옮길 때 빠졌던 B의 시작 안내 목록(10/23 확정 안내문)과 화면 예시 그림(B 11/03)을 되살림.
+  //   예시 그림은 화면 쓰는 법만 알려 준다. 예시 메시지는 실제 문제와 겹치지 않는 가짜이고 눌러도 아무 일이 없다
   const pre = S.phase === "pre";
-  const day = S.mode === "org" ? "평소 업무 중에" : "평소처럼 하루를 보내다";
+  const org = S.mode === "org";
+  const steps = pre ? [
+    org ? "평소 업무 중이라고 생각하고, 실제로 할 행동을 골라 주세요." : "평소처럼 받은 메시지라고 생각하고, 실제로 할 행동을 골라 주세요.",
+    org ? "진짜 업무 메시지도 섞여 있어요. 모든 메시지를 의심하면 업무가 늦어진 것으로 기록돼요." : "진짜 메시지도 섞여 있어요. 모든 메시지를 의심하면 할 일이 늦어진 것으로 기록돼요.",
+    "행동을 고르면 그 행동이 어떻게 진행되는지 먼저 보여 주고, 이어서 해설이 나와요.",
+    `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`
+  ] : ["처음 보는 메시지예요. 배운 대로 골라 보세요.", `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`];
+  const example = !pre ? "" : `
+    <p class="q">아래와 같은 방식으로 문제가 나와요.</p>
+    <div class="ex-wrap card">
+      <span class="ex-tag">화면 예시 (실제 문제가 아니에요)</span>
+      <div class="ex-grid" role="img" aria-label="문제 화면 예시: 왼쪽에 받은 문자, 오른쪽에 남은 시간 막대와 선택지 세 개">
+        <div class="ex-msg" aria-hidden="true"><span class="ex-num">1</span>
+          <p class="ex-from">예시 문자</p><div class="ex-bubble">[예시] 오늘 오후 3시 2층 회의실 예약이 확정되었습니다.</div></div>
+        <div class="ex-side" aria-hidden="true">
+          <div class="ex-time"><span class="ex-num">2</span>남은 시간<div class="timer"><i style="width:65%"></i></div></div>
+          <div class="ex-choices"><span class="ex-num">3</span><div class="ex-choice">선택지 하나</div><div class="ex-choice">선택지 둘</div><div class="ex-choice">선택지 셋</div></div>
+        </div>
+      </div>
+      <ol class="ex-legend">
+        <li><b aria-hidden="true">1</b><span>받은 메일이나 문자가 실제 화면처럼 나와요. 메일은 받은편지함에서 새 메일을 눌러 열어요.</span></li>
+        <li><b aria-hidden="true">2</b><span>남은 시간이 줄어들어요. 시간이 지나도 고를 수 있어요.</span></li>
+        <li><b aria-hidden="true">3</b><span>실제로 할 행동을 하나 골라요. 고른 행동이 진행되는 모습을 본 뒤 해설이 나와요.</span></li>
+      </ol>
+    </div>`;
   render(`
     ${pre ? backBtn("사전질문") : ""}
     <p class="step">${modeName()} 체험 · ${phaseName()}</p>
-    <h1 class="title">${pre ? "문자와 메일 4개가 도착해요" : "새 문자와 메일 4개가 도착해요"}</h1>
-    <p class="lead">${pre ? `${day} 받은 메시지라고 생각하고, 어떻게 할지 골라 주세요.` : "처음 보는 메시지예요. 배운 대로 골라 보세요."}</p>
-    <p class="note">문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.</p>
-    <div class="row"><button class="btn" id="next">시작하기</button></div>`, pre ? 1 : 5);
+    <h1 class="title">${pre ? "이제부터 체험을 시작해요" : "새 문자와 메일 4개가 도착해요"}</h1>
+    <ul class="intro-steps">${steps.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+    ${example}
+    <div class="row"><button class="btn" id="next">체험 시작</button></div>`, pre ? 1 : 5);
   if (pre) $("back").onclick = survey;   // 참고: 아직 답한 문제가 없어 기록이 남지 않는다. 다시 시작하면 새 익명 번호를 받는다
   $("next").onclick = message;
 }
