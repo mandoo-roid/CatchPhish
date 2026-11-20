@@ -170,8 +170,8 @@ main:focus { outline: none; }
 .from { display: flex; gap: .6rem; align-items: flex-start; }
 .from .meta { flex: 1; min-width: 0; }
 .from-name { border: 0; background: none; padding: 0; font-weight: 700; text-align: left; color: var(--navy); }
-.from-name::after { content: " ▾"; font-weight: 400; color: var(--muted); font-size: .8rem; }
-.from-name[aria-expanded="true"]::after { content: " ▴"; }
+.from-name::after { content: "세부정보 ▾"; display: inline-block; margin-left: .5rem; font-weight: 700; color: var(--blue); font-size: .75rem; border: 1.5px solid var(--blue); border-radius: 999px; padding: 0 .5rem; vertical-align: middle; }
+.from-name[aria-expanded="true"]::after { content: "세부정보 ▴"; }
 .from .to { display: block; font-size: .8rem; color: var(--muted); }
 .from time { font-size: .78rem; color: var(--muted); }
 .from-detail { margin: .5rem 0 0; background: var(--field); border-radius: 12px; padding: .6rem .8rem; font-size: .82rem; display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; }
@@ -230,6 +230,8 @@ main:focus { outline: none; }
 .verdict-big .ico { flex: none; width: 3.2rem; height: 3.2rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--title); font-size: 1.8rem; background: var(--paper); border: var(--bw) solid var(--navy); color: var(--navy); }
 .verdict-big b { display: block; font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); line-height: 1.2; }
 .verdict-big span.sub { display: block; font-size: .95rem; font-weight: 500; margin-top: .15rem; }
+.verdict-big .time-line { display: inline-block; font-size: .85rem; font-weight: 700; margin-top: .4rem; padding: .05rem .6rem; border-radius: 999px; background: rgba(255,255,255,.22); }
+.verdict-big.wait .time-line { background: rgba(15,31,69,.08); }
 .verdict-big.good { background: var(--blue); color: #fff; }
 .verdict-big.bad { background: var(--danger); color: #fff; }
 .verdict-big.wait { background: var(--point); color: var(--navy); }
@@ -524,7 +526,7 @@ function survey() {
   // 하는 일: 개인용은 대상, 해 본 적 있는지, 자신감(Q1). 기관용은 해 본 적 있는지와 문진표 Q1~Q4
   // 이유: 흐름 문서 1번. 대상과 해 본 적 있는지는 장부 새 칸(target, revisit)으로 들어가 관리자 통계에서 나눠 본다
   const qs = [];
-  if (S.mode === "personal") qs.push(["target", "지금 어떤 분이세요?", [["student", "학생"], ["general", "일반인"]]]);
+  if (S.mode === "personal") qs.push(["target", "어느 쪽에 해당하세요?", [["student", "학생"], ["general", "일반인"]]]);
   qs.push(["revisit", "캐치피싱을 해 본 적 있나요?", [["true", "있어요"], ["false", "처음이에요"]]]);
   qs.push(["Q1", SURVEY[0].text, [1, 2, 3, 4, 5].map(n => [String(n), n === 1 ? "1 전혀 아니다" : n === 5 ? "5 매우 그렇다" : String(n)])]);
   if (S.mode === "org") SURVEY.slice(1).forEach(q => qs.push([q.id, q.text, q.options.map(o => [o, o])]));
@@ -698,6 +700,7 @@ function message() {
       e.currentTarget.setAttribute("aria-expanded", String(!open)); $("fromDetail").hidden = open; };
   }
   startTimer(LIMIT[c.channel] || LIMIT.sms);
+  c.shownAt = c.shownAt || performance.now();   // 참고: 서버 오류로 다시 그려도 처음 뜬 시각을 유지
   main.querySelectorAll(".opt").forEach(b => b.onclick = () => pickAction(c, b.dataset.k));
 }
 
@@ -725,6 +728,8 @@ async function pickAction(c, k) {
   main.querySelectorAll(".opt").forEach(b => b.disabled = true);
   // 참고: 서버 오류로 다시 누를 때 두 번 세지 않도록 문제마다 한 번만 센다
   if (S.over && !c.lateCounted) { S.late[S.phase]++; c.lateCounted = true; }
+  if (c.sec == null) c.sec = Math.round((performance.now() - c.shownAt) / 100) / 10;   // 판단 시간(초), 장부 answer_sec
+  c.inTime = !c.lateCounted;
   const [st, wait] = previewText(c, k);
   const pv = document.createElement("div");
   pv.className = "preview";
@@ -734,12 +739,12 @@ async function pickAction(c, k) {
   try {
     // 서버 약속 2번: 채점은 서버가 한다. 미리보기를 보여 주는 동안 함께 기다린다
     const [r] = await Promise.all([
-      post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: k, round: S.round }),
+      post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: k, round: S.round, answer_sec: c.sec }),
       sleep(reduced() ? 600 : PREVIEW_MS)]);
     S.answers[S.phase][S.idx] = { scenario_id: c.scenario_id, choice: k };
     const harm = fullyFooled(r) ? harmOf(c, k, r) : null;
     addLog(c, r, choiceLabel(c, k), harm);
-    explain(c, r, harm, choiceLabel(c, k));
+    explain(c, r, harm, choiceLabel(c, k), c);
   } catch (err) {
     pv.remove();
     main.querySelectorAll(".opt").forEach(b => b.disabled = false);
@@ -825,7 +830,7 @@ function engineHTML(r) {
   return h;
 }
 
-function explain(c, r, harm, did) {
+function explain(c, r, harm, did, tc) {
   // 하는 일: 맨 위 큰 띠 하나로 "피싱이었는지, 내가 막았는지"를 먼저 보여 준다 (A 11/20: 한눈에 안 보임)
   let v;
   if (r.is_phishing) v = r.is_correct ? ["good", "✓", "피싱을 막았어요!", "이 메시지는 피싱이었어요"] : ["bad", "✕", "속았어요", "이 메시지는 피싱이었어요"];
@@ -833,7 +838,7 @@ function explain(c, r, harm, did) {
   const last = S.idx === S.cards.length - 1;
   render(`
     <p class="step">${phaseName()} · 문제 ${S.idx + 1}번 결과</p>
-    <div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}${did ? ` · 내 선택: ${esc(did)}` : ""}</span></div></div>
+    <div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}${did ? ` · 내 선택: ${esc(did)}` : ""}</span>${tc && tc.sec != null ? `<span class="time-line">${tc.inTime ? "⏱ 제한 시간 안에 골랐어요" : "⏱ 제한 시간이 지난 뒤에 골랐어요"} (${tc.sec}초)</span>` : ""}</div></div>
     <div class="explain">
       <div id="exCard">${cardHTML(c, true)}</div>
       <div>
@@ -987,7 +992,9 @@ function game() {
       <p class="lead">시간 제한은 없어요. 위험한 행동을 다 찾으면 끝나요.</p>
       <div class="card game-top"><span class="peek"><svg viewBox="0 0 110 80" aria-hidden="true"><g transform="rotate(-5 50 40)"><rect x="5" y="8" width="84" height="60" rx="12" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/><path d="M11 16 L47 42 L83 16" fill="none" stroke="#DCE8FB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="34" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="58" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="37" cy="50" r="3.3" fill="#0F1F45"/><circle cx="61" cy="50" r="3.3" fill="#0F1F45"/><path d="M26 38 l14 2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M52 37 q6 -6 13 -1" fill="none" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M41 60 l10 -2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/></g><line x1="92" y1="62" x2="83" y2="75" stroke="#2B5FB8" stroke-width="6" stroke-linecap="round"/><circle cx="96" cy="50" r="13" fill="#DCE8FB" fill-opacity=".6" stroke="#2B5FB8" stroke-width="4"/></svg></span><div class="gbar"><div class="lbl"><span>찾은 위험한 행동</span><span id="found" role="status">0 / ${total}</span></div><div class="track"><i id="gfill"></i></div></div></div>
       <div class="grid" id="grid">${cards.map((a, i) => `<button class="blk" data-i="${i}">${esc(a[0])}</button>`).join("")}</div>
+      <div class="row" id="gameDone" hidden><p style="font-weight:700;color:var(--navy);align-self:center">위험한 행동을 모두 찾았어요! 이유를 읽어 보고 넘어가요.</p><button class="btn" id="gameNext">다음</button></div>
     </section>`, 4);
+  $("gameNext").onclick = gameEnd;
   main.querySelectorAll(".blk").forEach(b => b.onclick = () => {
     if (b.dataset.done) return;
     const a = cards[b.dataset.i];
@@ -995,7 +1002,8 @@ function game() {
       b.dataset.done = 1; b.classList.add("ok"); found++;
       b.insertAdjacentHTML("beforeend", `<span class="bd">위험!</span><span class="why">${esc(a[2])}</span>`);
       $("found").textContent = `${found} / ${total}`; $("gfill").style.width = `${found / total * 100}%`;
-      if (found === total) setTimeout(gameEnd, 900);
+      // 수정 (A 11/20): 다 찾아도 자동으로 넘기지 않는다. 마지막 이유까지 읽고 [다음]을 누르게
+      if (found === total) { $("gameDone").hidden = false; $("gameDone").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); }
     } else {
       b.classList.remove("ng"); void b.offsetWidth; b.classList.add("ng");
       if (!b.querySelector(".why")) b.insertAdjacentHTML("beforeend", `<span class="why">안전한 행동이에요. ${esc(a[2])}</span>`);
@@ -1099,6 +1107,8 @@ function result() {
           ${row("사전", a.phishing_blocked, a.phishing_total, "pre")}${row("사후", b.phishing_blocked, b.phishing_total, "post")}</section>
         <section class="score"><h3>처리한 업무</h3><p>정상 메시지까지 의심하지 않고 잘 처리했나요?</p>
           ${row("사전", a.normal_handled, a.normal_total, "pre")}${row("사후", b.normal_handled, b.normal_total, "post")}</section>
+        <section class="score"><h3>시간 안에 고른 문제</h3><p>문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 안에 골랐나요? (점수에는 들어가지 않아요)</p>
+          ${row("사전", S.answers.pre.length - S.late.pre, S.answers.pre.length, "pre")}${row("사후", S.answers.post.length - S.late.post, S.answers.post.length, "post")}</section>
       </div>
       <div style="display:grid;gap:1.2rem">${side}</div>
     </div>
@@ -1117,7 +1127,6 @@ function result() {
     <details class="detail" style="margin-top:1.2rem"><summary>자세히 보기</summary>
       <p>${esc(a.gap_message)}</p>
       <p class="muted">자신감 ${a.confidence}점 (사전질문)</p>
-      <p class="muted">제한 시간(문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초) 안에 고른 문제 ${all - late}/${all}</p>
       ${S.chainResult ? `<p>연쇄형 연습: ${esc(chainLine(S.chainResult))}</p>` : ""}
       <p class="note">익명 번호 ${esc(S.anon)}</p>
     </details>
