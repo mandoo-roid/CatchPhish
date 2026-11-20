@@ -95,6 +95,9 @@ PUBLIC_FIELDS = ["scenario_id", "channel", "sender", "subject", "body", "link", 
 MODES = {"personal", "org"}
 TARGETS = {"personal": {"student", "general"}, "org": {"worker"}}   # 장부 target 칸 (칸 이름 사전)
 SETS = ("A", "B")
+# 기관 코드 (A 11/20, 교수님 피드백 "기관별 성취도"): 기관용 체험 첫 화면에서 받고 장부에 org_code로 남긴다
+# 참고: 비밀 값이 아니라 기관을 묶는 이름표다 (관리자 화면은 회사 코드로 들어가서 겹치지 않음). 코드가 없는 사람은 DEMO
+ORG_CODES = {"DEMO": "체험용 (코드 없음)", "ORG1": "시연 기관 1", "ORG2": "시연 기관 2"}
 
 
 def pick_scenarios(job):
@@ -210,7 +213,7 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
     if mode in MODES:
         if mode == "personal":
             job = None
-        if mode == "org" and job not in JOBS:
+        if mode == "org" and (job not in JOBS or data.get("org_code") not in ORG_CODES):
             return False
         if card.get("audience") not in (None, mode):   # 개인용 체험에 기관용 카드를 보낸 경우 등
             return False
@@ -243,6 +246,8 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
         record["mode"] = mode
         record["target"] = data["target"]
         record["revisit"] = data["revisit"]
+        if mode == "org":
+            record["org_code"] = data["org_code"]
         if card.get("set") in SETS:
             record["set"] = card["set"]
         if card.get("practice"):
@@ -385,6 +390,8 @@ def start_mode(data):
     # 돌려주는 것: anon_id, scenarios(4개, 정답 빼고), round(1 사전 / 2 사후)
     # 이유: 팀 결정 3·8번. 만점이어도 모두 사후 체험, 처음과 반대 세트라 공정하게 비교된다
     mode = data["mode"]
+    if mode == "org" and data.get("org_code") not in ORG_CODES:
+        return bad("기관 코드를 확인해 주세요.")
     if mode == "org" and data.get("job") not in JOBS:
         return bad("직군을 골라 주세요.")
     if not isinstance(data.get("self_check"), dict):
@@ -519,6 +526,54 @@ def org_records(entries):
             continue
         out.append(e)
     return out
+
+
+def achievement(entries):
+    # 하는 일: 사전·사후를 모두 마친 사람마다 성취도(사후 맞힌 수 - 사전 맞힌 수)를 계산하고 기관별·대상별로 모은다 (A 11/20)
+    # 이유: 교수님 피드백 "사전과 사후의 차이를 성취도로, 기관별 또는 개인별로 모아서"
+    # 참고: 맞힌 수 = 막은 피싱 + 바로 처리한 정상 메시지 (4문제 중). 새 흐름(mode 칸) 기록만, 연쇄형 연습은 뺀다.
+    #       같은 문제를 두 번 보냈으면 처음 답만 센다. 사전 4개·사후 4개를 다 푼 사람만 넣는다
+    people = {}
+    for e in entries:
+        r = e.get("record") if isinstance(e, dict) else None
+        if not (isinstance(r, dict) and r.get("mode") in MODES) or r.get("practice"):
+            continue
+        p = people.setdefault(r.get("anon_id"), {"mode": r["mode"], "org_code": r.get("org_code"), "target": r.get("target"),
+                                                  "revisit": r.get("revisit"), 1: {}, 2: {}})
+        rnd = 2 if r.get("round") == 2 else 1
+        sid = r.get("scenario_id")
+        if sid in p[rnd]:
+            continue
+        p[rnd][sid] = bool(r.get("is_correct")) and not r.get("over_suspicion")
+    rows = []
+    for anon, p in people.items():
+        if len(p[1]) != 4 or len(p[2]) != 4:
+            continue
+        pre, post = sum(p[1].values()), sum(p[2].values())
+        rows.append({"anon_id": anon, "mode": p["mode"], "org_code": p["org_code"], "target": p["target"],
+                     "revisit": p["revisit"], "pre": pre, "post": post, "gain": post - pre})
+    # 참고: 기관별·대상별 평균은 관리자 화면이 계산한다 ("처음 참여만 보기"를 화면에서 바로 바꿀 수 있게)
+    return {"people": rows, "org_names": ORG_CODES}
+
+
+def train_summary():
+    # 하는 일: 자유 훈련 기록(장부와 다른 표)을 모아 게임 교육 효과 숫자를 만든다 (A 11/20)
+    # 참고: 정확도 = 잡은 피싱 / (잡은 피싱 + 정상을 누른 수). 첫 판과 두 번째 판 이후를 나눠 본다
+    if not GAMELOG_READY:
+        return None
+    games = [g["record"] for g in load_games()]
+    if not games:
+        return {"plays": 0}
+    acc = lambda g: g["caught"] / (g["caught"] + g["wrong"]) if (g["caught"] + g["wrong"]) else None
+    def avg_acc(items):
+        v = [a for a in (acc(g) for g in items) if a is not None]
+        return round(sum(v) / len(v), 3) if v else None
+    rt, ro = sum(g["retry_total"] for g in games), sum(g["retry_ok"] for g in games)
+    multi = {g["player"] for g in games if g["play_no"] >= 2}
+    return {"plays": len(games), "players": len({g["player"] for g in games}),
+            "retry_total": rt, "retry_ok": ro, "retry_rate": round(ro / rt, 3) if rt else None,
+            "acc_first": avg_acc([g for g in games if g["play_no"] == 1 and g["player"] in multi]),
+            "acc_later": avg_acc([g for g in games if g["play_no"] >= 2]), "multi_players": len(multi)}
 
 
 def first_round(entries):
@@ -692,6 +747,12 @@ def admin_stats():
         entries = load_entries()
         out = compute_stats(first_round(entries))
         out["retry_effect"] = retry_effect(org_records(entries))
+        out["achievement"] = achievement(entries)
+        try:
+            out["train"] = train_summary()
+        except Exception as e:  # noqa: BLE001
+            print("게임 기록 집계 실패:", type(e).__name__)
+            out["train"] = None
         return jsonify(out)
     except Exception as e:  # noqa: BLE001
         # 참고: DB 주소가 로그에 남지 않게 오류 종류와 앞부분만 적는다
