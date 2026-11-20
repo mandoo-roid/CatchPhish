@@ -106,6 +106,7 @@ main h2 { color: var(--navy); }
 .back-btn { color: var(--navy); font-weight: 700; text-decoration: none; display: inline-block; margin-top: .3rem; }
 .soft { background: var(--paper); border: 2px solid var(--navy); border-radius: 18px; box-shadow: 3px 4px 0 var(--shadow); }
 main.main { max-width: 58rem; }
+#firstOnly { width: auto; flex: none; height: auto; margin: 0; }
 #stats { margin-top: 1.3rem; }
 .cards { margin-bottom: .4rem; }
 #form input { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-btn); }
@@ -135,7 +136,7 @@ th { color: var(--navy); font-weight: 700; }
 <main class="main" id="main">
   <a class="back-btn" href="/">‹ 처음으로</a>
   <h1>관리자 화면</h1>
-  <p class="muted">직군별로 어떤 피싱에 약한지 확인해요. 개인별 결과는 보이지 않아요.</p>
+  <p class="muted">교육 전후 성취도와 직군별로 약한 유형을 확인해요. 이름은 없고 익명 번호로만 보여요.</p>
 
   <section id="login">
     <h2>회사 코드</h2>
@@ -171,9 +172,48 @@ async function post(url) {
 const pct = x => (typeof x === "number" ? `${Math.round(x * 100)}%` : "-");
 const barWidth = x => (typeof x === "number" ? `${Math.round(x * 100)}%` : "0%");
 
+// 하는 일: 성취도 집계 (A 11/20, 교수님 피드백 "사전과 사후의 차이를 성취도로, 기관별 또는 개인별로 모아서")
+// 참고: 성취도 = 사후 맞힌 수 - 사전 맞힌 수 (맞힌 수 = 막은 피싱 + 처리한 업무, 4문제 중). 사전·사후를 다 푼 사람만.
+//       [처음 참여만 보기]를 켜면 "해 본 적 있어요"라고 답한 사람을 뺀다 (같은 사람이 여러 번 해서 숫자가 부푸는 것을 막으려고)
+let LAST = null, FIRST_ONLY = false;
+const TARGET = { student: "학생", general: "일반인", worker: "직원" };
+const sign = v => (v > 0 ? "+" : "") + v;
+function achievementHTML(ach) {
+  if (!ach) return "";
+  const rows = (ach.people || []).filter(p => !FIRST_ONLY || p.revisit === false);
+  const grp = (items) => { const n = items.length; if (!n) return null; const av = k => Math.round(items.reduce((t, x) => t + x[k], 0) / n * 100) / 100; return { n, pre: av("pre"), post: av("post"), gain: av("gain") }; };
+  const table = (title, groups) => groups.length ? `<div class="table-wrap"><table><thead><tr><th>${title}</th><th>인원</th><th>사전 평균</th><th>사후 평균</th><th>평균 성취도</th></tr></thead><tbody>` +
+    groups.map(([name, g]) => `<tr><td>${esc(name)}</td><td>${g.n}</td><td>${g.pre} / 4</td><td>${g.post} / 4</td><td><b>${sign(g.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 사전·사후를 모두 마친 사람이 없어요.</p>`;
+  const orgs = {}, tg = {};
+  rows.filter(p => p.mode === "org").forEach(p => (orgs[p.org_code || "?"] = orgs[p.org_code || "?"] || []).push(p));
+  rows.filter(p => p.mode === "personal").forEach(p => (tg[p.target] = tg[p.target] || []).push(p));
+  const all = grp(rows);
+  let h = `<h2>성취도 (사전 → 사후)</h2>
+    <p class="muted" style="font-size:.9rem">성취도 = 사후에 맞힌 문제 수 - 사전에 맞힌 문제 수 (막은 피싱 + 처리한 업무, 4문제 중). 사전·사후를 모두 마친 사람만 세요.</p>
+    <label style="display:flex;gap:.5rem;align-items:center;justify-content:flex-start;font-weight:700;color:var(--navy);margin:.4rem 0 1rem"><input type="checkbox" id="firstOnly" ${FIRST_ONLY ? "checked" : ""}> 처음 참여한 사람만 보기</label>`;
+  h += `<div class="cards"><div class="card"><b>${all ? all.n : 0}</b><span>사전·사후를 마친 사람</span></div><div class="card"><b>${all ? sign(all.gain) : "-"}</b><span>전체 평균 성취도</span></div></div>`;
+  h += `<h2>기관별 성취도 (기관용)</h2>` + table("기관", Object.entries(orgs).map(([c, items]) => [(ach.org_names || {})[c] ? `${(ach.org_names || {})[c]} (${c})` : c, grp(items)]));
+  h += `<h2>학생·일반인별 성취도 (개인용)</h2>` + table("대상", Object.entries(tg).map(([t, items]) => [TARGET[t] || t, grp(items)]));
+  h += `<h2>개인별 성취도</h2>` + (rows.length ? `<div class="table-wrap"><table><thead><tr><th>익명 번호</th><th>체험</th><th>대상·기관</th><th>처음?</th><th>사전</th><th>사후</th><th>성취도</th></tr></thead><tbody>` +
+    rows.map(p => `<tr><td>${esc(p.anon_id)}</td><td>${p.mode === "org" ? "기관용" : "개인용"}</td><td>${esc(p.mode === "org" ? (p.org_code || "") : (TARGET[p.target] || ""))}</td><td>${p.revisit === false ? "처음" : "다시"}</td><td>${p.pre}/4</td><td>${p.post}/4</td><td><b>${sign(p.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 없어요.</p>`);
+  return h;
+}
+function trainHTML(t) {
+  // 하는 일: 자유 훈련 기록 (장부와 다른 표, A 11/20). 즉각 교정(다시 나온 문자 맞힌 비율)과 판을 거듭할 때 정확도
+  if (!t) return "";
+  let h = `<h2>자유 훈련 (게임) 효과</h2>`;
+  if (!t.plays) return h + `<p class="muted" style="font-size:.9rem">아직 게임 기록이 없어요.</p>`;
+  h += `<div class="cards"><div class="card"><b>${t.plays}</b><span>게임 판 수 (${t.players}명)</span></div>
+    <div class="card"><b>${pct(t.retry_rate)}</b><span>틀렸다가 다시 나온 문자를 맞힌 비율 (${t.retry_ok}/${t.retry_total})</span></div></div>`;
+  h += `<p class="muted" style="font-size:.9rem">두 판 이상 한 ${t.multi_players}명: 첫 판 정확도 ${pct(t.acc_first)} → 두 번째 판부터 ${pct(t.acc_later)} (정확도 = 잡은 피싱 ÷ 누른 횟수)</p>`;
+  return h + `<p class="muted" style="font-size:.85rem">게임 기록은 체험 장부와 따로 모아요. 기록 검사(해시체인)에는 들어가지 않아요.</p>`;
+}
 function renderStats(d) {
   if (!d.connected) { $("stats").innerHTML = `<div class="notice">${esc(d.message)}</div>`; return; }
-  if (!d.participants) { $("stats").innerHTML = `<div class="notice">아직 체험 기록이 없어요. 직원들이 체험을 하면 여기에 숫자가 나타나요.</div>`; return; }
+  LAST = d;
+  const extra = achievementHTML(d.achievement) + trainHTML(d.train);
+  const bind = () => { const f = $("firstOnly"); if (f) f.onchange = () => { FIRST_ONLY = f.checked; renderStats(LAST); }; };
+  if (!d.participants) { $("stats").innerHTML = extra + `<h2>직군별 통계 (기관용)</h2><div class="notice">아직 기관용 체험 기록이 없어요. 직원들이 체험을 하면 여기에 숫자가 나타나요.</div>`; bind(); return; }
   const gap = d.confidence_gap || {};
   let h = `<div class="cards">
     <div class="card"><b>${esc(d.participants)}</b><span>참여 인원</span></div>
@@ -203,16 +243,17 @@ function renderStats(d) {
   h += `<h2>다시 도전 효과</h2>`;
   if (re && re.people) {
     const row = (label, a, b) => `<tr><td>${label}</td><td>${pct(a)}</td><td>${pct(b)}</td><td>${typeof a === "number" && typeof b === "number" ? (b > a ? "▲ " : b < a ? "▼ " : "") + Math.abs(Math.round((b - a) * 100)) + "%p" : "-"}</td></tr>`;
-    h += `<p class="muted" style="font-size:.9rem">1회차를 마치고 처음 보는 문제로 다시 도전한 ${esc(re.people)}명의 결과예요.</p>
+    h += `<p class="muted" style="font-size:.9rem">사전 체험을 마치고 처음 보는 문제로 사후 체험까지 한 ${esc(re.people)}명의 결과예요 (예전 흐름의 다시 도전 포함).</p>
       <div class="table-wrap"><table><thead><tr><th></th><th>1회차</th><th>2회차 (새 문제)</th><th>변화</th></tr></thead><tbody>` +
       row("피싱을 막은 비율", re.round1.phishing_blocked, re.round2.phishing_blocked) +
       row("정상 업무를 처리한 비율", re.round1.normal_handled, re.round2.normal_handled) +
       `</tbody></table></div>
       <p class="muted" style="font-size:.9rem">피싱을 막은 비율이 나아진 사람 ${esc(re.improved)}명 · 같은 사람 ${esc(re.same)}명 · 낮아진 사람 ${esc(re.worse)}명</p>`;
   } else {
-    h += `<p class="muted" style="font-size:.9rem">아직 다시 도전한 사람이 없어요. 결과 화면에서 [새 문제로 다시 도전]을 하면 여기에 나타나요.</p>`;
+    h += `<p class="muted" style="font-size:.9rem">아직 사후 체험까지 마친 사람이 없어요.</p>`;
   }
-  $("stats").innerHTML = h;
+  $("stats").innerHTML = extra + `<h2>직군별 통계 (기관용)</h2>` + h;
+  bind();
 }
 
 $("form").addEventListener("submit", async e => {
