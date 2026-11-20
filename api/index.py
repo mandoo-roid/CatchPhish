@@ -5,6 +5,7 @@
 # 6(기록 검사): C의 ledger_v2.verify_ledger로 장부 전체와 마지막 기록 표시(head)를 검사한다 (A 10/28 연결, 10/30 v2).
 # 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
 # 9(연쇄형 연습): /api/practice. 사전과 사후 사이 연습 카드를 준다 (A 11/19). 1번은 mode(personal/org)를 보내면 새 흐름(세트 A·B, 사후는 반대 세트)
+# 10(자유 훈련 기록): /api/train-log. 한 판 끝난 숫자를 장부와 다른 표에 남긴다 (A 11/20)
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -37,6 +38,14 @@ try:
 except Exception as e:  # noqa: BLE001
     print("장부 코드 불러오기 실패:", type(e).__name__)
     LEDGER_READY = False
+# 자유 훈련 게임 기록 (A 11/20): 장부와 다른 표(game_logs). 불러오기에 실패해도 게임은 그대로 돈다
+try:
+    from game_log import append_game, load_games  # noqa: E402
+    GAMELOG_READY = True
+except Exception as e:  # noqa: BLE001
+    print("게임 기록 불러오기 실패:", type(e).__name__)
+    GAMELOG_READY = False
+
 
 # 맞춤 피드백 코드 (C의 feedback.py)
 # 하는 일: 결과 화면 "이렇게 해 보세요" 문장을 고른다. 불러오기에 실패하면 아래 CASE_TIPS(임시)로 그대로 동작한다
@@ -407,6 +416,40 @@ def practice():
     if not cards:
         return bad("연습 카드가 없습니다.")
     return jsonify({"scenarios": cards[:1]})
+
+
+GAME_ID = re.compile(r"^G[0-9A-F]{6}$")
+GAME_INTS = {"play_no": 1000, "score": 100000, "caught": 500, "lost": 500, "wrong": 500, "taps": 2000,
+             "retry_total": 500, "retry_ok": 500, "best_combo": 500}
+
+
+@app.post("/api/train-log")
+def train_log():
+    # 서버 약속 10번 (A 11/20): 자유 훈련 한 판이 끝나면 화면이 보내는 기록을 장부와 따로 남긴다
+    # 받는 것: player(이 기기의 익명 게임 번호 G+6자리), play_no(이 기기에서 몇 번째 판), score, caught(잡은 피싱),
+    #          lost(놓친 피싱), wrong(정상을 누른 수), taps, retry_total(틀렸다가 다시 나온 문자 수), retry_ok(그중 맞힌 수), best_combo
+    # 이유: 게임의 교육 효과(한 판 안의 즉각 교정, 판을 거듭할수록 정확도)를 시범 운영 숫자로 보여 주려고
+    # 참고: 이름·별명은 받지 않는다. 숫자 범위를 벗어나면 저장하지 않는다. 저장에 실패해도 게임 화면에는 영향 없음
+    data = request.get_json(silent=True) or {}
+    player = data.get("player")
+    if not (isinstance(player, str) and GAME_ID.match(player)):
+        return bad("게임 번호가 올바르지 않습니다.")
+    rec = {"player": player}
+    for k, hi in GAME_INTS.items():
+        v = data.get(k)
+        if not (isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= hi):
+            return bad("게임 기록이 올바르지 않습니다.")
+        rec[k] = v
+    if rec["retry_ok"] > rec["retry_total"] or rec["play_no"] < 1:
+        return bad("게임 기록이 올바르지 않습니다.")
+    if not GAMELOG_READY:
+        return jsonify({"logged": False})
+    try:
+        append_game(rec)
+        return jsonify({"logged": True})
+    except Exception as e:  # noqa: BLE001
+        print("게임 기록 저장 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"logged": False})
 
 
 @app.post("/api/answer")
