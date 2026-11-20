@@ -7,21 +7,70 @@
 <title>캐치피싱 관리자</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* ===== 포스터 테마 (A 11/19, 포스터 2장 색·글꼴·카드 모양을 사이트에 옮김) =====
+   색: 포스터 파일에서 뽑은 값 (A 개인 메모 5번). 글꼴: 제목 주아체(Jua), 본문 본고딕(Noto Sans KR), 둘 다 OFL (B 11/16)
+   카드: 흰 바탕 + 남색 두꺼운 테두리 + 오른쪽 아래 진한 그림자 (포스터 "이런 걸 할 수 있어요" 카드) */
 :root {
   color-scheme: light;
-  --ink: #1B2A41; --muted: #5B6B7D; --paper: #FFFFFF; --field: #F1F4F7; --line: #D5DDE3; --focus: #2457C5;
-  --danger: #B3261E; --safe: #1F6B4A; --safe-soft: #E4F3EB; --danger-soft: #FCEBEA;
-  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --bg: #E7ECF4; --dot: #CBD5E5; --paper: #FFFFFF; --field: #F2F5FA; --line: #D3DCEA;
+  --navy: #0F1F45; --ink: #1B2A41; --muted: #56657D; --blue: #2563C9; --blue-soft: #E3ECFA; --circle: #CFDCF0;
+  --point: #FFE699; --mascot: #3B7BE0; --shadow: #B8C4D8;
+  --danger: #C62828; --danger-soft: #FDECEC; --caution: #8A5A00; --caution-soft: #FFF3D1; --safe: #1E7A4E; --safe-soft: #E3F4EA;
+  --title: "Jua", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-card: 22px; --r-btn: 14px; --bw: 2.5px;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (prefers-color-scheme: dark) {
-  :root { color-scheme: dark; --ink: #E6ECF2; --muted: #9AA8B6; --paper: #12181F; --field: #1C242D; --line: #2E3A46; --focus: #8DB2FF;
-    --danger: #FF8A80; --safe: #7FD3A8; --safe-soft: #16302A; --danger-soft: #3A1D1B; }
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
-main { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; font-size: 17px; }
+@media (min-width: 56rem) { html { font-size: 19px; } }
+body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.6;
+  word-break: keep-all; overflow-wrap: anywhere;
+  background: var(--bg) radial-gradient(var(--dot) 1.3px, transparent 1.5px) 0 0 / 20px 20px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* 머리줄과 메뉴 */
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem; padding-top: calc(.6rem + env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+.menu-btn { width: 2.7rem; height: 2.7rem; border-radius: 12px; border: var(--bw) solid var(--navy); background: var(--paper);
+  box-shadow: 3px 3px 0 var(--shadow); font-size: 1.15rem; line-height: 1; color: var(--navy); }
+.logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: var(--navy); font-family: var(--title); font-size: 1.45rem; line-height: 1; }
+.logo .app { width: 2.3rem; height: 2.3rem; border-radius: 10px; background: var(--blue); display: grid; place-items: center; box-shadow: 2px 3px 0 var(--navy); }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper); border-right: var(--bw) solid var(--navy);
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem; transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(15, 31, 69, .4); }
+.side a { display: block; padding: .75rem .9rem; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.side a:hover { background: var(--blue-soft); }
+.side .side-head { font-family: var(--title); font-size: 1.2rem; color: var(--navy); padding: .2rem .9rem .5rem; }
+.main { padding: 1rem 1rem 2.5rem; max-width: 72rem; margin: 0 auto; }
+main:focus { outline: none; }
+
+/* 공통 조각 */
+.card { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); }
+.h-sec { font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); color: var(--navy); line-height: 1.25; }
+.band { background: linear-gradient(transparent 46%, var(--point) 46%, var(--point) 92%, transparent 92%); }
+.num { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--point); border: var(--bw) solid var(--navy); color: var(--navy);
+  display: grid; place-items: center; font-family: var(--title); font-size: 1.35rem; line-height: 1; flex: none; }
+.chip { display: inline-flex; align-items: center; border: var(--bw) solid var(--navy); background: var(--paper); border-radius: 999px; padding: .3rem 1rem;
+  font-weight: 700; color: var(--navy); font-size: .92rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: var(--bw) solid var(--navy); border-radius: var(--r-btn);
+  padding: .8rem 1.5rem; background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; box-shadow: 4px 4px 0 var(--navy); transition: transform .08s, box-shadow .08s; }
+.btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--navy); }
+.btn.sub { background: var(--paper); color: var(--navy); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ===== 이 화면 원래 스타일 (B·A, 색 이름은 테마 값을 그대로 씀) ===== */
 h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
 h2 { font-size: 1.05rem; margin: 2rem 0 .75rem; }
 .muted { color: var(--muted); }
@@ -45,11 +94,46 @@ th { color: var(--muted); font-weight: 500; }
 .result-bad { background: var(--danger-soft); color: var(--danger); border-radius: 12px; padding: 1rem 1.25rem; font-weight: 500; }
 .error { color: var(--danger); }
 [hidden] { display: none !important; }
+
+/* ===== 포스터 테마를 차분하게 (A 11/20) =====
+   하는 일: 첫 화면·체험과 같은 바탕·글꼴·남색 테두리를 쓰되, 마스코트와 장식은 빼고 그림자를 얕게 한다
+   이유: 한 작품처럼 보이게 하면서, 실제로 쓰는 도구 화면(링크 검사, 매뉴얼, 관리자)은 믿음이 가게 */
+:root { --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace; --focus: var(--blue); --accent: var(--blue); }
+main.main { word-break: keep-all; overflow-wrap: anywhere; }
+main h1 { font-family: var(--title); font-weight: 400; color: var(--navy); font-size: clamp(1.8rem, 1.4rem + 1.4vw, 2.4rem); line-height: 1.3; margin: .4rem 0 .5rem; letter-spacing: 0; }
+main h2 { color: var(--navy); }
+.menu-btn { padding: 0; display: grid; place-items: center; }
+.back-btn { color: var(--navy); font-weight: 700; text-decoration: none; display: inline-block; margin-top: .3rem; }
+.soft { background: var(--paper); border: 2px solid var(--navy); border-radius: 18px; box-shadow: 3px 4px 0 var(--shadow); }
+main.main { max-width: 58rem; }
+#stats { margin-top: 1.3rem; }
+.cards { margin-bottom: .4rem; }
+#form input { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-btn); }
+#form button { background: var(--blue); color: #fff; border: var(--bw) solid var(--navy); border-radius: var(--r-btn); box-shadow: 3px 3px 0 var(--navy); font-weight: 700; }
+button.secondary { background: var(--paper); color: var(--navy); border: 2px solid var(--navy); border-radius: var(--r-btn); font-weight: 700; box-shadow: 3px 3px 0 var(--shadow); }
+.cards .card { background: var(--paper); border: 2px solid var(--navy); border-radius: 16px; box-shadow: 3px 4px 0 var(--shadow); }
+.cards .card b { font-family: var(--title); font-weight: 400; color: var(--navy); font-size: 1.9rem; }
+.table-wrap { background: var(--paper); border: 2px solid var(--navy); border-radius: 16px; box-shadow: 3px 4px 0 var(--shadow); padding: .3rem .9rem; }
+th { color: var(--navy); font-weight: 700; }
+.bar { background: var(--field); border: 1.5px solid var(--navy); height: 10px; }
+.bar i { background: var(--blue); }
+.notice { background: var(--paper); border: 2px solid var(--line); }
+.result-ok, .result-bad { border: 2px solid currentColor; }
 </style>
 </head>
 <body>
-<main>
-  <p style="margin:0 0 1.5rem"><a href="/" style="color:inherit;font-size:.9rem">← 처음으로</a></p>
+<header class="top">
+  <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+  <a class="logo" href="/"><span class="app"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="4" fill="#fff"/><path d="M5 9l9 6 9-6" fill="none" stroke="#2563C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>캐치피싱</a>
+</header>
+<nav class="side" id="side" aria-label="메뉴">
+  <p class="side-head">메뉴</p>
+  <a href="/" aria-current="page">첫 화면</a>
+  <a href="/check">링크 검사</a>
+  <a href="/manual">대응 매뉴얼</a>
+  </nav>
+<main class="main" id="main">
+  <a class="back-btn" href="/">‹ 처음으로</a>
   <h1>관리자 화면</h1>
   <p class="muted">직군별로 어떤 피싱에 약한지 확인해요. 개인별 결과는 보이지 않아요.</p>
 
@@ -147,6 +231,16 @@ $("verify").onclick = async () => {
     else $("verify-result").innerHTML = `<div class="result-bad">${r.broken_seq}번째 기록에서 문제 발견: ${esc(r.reason)}</div>`;
   } catch (err) { $("verify-result").innerHTML = `<p class="error">${esc(err.message)}</p>`; }
 };
+</script>
+<script>
+// 하는 일: ☰ 메뉴 열고 닫기 (다른 화면과 같음, A 11/20)
+(() => {
+  const side = document.getElementById("side"), menuBtn = document.getElementById("menuBtn");
+  const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
+  menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
+  document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+})();
 </script>
 </body>
 </html>
