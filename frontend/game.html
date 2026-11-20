@@ -202,6 +202,8 @@ main:focus { outline: none; }
 .opt { display: block; width: 100%; text-align: left; border: var(--bw) solid var(--navy); background: var(--paper); border-radius: var(--r-btn); padding: .85rem 1rem;
   margin-bottom: .7rem; font-size: .96rem; font-weight: 500; color: var(--ink); box-shadow: 3px 4px 0 var(--shadow); transition: transform .08s, box-shadow .08s, background .12s; }
 .opt:hover:not(:disabled) { background: var(--blue-soft); }
+/* 답 고르기 버튼: 마우스를 올리면 테두리를 진하고 두껍게 (B 10/26). box-shadow로 두께를 더해 버튼 크기는 그대로 */
+@media (hover: hover) { .opt:hover:not(:disabled), .pick button:hover { border-color: var(--blue); box-shadow: inset 0 0 0 2px var(--blue), 3px 4px 0 var(--shadow); } }
 .opt:active:not(:disabled) { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
 .opt:disabled { opacity: .45; cursor: not-allowed; }
 .wait-open { font-size: .95rem; color: var(--navy); font-weight: 700; margin-bottom: .8rem; background: var(--point); border: 2px solid var(--navy); border-radius: 12px; padding: .5rem .7rem; }
@@ -503,8 +505,10 @@ function job() {
   render(`
     ${backBtn("체험 고르기")}
     <p class="step">기관용 체험</p>
-    <h1 class="title">하는 일을 골라 주세요</h1>
-    <p class="lead">내 직군에게 자주 오는 메시지가 하나 섞여요.</p>
+    <!-- 제목·안내는 B 11/03 피드백 문구 그대로 (11/19 새 화면으로 옮길 때 빠졌던 것을 11/20 되살림) -->
+    <h1 class="title">간단한 문진을 시작합니다</h1>
+    <p class="lead">체험 전 현재 내 보안 인식을 점검합니다. 결과 피드백에 내용이 반영됩니다.<br>이름은 저장하지 않고, 결과는 익명으로 모입니다.</p>
+    <p class="q">내 직군</p>
     <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
     <div class="row"><button class="btn" id="next" disabled>다음</button></div>`, 0);
   $("back").onclick = choose;
@@ -529,7 +533,7 @@ function survey() {
     ${backBtn(S.mode === "org" ? "직군 고르기" : "체험 고르기")}
     <p class="step">${modeName()} 체험 · 시작 전</p>
     <h1 class="title">체험 전 사전질문</h1>
-    <p class="lead">정답이 있는 질문이 아니에요. 평소 모습 그대로 답해 주세요. 결과 화면에서 내 생각과 실제 판단을 비교해 드려요.</p>
+    <p class="lead">정답이 있는 질문이 아닙니다. 평소 모습 그대로 답해 주세요. 답은 익명 번호로만 저장됩니다.</p>
     ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
       <div class="pick${k === "Q1" ? " scale" : ""}" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false"${k === "Q1" ? ` aria-label="${esc(t)}"` : ""}>${esc(k === "Q1" ? v : t)}</button>`).join("")}</div>
       ${k === "Q1" ? `<p class="scale-cap" aria-hidden="true"><span>1 전혀 아니다</span><span>5 매우 그렇다</span></p>` : ""}`).join("")}
@@ -919,7 +923,7 @@ function chainScreen() {
     <p class="step">연습 · 연쇄형 체험 ${step}단계 <span class="data-tag">점수에 안 들어가요</span></p>
     <div class="stage">
       ${smsHTML(c, "", chainThread())}
-      <aside class="choices" aria-label="행동 고르기"><h2>${st ? "이어서 어떻게 할까요?" : "이 문자, 어떻게 할까요?"}</h2>
+      <aside class="choices" aria-label="행동 고르기"><h2>${st ? "다음 화면이 나왔어요. 어떻게 하시겠어요?" : "이 문자, 어떻게 할까요?"}</h2>
         ${opts.map(([k, t]) => `<button class="opt" data-k="${k}">${esc(t)}</button>`).join("")}
         <div id="msgErr"></div></aside>
     </div>`, S.mode === "org" ? 4 : 3);
@@ -953,7 +957,14 @@ function chainDone(r) {
   const harm = cr.step === 0 ? harmOf(S.chainCard, cr.call ? "call" : "click", r) : null;
   render(`
     <p class="step">연습 · 연쇄형 체험 결과 <span class="data-tag">점수에 안 들어가요</span></p>
-    <h1 class="title">${esc(chainLine(cr))}</h1>
+    ${(() => {
+      // 하는 일: 2·3단계에서 멈췄으면 빨간 "속았어요" 대신 노란 "중간에 멈췄어요" (B 10/29). 멈춘 행동을 인정해 "단계마다 멈춰라"를 가르치려고
+      const v = cr.step === 1 ? ["good", "✓", "피싱을 막았어요!", "첫 문자에서 멈췄어요"]
+              : cr.step >= 2 ? ["wait", "△", "중간에 멈췄어요", "이 메시지는 피싱입니다. 첫 문자에서 멈춰야 가장 안전해요"]
+              : ["bad", "✕", "속았어요", "이 메시지는 피싱이었어요"];
+      return `<div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}</span></div></div>`;
+    })()}
+    <h1 class="title" style="font-size:1.3rem">${esc(chainLine(cr))}</h1>
     <p class="chain-steps">${esc(["첫 문자", ...(cr.titles || [])].join(" → "))}</p>
     <div class="ex-box" style="margin-top:1.2rem;max-width:44rem">
       ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
