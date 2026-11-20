@@ -570,6 +570,7 @@ function intro() {
   const pre = S.phase === "pre";
   const org = S.mode === "org";
   const steps = pre ? [
+    "체험은 약 10분 걸려요.",
     org ? "평소 업무 중이라고 생각하고, 실제로 할 행동을 골라 주세요." : "평소처럼 받은 메시지라고 생각하고, 실제로 할 행동을 골라 주세요.",
     org ? "진짜 업무 메시지도 섞여 있어요. 모든 메시지를 의심하면 업무가 늦어진 것으로 기록돼요." : "진짜 메시지도 섞여 있어요. 모든 메시지를 의심하면 할 일이 늦어진 것으로 기록돼요.",
     "행동을 고르면 그 행동이 어떻게 진행되는지 먼저 보여 주고, 이어서 해설이 나와요.",
@@ -845,9 +846,12 @@ function explain(c, r, harm, did, tc) {
         <div class="ex-box">
           ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
           <p class="short">${esc(r.explanation_short || r.explanation)}</p>
-          <h3>${r.is_phishing ? "수상한 점" : "확인한 점"} <small class="muted" style="font-weight:400;font-size:.8rem">(메시지에 번호로 표시)</small></h3>
-          <ul class="list">${(r.clues || []).map((x, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div></li>`).join("")}</ul>
-          <details class="detail"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>
+          ${(() => {
+            // 수정 (A 11/20): 사후는 재는 단계라 해설을 짧게. 결과 띠와 요점 한 줄만 보이고, 단서 목록은 [자세히 보기] 안에 (빼지 않음)
+            const clues = `<h3>${r.is_phishing ? "수상한 점" : "확인한 점"} <small class="muted" style="font-weight:400;font-size:.8rem">(메시지에 번호로 표시)</small></h3>
+          <ul class="list">${(r.clues || []).map((x, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div></li>`).join("")}</ul>`;
+            return S.phase === "post" ? `<details class="detail"><summary>자세히 보기 (수상한 점, 해설 전체, 탐지 엔진 분석)</summary>${clues}` : `${clues}<details class="detail"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>`;
+          })()}
             <h4>해설</h4><p>${esc(r.explanation)}</p>
             <h4>탐지 엔진 분석</h4>${engineHTML(r)}
           </details>
@@ -1095,8 +1099,9 @@ function result() {
   const late = S.late.pre + S.late.post, all = S.answers.pre.length + S.answers.post.length;
   const jc = S.mode === "org" ? a.job_compare : null;   // 같은 직군 비교는 사전(1회차) 기준 (관리자 통계와 같은 기준)
   let side = levelHTML(b);
-  if (harms.length) side += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
-  if (b.over_suspicion > 0) side += `<p class="slow-box">사후 체험에서 확인하느라 ${work}가 ${b.over_suspicion}번 늦어졌어요. 보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</p>`;
+  let fold = "";   // 수정 (A 11/20): 결과를 한눈에 보이게 아래 내용은 접는다 (B 11/03 결과 구조는 그대로, 빼지 않음)
+  if (harms.length) fold += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+  if (b.over_suspicion > 0) fold += `<p class="slow-box">사후 체험에서 확인하느라 ${work}가 ${b.over_suspicion}번 늦어졌어요. 보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</p>`;
   render(`
     <p class="step">${modeName()} 체험 · 결과</p>
     <h1 class="title">체험을 모두 마쳤어요</h1>
@@ -1112,6 +1117,8 @@ function result() {
       </div>
       <div style="display:grid;gap:1.2rem">${side}</div>
     </div>
+    <details class="detail" style="margin-top:1.4rem"><summary>내가 한 일과 실제였다면 (문제별로 보기)</summary>
+    <div style="display:grid;gap:1rem;margin-top:.6rem">${fold}</div>
     <h2 class="sub-h">내가 한 일</h2>
     ${logs.map(([n, list]) => `<p class="log-h">${n} 체험</p><ul class="mylog">${list.filter(Boolean).map(l => {
       const [m, t] = l.kind === "ok" ? ["✓", l.phishing ? "막았어요" : "바로 처리했어요"] : l.kind === "slow" ? ["△", `정상인데 멈춰서 ${work === "업무" ? "업무가" : "할 일이"} 늦어졌어요`] : ["✕", "속았어요"];
@@ -1123,6 +1130,7 @@ function result() {
       return `<h2 class="sub-h">같은 직군과 비교한 오답률 (사전 체험)</h2><div class="cmp" role="img" aria-label="같은 직군 평균 오답률 ${avg}%, 내 오답률 ${mine}%">${bar("같은 직군 평균", avg, false)}${bar("나", mine, true)}</div>
         <p class="muted" style="font-size:.88rem;margin-top:.4rem">${mine < avg ? "같은 직군 평균보다 덜 속았어요." : mine > avg ? "같은 직군 평균보다 더 속았어요." : "같은 직군 평균과 같아요."}</p>`;
     })() : ""}
+    </details>
     ${(b.tips || []).length ? `<h2 class="sub-h">이렇게 해 보세요</h2><ul class="list">${b.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>` : ""}
     <details class="detail" style="margin-top:1.2rem"><summary>자세히 보기</summary>
       <p>${esc(a.gap_message)}</p>
