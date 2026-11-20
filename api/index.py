@@ -248,6 +248,11 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
         record["revisit"] = data["revisit"]
         if mode == "org":
             record["org_code"] = data["org_code"]
+        # 하는 일: 같은 기기(브라우저)에서 체험을 이미 끝까지 한 적이 있으면 표시 (A 11/20)
+        # 이유: "체험은 한 번만"이라고 해도 2차 때 여러 번 한 사람이 여러 명으로 세어졌다. 본인 답(revisit)과 따로 남겨서 걸러 본다
+        # 참고: 이름 같은 개인정보가 아니라 그 브라우저에 남긴 "완료" 표시만 본다. 다른 기기·시크릿 창은 못 알아챈다
+        if data.get("device_repeat") is True:
+            record["device_repeat"] = True
         if card.get("set") in SETS:
             record["set"] = card["set"]
         if card.get("practice"):
@@ -539,7 +544,9 @@ def achievement(entries):
         if not (isinstance(r, dict) and r.get("mode") in MODES) or r.get("practice"):
             continue
         p = people.setdefault(r.get("anon_id"), {"mode": r["mode"], "org_code": r.get("org_code"), "target": r.get("target"),
-                                                  "revisit": r.get("revisit"), 1: {}, 2: {}})
+                                                  "revisit": r.get("revisit"), "device_repeat": False, 1: {}, 2: {}})
+        if r.get("device_repeat"):
+            p["device_repeat"] = True
         rnd = 2 if r.get("round") == 2 else 1
         sid = r.get("scenario_id")
         if sid in p[rnd]:
@@ -551,7 +558,7 @@ def achievement(entries):
             continue
         pre, post = sum(p[1].values()), sum(p[2].values())
         rows.append({"anon_id": anon, "mode": p["mode"], "org_code": p["org_code"], "target": p["target"],
-                     "revisit": p["revisit"], "pre": pre, "post": post, "gain": post - pre})
+                     "revisit": p["revisit"], "device_repeat": p["device_repeat"], "pre": pre, "post": post, "gain": post - pre})
     # 참고: 기관별·대상별 평균은 관리자 화면이 계산한다 ("처음 참여만 보기"를 화면에서 바로 바꿀 수 있게)
     return {"people": rows, "org_names": ORG_CODES}
 
