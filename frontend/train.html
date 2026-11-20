@@ -83,7 +83,8 @@ main:focus { outline: none; }
 .credit { font-size: .82rem; color: var(--muted); margin-top: 1rem; }
 @media (min-width: 56rem) { .intro { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
 
-.play { display: grid; gap: 1rem; }
+.play { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
+.time { white-space: nowrap; }
 .panel { position: sticky; top: 4.4rem; z-index: 10; padding: .8rem 1rem; display: grid; gap: .55rem .9rem; align-items: center;
   grid-template-columns: auto 1fr auto; grid-template-areas: "score time quit" "bar bar bar" "lv lv lv"; }
 .panel .score { grid-area: score; } .panel .time { grid-area: time; } .panel .tbar { grid-area: bar; } .panel .lv { grid-area: lv; } .panel .quit { grid-area: quit; }
@@ -101,6 +102,20 @@ main:focus { outline: none; }
 .quit { white-space: nowrap; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px; padding: .25rem .9rem; font-weight: 700; font-size: .85rem; }
 .panel .hint { font-size: .85rem; color: var(--muted); }
 .board { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; align-content: start; }
+/* 수정 (A 11/20): 폰에서 카드 8장이 스크롤 없이 한 화면에. 점수판은 두 줄로 줄이고, 판 높이를 남은 화면에 맞춰 4줄로 나눈다 */
+@media (max-width: 55.99rem) {
+  #play .main, #play { margin-top: -.4rem; }
+  .panel { top: 3.9rem; padding: .55rem .8rem; gap: .4rem .7rem; grid-template-columns: auto auto 1fr auto; grid-template-areas: "score time lv quit" "bar bar bar bar"; }
+  .panel .lv { justify-self: end; }
+  .quit { padding: .2rem .7rem; font-size: .8rem; }
+  .lv i { width: .65rem; height: .65rem; }
+  .score { font-size: 1.6rem; }
+  .board { height: calc(100svh - 15.9rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 20rem; grid-template-rows: repeat(4, 1fr); gap: .55rem; }
+  .c { min-height: 0; padding: .5rem .65rem; gap: .15rem; }
+  .c .m { font-size: .86rem; line-height: 1.35; }
+  .c .why { font-size: .76rem; padding: .5rem .6rem; }
+}
+@media (max-width: 24.99rem) { .lv i { display: none; } }
 @media (min-width: 56rem) {
   .panel { grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "score time bar lv quit"; padding: .9rem 1.3rem; gap: 1.2rem; }
   .panel .tbar { height: 1.1rem; }
