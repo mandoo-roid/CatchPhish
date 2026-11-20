@@ -448,7 +448,12 @@ function reset(mode) {
         chainCard: null, chainSteps: [], chainResult: null };
 }
 // 하는 일: 서버로 보낼 때마다 붙는 공통 값 (서버 약속 1번 새 모양, 장부 새 칸)
-const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, org_code: S.mode === "org" ? S.orgCode : null, target: S.target, revisit: S.revisit, self_check: S.survey });
+const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, org_code: S.mode === "org" ? S.orgCode : null, target: S.target, revisit: S.revisit, self_check: S.survey, device_repeat: S.deviceRepeat === true });
+// 하는 일: 이 기기(브라우저)에서 체험을 끝까지 한 적이 있는지 (A 11/20). 결과 화면이 뜰 때 표시를 남기고, 다음 체험부터 장부에 device_repeat로 알린다
+// 참고: 개인정보가 아니라 "완료" 표시 하나. 저장이 안 되는 브라우저(사생활 보호 모드 등)에서는 그냥 넘어간다
+const DONE_KEY = "cp_experience_done";
+const deviceDone = () => { try { return localStorage.getItem(DONE_KEY) === "1"; } catch (e) { return false; } };
+const markDone = () => { try { localStorage.setItem(DONE_KEY, "1"); } catch (e) { /* 저장 안 되면 넘어감 */ } };
 // 기관 코드 (A 11/20, 교수님 피드백 "기관별 성취도"). 서버 ORG_CODES와 같은 목록. 비밀 값이 아니라 기관을 묶는 이름표
 const ORG_CODES = ["DEMO", "ORG1", "ORG2"];
 
@@ -501,7 +506,7 @@ function choose() {
   main.querySelectorAll("[data-start]").forEach(b => b.onclick = () => start(b.dataset.start));
 }
 
-function start(mode) { reset(mode); mode === "org" ? job() : survey(); }
+function start(mode) { reset(mode); S.deviceRepeat = deviceDone(); mode === "org" ? job() : survey(); }
 
 // 하는 일: 문제를 풀기 전 화면에만 뒤로가기를 둔다. 답을 고르면 장부에 기록되어, 뒤로 가서 다시 고르면 전후 비교 숫자가 틀어지기 때문
 function backBtn(label) { return `<button class="back-btn" id="back">‹ ${label}</button>`; }
@@ -545,6 +550,7 @@ function survey() {
     <p class="step">${modeName()} 체험 · 시작 전</p>
     <h1 class="title">체험 전 사전질문</h1>
     <p class="lead">정답이 있는 질문이 아닙니다. 평소 모습 그대로 답해 주세요. 답은 익명 번호로만 저장됩니다.</p>
+    ${S.deviceRepeat ? `<p class="wait-open" role="note" style="max-width:46rem">이 기기에서 이미 체험을 끝까지 한 기록이 있어요. 다시 하면 "다시 참여"로 기록돼요.</p>` : ""}
     ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
       <div class="pick${k === "Q1" ? " scale" : ""}" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false"${k === "Q1" ? ` aria-label="${esc(t)}"` : ""}>${esc(k === "Q1" ? v : t)}</button>`).join("")}</div>
       ${k === "Q1" ? `<p class="scale-cap" aria-hidden="true"><span>1 전혀 아니다</span><span>5 매우 그렇다</span></p>` : ""}`).join("")}
@@ -1099,6 +1105,7 @@ function againLine(pv, r) {
 }
 
 function result() {
+  markDone();   // 이 기기에서 체험 완료 표시 (다음 체험은 device_repeat로 기록)
   const a = S.res.pre, b = S.res.post;
   const row = (lbl, n, t, cls) => `<div class="pp ${cls}"><span>${lbl}</span><span class="track"><i style="width:${t ? n / t * 100 : 0}%"></i></span><b>${n}/${t}</b></div>`;
   const [head, tip] = againLine(a, b);
