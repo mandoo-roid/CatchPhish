@@ -2,7 +2,7 @@
 
 AI 기반 피싱 탐지 및 보안 교육 체험 플랫폼 (캡스톤디자인)
 
-- 배포 주소: https://catchphish-three.vercel.app (`/` 첫 화면, `/game` 체험 게임, `/check` 링크 검사, `/admin` 관리자)
+- 배포 주소: https://catchphish-three.vercel.app (`/` 첫 화면, `/game` 체험, `/train` 자유 훈련, `/check` 링크 검사, `/admin` 관리자)
 
 ## 이 저장소는 무엇인가요?
 
