@@ -448,7 +448,9 @@ function reset(mode) {
         chainCard: null, chainSteps: [], chainResult: null };
 }
 // 하는 일: 서버로 보낼 때마다 붙는 공통 값 (서버 약속 1번 새 모양, 장부 새 칸)
-const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, target: S.target, revisit: S.revisit, self_check: S.survey });
+const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, org_code: S.mode === "org" ? S.orgCode : null, target: S.target, revisit: S.revisit, self_check: S.survey });
+// 기관 코드 (A 11/20, 교수님 피드백 "기관별 성취도"). 서버 ORG_CODES와 같은 목록. 비밀 값이 아니라 기관을 묶는 이름표
+const ORG_CODES = ["DEMO", "ORG1", "ORG2"];
 
 async function post(url, body) {
   let res, data;
@@ -510,16 +512,23 @@ function job() {
     <!-- 제목·안내는 B 11/03 피드백 문구 그대로 (11/19 새 화면으로 옮길 때 빠졌던 것을 11/20 되살림) -->
     <h1 class="title">간단한 문진을 시작합니다</h1>
     <p class="lead">체험 전 현재 내 보안 인식을 점검합니다. 결과 피드백에 내용이 반영됩니다.<br>이름은 저장하지 않고, 결과는 익명으로 모입니다.</p>
+    <p class="q"><label for="orgCode">기관 코드</label></p>
+    <input class="field" id="orgCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="예: ORG1" value="${esc(S.orgCode || "")}">
+    <p class="note" style="margin-top:.4rem">기관에서 받은 코드를 넣어 주세요. 코드가 없으면 <b>DEMO</b>를 넣으면 돼요.</p>
     <p class="q">내 직군</p>
     <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
     <div class="row"><button class="btn" id="next" disabled>다음</button></div>`, 0);
   $("back").onclick = choose;
+  // 하는 일: 기관 코드와 직군이 둘 다 맞아야 [다음]이 눌린다
+  const ok = () => { const c = $("orgCode").value.trim().toUpperCase(); $("next").disabled = !(S.job && ORG_CODES.includes(c)); };
+  $("orgCode").oninput = ok;
   if (S.job) { const on = main.querySelector(`[data-v="${S.job}"]`); if (on) { on.setAttribute("aria-pressed", "true"); $("next").disabled = false; } }
   main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
     main.querySelectorAll(".pick button").forEach(x => x.setAttribute("aria-pressed", "false"));
-    b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; $("next").disabled = false;
+    b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; ok();
   });
-  $("next").onclick = survey;
+  ok();
+  $("next").onclick = () => { S.orgCode = $("orgCode").value.trim().toUpperCase(); survey(); };
 }
 
 function survey() {
@@ -1106,6 +1115,13 @@ function result() {
     <p class="step">${modeName()} 체험 · 결과</p>
     <h1 class="title">체험을 모두 마쳤어요</h1>
     <p class="headline">${esc(head)}</p><p class="muted">${esc(tip)}</p>
+    ${(() => {
+      // 하는 일: 나의 성취도 = 사후 맞힌 수 - 사전 맞힌 수 (맞힌 수 = 막은 피싱 + 처리한 업무). 교수님 피드백 11/20
+      const pre = a.phishing_blocked + a.normal_handled, post = b.phishing_blocked + b.normal_handled;
+      const tot = a.phishing_total + a.normal_total, tot2 = b.phishing_total + b.normal_total, g = post - pre;
+      const cls = g > 0 ? "good" : g < 0 ? "bad" : "wait";
+      return `<div class="verdict-big ${cls} gain-card"><span class="ico" aria-hidden="true">${g > 0 ? "▲" : g < 0 ? "▼" : "="}</span><div><b>나의 성취도 ${g > 0 ? "+" : ""}${g}</b><span class="sub">맞힌 문제 사전 ${pre}/${tot} → 사후 ${post}/${tot2} (막은 피싱 + 처리한 업무)</span></div></div>`;
+    })()}
     <div class="result">
       <div>
         <section class="score"><h3>막은 피싱</h3><p>피싱을 잘 멈췄나요?</p>
