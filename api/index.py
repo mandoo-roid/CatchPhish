@@ -238,6 +238,11 @@ def save_to_ledger(data, card, choice, ok, over, analysis, stopped_step=None):
             record["set"] = card["set"]
         if card.get("practice"):
             record["practice"] = True
+        # 하는 일: 문제가 뜬 뒤 고르기까지 걸린 초 (소수 한 자리). 감점에는 쓰지 않고 통계용으로만 남긴다 (A 11/20)
+        # 참고: 화면이 재서 보내는 값이라 0~600초 숫자만 받는다. 시간 안에 골랐는지는 LIMIT(문자 15초, 메일 25초)와 비교해 계산
+        sec = data.get("answer_sec")
+        if isinstance(sec, (int, float)) and not isinstance(sec, bool) and 0 <= sec <= 600:
+            record["answer_sec"] = round(float(sec), 1)
     try:
         append_record(record)
         return True
