@@ -6,54 +6,70 @@
 <title>캐치피싱 링크 검사</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* ===== 포스터 테마 (A 11/19, 포스터 2장 색·글꼴·카드 모양을 사이트에 옮김) =====
+   색: 포스터 파일에서 뽑은 값 (A 개인 메모 5번). 글꼴: 제목 주아체(Jua), 본문 본고딕(Noto Sans KR), 둘 다 OFL (B 11/16)
+   카드: 흰 바탕 + 남색 두꺼운 테두리 + 오른쪽 아래 진한 그림자 (포스터 "이런 걸 할 수 있어요" 카드) */
 :root {
   color-scheme: light;
-  --ink: #1B2A41;
-  --muted: #5B6B7D;
-  --paper: #FFFFFF;
-  --field: #F1F4F7;
-  --line: #D5DDE3;
-  --danger: #B3261E;
-  --danger-soft: #FCEBEA;
-  --caution: #8A5A00;
-  --caution-soft: #FFF3D6;
-  --safe: #1F6B4A;
-  --safe-soft: #E4F3EB;
-  --focus: #2457C5;
-  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --bg: #E7ECF4; --dot: #CBD5E5; --paper: #FFFFFF; --field: #F2F5FA; --line: #D3DCEA;
+  --navy: #0F1F45; --ink: #1B2A41; --muted: #56657D; --blue: #2563C9; --blue-soft: #E3ECFA; --circle: #CFDCF0;
+  --point: #FFE699; --mascot: #3B7BE0; --shadow: #B8C4D8;
+  --danger: #C62828; --danger-soft: #FDECEC; --caution: #8A5A00; --caution-soft: #FFF3D1; --safe: #1E7A4E; --safe-soft: #E3F4EA;
+  --title: "Jua", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-card: 22px; --r-btn: 14px; --bw: 2.5px;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --ink: #E6ECF2;
-    --muted: #9AA8B6;
-    --paper: #12181F;
-    --field: #1C242D;
-    --line: #2E3A46;
-    --danger: #FF8A80;
-    --danger-soft: #3A1D1B;
-    --caution: #F2C14E;
-    --caution-soft: #3A2E14;
-    --safe: #7FD3A8;
-    --safe-soft: #16302A;
-    --focus: #8DB2FF;
-  }
-}
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--sans);
-  font-size: 16px;
-  line-height: 1.6;
-  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
-}
-main { max-width: 34rem; margin: 0 auto; padding: 2.5rem 1.25rem 3rem; }
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; font-size: 17px; }
+@media (min-width: 56rem) { html { font-size: 19px; } }
+body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.6;
+  word-break: keep-all; overflow-wrap: anywhere;
+  background: var(--bg) radial-gradient(var(--dot) 1.3px, transparent 1.5px) 0 0 / 20px 20px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+[hidden] { display: none !important; }
+h1, h2, h3, p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* 머리줄과 메뉴 */
+.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem; padding-top: calc(.6rem + env(safe-area-inset-top, 0px));
+  background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 21; background: var(--bg); }
+.menu-btn { width: 2.7rem; height: 2.7rem; border-radius: 12px; border: var(--bw) solid var(--navy); background: var(--paper);
+  box-shadow: 3px 3px 0 var(--shadow); font-size: 1.15rem; line-height: 1; color: var(--navy); }
+.logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: var(--navy); font-family: var(--title); font-size: 1.45rem; line-height: 1; }
+.logo .app { width: 2.3rem; height: 2.3rem; border-radius: 10px; background: var(--blue); display: grid; place-items: center; box-shadow: 2px 3px 0 var(--navy); }
+.side { position: fixed; z-index: 30; inset: 0 auto 0 0; width: min(80vw, 17rem); background: var(--paper); border-right: var(--bw) solid var(--navy);
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem 1rem; transform: translateX(-105%); transition: transform .2s; display: flex; flex-direction: column; gap: .3rem; }
+.side.open { transform: none; box-shadow: 0 0 0 100vmax rgba(15, 31, 69, .4); }
+.side a { display: block; padding: .75rem .9rem; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.side a:hover { background: var(--blue-soft); }
+.side .side-head { font-family: var(--title); font-size: 1.2rem; color: var(--navy); padding: .2rem .9rem .5rem; }
+.main { padding: 1rem 1rem 2.5rem; max-width: 72rem; margin: 0 auto; }
+main:focus { outline: none; }
+
+/* 공통 조각 */
+.card { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); }
+.h-sec { font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); color: var(--navy); line-height: 1.25; }
+.band { background: linear-gradient(transparent 46%, var(--point) 46%, var(--point) 92%, transparent 92%); }
+.num { width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--point); border: var(--bw) solid var(--navy); color: var(--navy);
+  display: grid; place-items: center; font-family: var(--title); font-size: 1.35rem; line-height: 1; flex: none; }
+.chip { display: inline-flex; align-items: center; border: var(--bw) solid var(--navy); background: var(--paper); border-radius: 999px; padding: .3rem 1rem;
+  font-weight: 700; color: var(--navy); font-size: .92rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border: var(--bw) solid var(--navy); border-radius: var(--r-btn);
+  padding: .8rem 1.5rem; background: var(--blue); color: #fff; font-weight: 700; text-decoration: none; box-shadow: 4px 4px 0 var(--navy); transition: transform .08s, box-shadow .08s; }
+.btn:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--navy); }
+.btn.sub { background: var(--paper); color: var(--navy); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ===== 이 화면 원래 스타일 (B·A, 색 이름은 테마 값을 그대로 씀) ===== */
 h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 .5rem; font-weight: 700; letter-spacing: -0.01em; }
 .lead { color: var(--muted); margin: 0 0 2rem; }
 label { display: block; font-weight: 500; margin-bottom: .5rem; }
@@ -97,58 +113,45 @@ ul.reasons li:last-child { border-bottom: 1px solid var(--line); }
 .pts { font-weight: 700; white-space: nowrap; }
 .note { font-size: .9rem; color: var(--muted); margin: 1rem 0 0; }
 .error { color: var(--danger); margin-top: 1rem; }
-footer { margin-top: 3rem; font-size: .8rem; color: var(--muted); }
 @media (prefers-reduced-motion: no-preference) {
   .verdict { animation: show .25s ease-out; }
   @keyframes show { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 }
-/* 사이드 바 (B 11/02): 링크 검사·대응 매뉴얼 화면 왼쪽 메뉴
-   하는 일: 메인 화면, 링크 검사, 대응 매뉴얼로 바로 갈 수 있는 세로 메뉴를 왼쪽에 고정한다
-   이유: 체험이 아닌 화면끼리 오갈 때 매번 첫 화면으로 돌아가지 않게 하려고 (메인 화면에는 넣지 않음)
-   참고: 폭이 좁은 화면(폰)에서는 위쪽 가로 메뉴로 바뀐다 */
-.side { position: fixed; inset: 0 auto 0 0; width: 14.5rem; background: #0E1730; color: #EEF1FA; display: flex; flex-direction: column;
-  padding: calc(1.5rem + env(safe-area-inset-top, 0px)) 1rem 1.5rem; z-index: 10; }
-.side .brand { display: flex; align-items: center; gap: .55rem; color: inherit; text-decoration: none; font-weight: 700; font-size: 1.05rem; padding: 0 .5rem 1.75rem; }
-.side .brand img { flex: none; height: 1.75rem; width: auto; }
-.side nav { display: flex; flex-direction: column; gap: .25rem; }
-.side nav a { display: flex; align-items: center; gap: .7rem; color: #A5B0CC; text-decoration: none; padding: .7rem .75rem; border-radius: 10px; font-weight: 500; }
-.side nav a svg { flex: none; opacity: .85; }
-.side nav a:hover { background: rgba(255,255,255,.06); color: #EEF1FA; }
-.side nav a[aria-current="page"] { background: rgba(142,150,255,.16); color: #FFFFFF; box-shadow: inset 3px 0 0 #8E96FF; }
-.side nav a:focus-visible, .side .brand:focus-visible { outline: 3px solid #8E96FF; outline-offset: 2px; }
-.side .foot { margin-top: auto; font-size: .75rem; color: #7E89A8; padding: 0 .5rem; line-height: 1.5; }
-.with-side { margin-left: 14.5rem; }
-@media (max-width: 54rem) {
-  .side { position: sticky; top: 0; inset: auto; width: auto; flex-direction: row; align-items: center; gap: .5rem;
-    padding: calc(.6rem + env(safe-area-inset-top, 0px)) .75rem .6rem; overflow-x: auto; }
-  .side .brand { padding: 0 .5rem 0 0; font-size: .95rem; }
-  .side .brand span { display: inline; }
-  .side nav { flex-direction: row; }
-  .side nav a { padding: .5rem .6rem; white-space: nowrap; font-size: .9rem; }
-  .side nav a svg { display: none; }
-  .side nav a[aria-current="page"] { box-shadow: inset 0 -3px 0 #8E96FF; }
-  .side .foot { display: none; }
-  .with-side { margin-left: 0; }
-}
+
+/* ===== 포스터 테마를 차분하게 (A 11/20) =====
+   하는 일: 첫 화면·체험과 같은 바탕·글꼴·남색 테두리를 쓰되, 마스코트와 장식은 빼고 그림자를 얕게 한다
+   이유: 한 작품처럼 보이게 하면서, 실제로 쓰는 도구 화면(링크 검사, 매뉴얼, 관리자)은 믿음이 가게 */
+:root { --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace; --focus: var(--blue); --accent: var(--blue); }
+main.main { word-break: keep-all; overflow-wrap: anywhere; }
+main h1 { font-family: var(--title); font-weight: 400; color: var(--navy); font-size: clamp(1.8rem, 1.4rem + 1.4vw, 2.4rem); line-height: 1.3; margin: .4rem 0 .5rem; letter-spacing: 0; }
+main h2 { color: var(--navy); }
+.menu-btn { padding: 0; display: grid; place-items: center; }
+.back-btn { color: var(--navy); font-weight: 700; text-decoration: none; display: inline-block; margin-top: .3rem; }
+.soft { background: var(--paper); border: 2px solid var(--navy); border-radius: 18px; box-shadow: 3px 4px 0 var(--shadow); }
+main.main { max-width: 40rem; }
+#form label { color: var(--navy); font-weight: 700; }
+#form input { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-btn); }
+#go { background: var(--blue); color: #fff; border: var(--bw) solid var(--navy); border-radius: var(--r-btn); box-shadow: 3px 3px 0 var(--navy); font-weight: 700; padding: 0 1.3rem; }
+#go:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--navy); }
+.examples button { background: var(--paper); border: 2px solid var(--line); border-radius: 999px; color: var(--navy); padding: .35rem .8rem; }
+.examples button:hover { border-color: var(--navy); }
+.verdict { border: 2px solid var(--navy); border-radius: 18px; box-shadow: 3px 4px 0 var(--shadow); }
+.score strong { font-family: var(--title); font-weight: 400; }
 </style>
 </head>
 <body>
-<!-- 사이드 바 (B 11/02). aria-current="page"는 지금 보고 있는 화면에만 붙인다 -->
-<aside class="side">
-  <a class="brand" href="/" aria-label="캐치피싱 메인 화면">
-    <!-- 로고 자리 (B 11/02): 확정 로고를 frontend/img/에 올리면 바로 아래 줄의 주석 표시(앞뒤 기호)를 지우고 파일 이름을 맞춰요 -->
-    <!-- <img src="/img/logo.svg" alt=""> -->
-    <span>캐치피싱</span>
-  </a>
-  <nav aria-label="메뉴">
-    <a href="/" data-nav="home"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 8l7-6 7 6v8H11v-5H7v5H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>메인 화면</a>
-    <a href="/check" data-nav="check" aria-current="page"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 12l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>링크 검사</a>
-    <a href="/manual" data-nav="manual"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 2.5h8.5L15 6v9.5H3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 8h6M6 11h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>대응 매뉴얼</a>
+<header class="top">
+  <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+  <a class="logo" href="/"><span class="app"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="4" fill="#fff"/><path d="M5 9l9 6 9-6" fill="none" stroke="#2563C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>캐치피싱</a>
+</header>
+<nav class="side" id="side" aria-label="메뉴">
+  <p class="side-head">메뉴</p>
+  <a href="/">첫 화면</a>
+  <a href="/check" aria-current="page">링크 검사</a>
+  <a href="/manual">대응 매뉴얼</a>
   </nav>
-  <p class="foot">배화여자대학교 소프트웨어공학과<br>Phish&amp;Chips 캡스톤디자인</p>
-</aside>
-<div class="with-side">
-<main>
+
+<main class="main" id="main">
   <h1>이 링크, 눌러도 될까요?</h1>
   <p class="lead">문자나 메일로 받은 링크를 붙여 넣으면 위험한 점을 찾아 알려 드려요. 링크에 직접 접속하지 않고 주소만 분석하니 안심하세요.</p>
 
@@ -168,11 +171,9 @@ footer { margin-top: 3rem; font-size: .8rem; color: var(--muted); }
 
   <section id="result" aria-live="polite"></section>
 
-  <p class="note" style="margin-top:2.5rem"><a href="/game" style="color:inherit">피싱 대응 체험 해 보기</a> · 메일·문자 5개로 내 대응 습관을 확인해요</p>
+  <p class="note" style="margin-top:2.5rem"><a href="/" style="color:var(--blue);font-weight:700">피싱 대응 체험 해 보기</a> · 문자·메일로 내 대응 습관을 확인해요</p>
 
-  <footer>캐치피싱 · 배화여자대학교 소프트웨어공학과 Phish&amp;Chips 캡스톤디자인</footer>
 </main>
-</div>
 
 <script>
 const form = document.getElementById('form');
@@ -249,6 +250,16 @@ form.addEventListener('submit', e => { e.preventDefault(); check(input.value); }
 document.querySelectorAll('.examples button').forEach(b => b.addEventListener('click', () => {
   input.value = b.dataset.url; input.focus();
 }));
+</script>
+<script>
+// 하는 일: ☰ 메뉴 열고 닫기 (다른 화면과 같음, A 11/20)
+(() => {
+  const side = document.getElementById("side"), menuBtn = document.getElementById("menuBtn");
+  const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
+  menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
+  document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+})();
 </script>
 </body>
 </html>
