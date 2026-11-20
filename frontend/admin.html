@@ -173,7 +173,7 @@ const barWidth = x => (typeof x === "number" ? `${Math.round(x * 100)}%` : "0%")
 
 function renderStats(d) {
   if (!d.connected) { $("stats").innerHTML = `<div class="notice">${esc(d.message)}</div>`; return; }
-  if (!d.participants) { $("stats").innerHTML = `<div class="notice">아직 체험 기록이 없어요. 직원들이 게임을 하면 여기에 숫자가 나타나요.</div>`; return; }
+  if (!d.participants) { $("stats").innerHTML = `<div class="notice">아직 체험 기록이 없어요. 직원들이 체험을 하면 여기에 숫자가 나타나요.</div>`; return; }
   const gap = d.confidence_gap || {};
   let h = `<div class="cards">
     <div class="card"><b>${esc(d.participants)}</b><span>참여 인원</span></div>
