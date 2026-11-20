@@ -30,8 +30,9 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 *, *::before, *::after { box-sizing: inherit; }
-html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
-body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6;
+html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; font-size: 17px; }
+@media (min-width: 56rem) { html { font-size: 19px; } }   /* 글씨 크게 (A 11/20: 전체적으로 너무 작음) */
+body { margin: 0; min-height: 100%; color: var(--ink); font-family: var(--sans); font-size: 1rem; line-height: 1.6;
   word-break: keep-all; overflow-wrap: anywhere;
   background: var(--bg) radial-gradient(var(--dot) 1.3px, transparent 1.5px) 0 0 / 20px 20px; }
 button, input, textarea { font: inherit; color: inherit; }
@@ -56,7 +57,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .side a { display: block; padding: .75rem .9rem; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
 .side a:hover { background: var(--blue-soft); }
 .side .side-head { font-family: var(--title); font-size: 1.2rem; color: var(--navy); padding: .2rem .9rem .5rem; }
-.main { padding: 1rem 1rem 2.5rem; max-width: 72rem; margin: 0 auto; }
+.main { padding: 1rem 1rem 2.5rem; max-width: 64rem; margin: 0 auto; }
 main:focus { outline: none; }
 
 /* 공통 조각 */
@@ -93,7 +94,7 @@ main:focus { outline: none; }
 .stepper .done .n { background: var(--blue); border-color: var(--navy); color: #fff; }
 .stepper .now { color: var(--navy); }
 .stepper .now .n { background: var(--point); border-color: var(--navy); color: var(--navy); }
-@media (max-width: 39.99rem) { .stepper li:not(.now) .t { display: none; } .stepper li:not(:last-child)::after { width: .55rem; } .stepper { gap: .15rem; padding: .55rem .7rem; } }
+@media (max-width: 39.99rem) { .mail { min-height: 0; } .mail-list { padding-bottom: .4rem; } .stepper .n { width: 1.45rem; height: 1.45rem; font-size: .8rem; } .stepper li:not(.now) .t { display: none; } .stepper li:not(:last-child)::after { width: .55rem; } .stepper { gap: .15rem; padding: .55rem .7rem; } }
 
 /* 고르기·사전질문 */
 .go3 { display: grid; gap: 1.1rem; margin-top: 1.2rem; }
@@ -111,7 +112,10 @@ main:focus { outline: none; }
 .go.o .kw { color: var(--blue); }
 @media (min-width: 40rem) { .go3 { grid-template-columns: repeat(2, minmax(0, 20rem)); } .go { min-height: 12rem; } }
 .back-btn { border: 0; background: none; color: var(--navy); font-weight: 700; padding: .2rem 0; margin-bottom: .8rem; text-decoration: none; display: inline-block; }
-.pick { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); max-width: 42rem; }
+.pick { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+.pick.scale { grid-template-columns: repeat(5, 1fr); }
+.pick.scale button { text-align: center; font-family: var(--title); font-size: 1.3rem; padding: .6rem 0; }
+.scale-cap { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-top: .4rem; }
 .pick button { border: var(--bw) solid var(--navy); background: var(--paper); border-radius: var(--r-btn); padding: .85rem 1rem; text-align: left; font-weight: 500;
   box-shadow: 3px 4px 0 var(--shadow); transition: transform .08s, box-shadow .08s; }
 .pick button:hover { background: var(--blue-soft); }
@@ -179,7 +183,7 @@ main:focus { outline: none; }
 .attach i { width: 1.6rem; height: 2rem; border-radius: 4px; background: var(--field); border: 1.5px solid var(--line); }
 .empty-read { display: none; }
 @container (min-width: 34rem) {
-  .mail-body { grid-template-columns: 15rem 1fr; }
+  .mail-body { grid-template-columns: 16.5rem 1fr; }
   .mail-list { border-right: 1.5px solid var(--line); }
   .mail[data-view] .mail-list { display: block; }
   .mail[data-view] .mail-read { display: block; }
@@ -200,7 +204,13 @@ main:focus { outline: none; }
 .opt:hover:not(:disabled) { background: var(--blue-soft); }
 .opt:active:not(:disabled) { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
 .opt:disabled { opacity: .45; cursor: not-allowed; }
-.wait-open { font-size: .85rem; color: var(--blue); font-weight: 700; margin-bottom: .7rem; }
+.wait-open { font-size: .95rem; color: var(--navy); font-weight: 700; margin-bottom: .8rem; background: var(--point); border: 2px solid var(--navy); border-radius: 12px; padding: .5rem .7rem; }
+.wait-open .up { display: none; }
+@media (max-width: 55.99rem) { .wait-open .left { display: none; } .wait-open .up { display: inline; } }
+.mail-row.new { position: relative; animation: ring 1.4s ease-in-out infinite; }
+.tap-me { grid-column: 2 / -1; justify-self: start; margin-top: .35rem; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; font-size: .72rem; font-weight: 900; padding: 0 .5rem; }
+@keyframes ring { 0%, 100% { box-shadow: inset 0 0 0 0 var(--point); } 50% { box-shadow: inset 0 0 0 4px var(--point); } }
+.mail-row.on .tap-me { display: none; }
 
 /* 선택 미리보기 */
 .preview { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 85%, transparent); border-radius: var(--r-card); }
@@ -214,6 +224,13 @@ main:focus { outline: none; }
 @keyframes fill { to { width: 100%; } }
 
 /* 해설 */
+.verdict-big { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; margin-bottom: 1.3rem; border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); }
+.verdict-big .ico { flex: none; width: 3.2rem; height: 3.2rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--title); font-size: 1.8rem; background: var(--paper); border: var(--bw) solid var(--navy); color: var(--navy); }
+.verdict-big b { display: block; font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); line-height: 1.2; }
+.verdict-big span.sub { display: block; font-size: .95rem; font-weight: 500; margin-top: .15rem; }
+.verdict-big.good { background: var(--blue); color: #fff; }
+.verdict-big.bad { background: var(--danger); color: #fff; }
+.verdict-big.wait { background: var(--point); color: var(--navy); }
 .explain { display: grid; gap: 1.4rem; }
 @media (min-width: 56rem) { .explain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
 .explain .sms, .explain .mail-wrap { pointer-events: none; }
@@ -370,7 +387,7 @@ const ACTIONS = [
   ["메일 속 주소로 들어가 로그인하기", 1, "가짜 로그인 화면일 수 있어요"],
   ["앱을 직접 열어 알림 확인하기", 0, "공식 앱 안의 알림은 내가 연 경로라 안전해요"],
   ["문자가 알려 준 앱 설치하기", 1, "설치 파일로 악성 앱이 깔릴 수 있어요"],
-  ["앱 장터에서 공식 앱 찾아 설치하기", 0, "공식 장터에서 직접 찾은 앱이에요"],
+  ["앱 스토어에서 공식 앱 찾아 설치하기", 0, "앱 스토어에서 직접 찾은 공식 앱이에요"],
   ["메일에 답장해 진짜인지 묻기", 1, "답장은 보낸 사람에게 가요. 가짜라면 가짜가 대답해요"],
   ["담당자에게 따로 연락해 확인하기", 0, "내가 아는 연락처로 확인하는 방법이에요"]
 ];
@@ -492,7 +509,8 @@ function survey() {
     <h1 class="title">체험 전 사전질문</h1>
     <p class="lead">정답이 있는 질문이 아니에요. 평소 모습 그대로 답해 주세요. 결과 화면에서 내 생각과 실제 판단을 비교해 드려요.</p>
     ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
-      <div class="pick" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false">${esc(t)}</button>`).join("")}</div>`).join("")}
+      <div class="pick${k === "Q1" ? " scale" : ""}" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false"${k === "Q1" ? ` aria-label="${esc(t)}"` : ""}>${esc(k === "Q1" ? v : t)}</button>`).join("")}</div>
+      ${k === "Q1" ? `<p class="scale-cap" aria-hidden="true"><span>1 전혀 아니다</span><span>5 매우 그렇다</span></p>` : ""}`).join("")}
     <div class="row"><button class="btn" id="next" disabled>체험 시작</button></div>`, 0);
   $("back").onclick = () => S.mode === "org" ? job() : choose();
   main.querySelectorAll(".pick button").forEach(b => { if (ans[b.dataset.k] === b.dataset.v) b.setAttribute("aria-pressed", "true"); });
@@ -564,11 +582,11 @@ function mailHTML(c, time, open) {
     <div class="mail-bar"><span>받은편지함</span><span class="search">메일 검색</span></div>
     <div class="mail-body">
       <div class="mail-list">
-        <button class="mail-row ${open ? "on" : "new"}" id="openMail"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(name)}</span><time>${time}</time><span class="sj">${esc(c.subject)}</span></button>
+        <button class="mail-row ${open ? "on" : "new"}" id="openMail"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(name)}</span><time>${time}</time><span class="sj">${esc(c.subject)}</span>${open ? "" : `<span class="tap-me" aria-hidden="true">눌러서 열기</span>`}</button>
         ${old}
       </div>
       <div class="mail-read">
-        <p class="empty-read">메일을 눌러 열어 보세요</p>
+        <p class="empty-read">← 왼쪽 새 메일을 눌러 열어 보세요</p>
         <button class="back" id="backList">‹ 받은편지함</button>
         <h3>${esc(c.subject)}</h3>
         <div class="from"><span class="avatar" aria-hidden="true">${esc(name.charAt(0))}</span>
@@ -612,7 +630,7 @@ function message() {
       <aside class="choices" aria-label="행동 고르기">
         <h2>이 메시지, 어떻게 할까요?</h2>
         <div class="timer" id="tbar"><i></i></div><p class="timer-txt" id="ttxt"></p>
-        ${isMail ? `<p class="wait-open" id="waitOpen">메일을 열면 고를 수 있어요</p>` : ""}
+        ${isMail ? `<p class="wait-open" id="waitOpen"><span class="left">← 왼쪽</span><span class="up">↑ 위</span> 받은편지함에서 새 메일을 눌러 열면 고를 수 있어요</p>` : ""}
         ${keys.map(k => `<button class="opt" data-k="${k}" ${isMail ? "disabled" : ""}>${esc(choiceLabel(c, k))}</button>`).join("")}
         <div id="msgErr"></div>
       </aside>
@@ -669,7 +687,7 @@ async function pickAction(c, k) {
     S.answers[S.phase][S.idx] = { scenario_id: c.scenario_id, choice: k };
     const harm = fullyFooled(r) ? harmOf(c, k, r) : null;
     addLog(c, r, choiceLabel(c, k), harm);
-    explain(c, r, harm);
+    explain(c, r, harm, choiceLabel(c, k));
   } catch (err) {
     pv.remove();
     main.querySelectorAll(".opt").forEach(b => b.disabled = false);
@@ -755,22 +773,22 @@ function engineHTML(r) {
   return h;
 }
 
-function explain(c, r, harm) {
+function explain(c, r, harm, did) {
+  // 하는 일: 맨 위 큰 띠 하나로 "피싱이었는지, 내가 막았는지"를 먼저 보여 준다 (A 11/20: 한눈에 안 보임)
   let v;
-  if (r.is_phishing) v = r.is_correct ? ["good", "피싱을 막았어요"] : ["bad", "속았어요"];
-  else v = r.over_suspicion ? ["wait", `정상 메시지였어요. ${S.mode === "org" ? "업무가" : "할 일이"} 늦어졌어요`] : ["good", "정상 메시지였어요. 잘 처리했어요"];
+  if (r.is_phishing) v = r.is_correct ? ["good", "✓", "피싱을 막았어요!", "이 메시지는 피싱이었어요"] : ["bad", "✕", "속았어요", "이 메시지는 피싱이었어요"];
+  else v = r.over_suspicion ? ["wait", "△", "정상 메시지였어요", `확인하느라 ${S.mode === "org" ? "업무가" : "할 일이"} 늦어졌어요`] : ["good", "✓", "잘 처리했어요", "이 메시지는 정상이었어요"];
   const last = S.idx === S.cards.length - 1;
   render(`
     <p class="step">${phaseName()} · 문제 ${S.idx + 1}번 결과</p>
+    <div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}${did ? ` · 내 선택: ${esc(did)}` : ""}</span></div></div>
     <div class="explain">
       <div id="exCard">${cardHTML(c, true)}</div>
       <div>
-        <span class="verdict ${v[0]}">${v[1]}</span>
         <div class="ex-box">
           ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
           <p class="short">${esc(r.explanation_short || r.explanation)}</p>
-          <h3>${r.is_phishing ? "수상한 점" : "확인한 점"}</h3>
-          <p class="hint">왼쪽 메시지에 번호로 표시했어요.</p>
+          <h3>${r.is_phishing ? "수상한 점" : "확인한 점"} <small class="muted" style="font-weight:400;font-size:.8rem">(메시지에 번호로 표시)</small></h3>
           <ul class="list">${(r.clues || []).map((x, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div></li>`).join("")}</ul>
           <details class="detail"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>
             <h4>해설</h4><p>${esc(r.explanation)}</p>
