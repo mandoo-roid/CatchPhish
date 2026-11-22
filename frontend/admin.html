@@ -106,7 +106,7 @@ main h2 { color: var(--navy); }
 .back-btn { color: var(--navy); font-weight: 700; text-decoration: none; display: inline-block; margin-top: .3rem; }
 .soft { background: var(--paper); border: 2px solid var(--navy); border-radius: 18px; box-shadow: 3px 4px 0 var(--shadow); }
 main.main { max-width: 58rem; }
-#firstOnly { width: auto; flex: none; height: auto; margin: 0; }
+#firstOnly, #trialOnly { width: auto; flex: none; height: auto; margin: 0; }
 #stats { margin-top: 1.3rem; }
 .cards { margin-bottom: .4rem; }
 #form input { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-btn); }
@@ -175,13 +175,13 @@ const barWidth = x => (typeof x === "number" ? `${Math.round(x * 100)}%` : "0%")
 // 하는 일: 성취도 집계 (A 11/20, 교수님 피드백 "사전과 사후의 차이를 성취도로, 기관별 또는 개인별로 모아서")
 // 참고: 성취도 = 사후 맞힌 수 - 사전 맞힌 수 (맞힌 수 = 막은 피싱 + 처리한 업무, 4문제 중). 사전·사후를 다 푼 사람만.
 //       [처음 참여만 보기]를 켜면 "해 본 적 있어요"라고 답한 사람과 같은 기기에서 다시 한 사람을 뺀다 (같은 사람이 여러 번 해서 숫자가 부푸는 것을 막으려고)
-let LAST = null, FIRST_ONLY = false;
+let LAST = null, FIRST_ONLY = false, TRIAL_ONLY = true;   // 수정 (A 11/22): 시범 운영 기간만 보기 (기본 켬)
 const TARGET = { student: "학생", general: "일반인", worker: "직원" };
 const sign = v => (v > 0 ? "+" : "") + v;
 function achievementHTML(ach) {
   if (!ach) return "";
   // 수정 (A 11/20): "처음 참여"는 본인이 "처음이에요"라고 답했고, 같은 기기에서 다시 한 표시(device_repeat)도 없는 사람
-  const rows = (ach.people || []).filter(p => !FIRST_ONLY || (p.revisit === false && !p.device_repeat));
+  const rows = (ach.people || []).filter(p => (!FIRST_ONLY || (p.revisit === false && !p.device_repeat)) && (!TRIAL_ONLY || p.trial));
   const grp = (items) => { const n = items.length; if (!n) return null; const av = k => Math.round(items.reduce((t, x) => t + x[k], 0) / n * 100) / 100; return { n, pre: av("pre"), post: av("post"), gain: av("gain") }; };
   const table = (title, groups) => groups.length ? `<div class="table-wrap"><table><thead><tr><th>${title}</th><th>인원</th><th>사전 평균</th><th>사후 평균</th><th>평균 성취도</th></tr></thead><tbody>` +
     groups.map(([name, g]) => `<tr><td>${esc(name)}</td><td>${g.n}</td><td>${g.pre} / 4</td><td>${g.post} / 4</td><td><b>${sign(g.gain)}</b></td></tr>`).join("") + `</tbody></table></div>` : `<p class="muted" style="font-size:.9rem">아직 사전·사후를 모두 마친 사람이 없어요.</p>`;
@@ -191,7 +191,8 @@ function achievementHTML(ach) {
   const all = grp(rows);
   let h = `<h2>성취도 (사전 → 사후)</h2>
     <p class="muted" style="font-size:.9rem">성취도 = 사후에 맞힌 문제 수 - 사전에 맞힌 문제 수 (막은 피싱 + 처리한 업무, 4문제 중). 사전·사후를 모두 마친 사람만 세요.</p>
-    <label style="display:flex;gap:.5rem;align-items:center;justify-content:flex-start;font-weight:700;color:var(--navy);margin:.4rem 0 1rem"><input type="checkbox" id="firstOnly" ${FIRST_ONLY ? "checked" : ""}> 처음 참여한 사람만 보기</label>`;
+    <label style="display:flex;gap:.5rem;align-items:center;justify-content:flex-start;font-weight:700;color:var(--navy);margin:.4rem 0 1rem"><input type="checkbox" id="firstOnly" ${FIRST_ONLY ? "checked" : ""}> 처음 참여한 사람만 보기</label>
+    <label style="display:flex;gap:.5rem;align-items:center;justify-content:flex-start;font-weight:700;color:var(--navy);margin:-.6rem 0 1rem"><input type="checkbox" id="trialOnly" ${TRIAL_ONLY ? "checked" : ""}> 3차 시범 운영 기간만 보기 (11/21 0시 ~ 11/22 19시)</label>`;
   h += `<div class="cards"><div class="card"><b>${all ? all.n : 0}</b><span>사전·사후를 마친 사람</span></div><div class="card"><b>${all ? sign(all.gain) : "-"}</b><span>전체 평균 성취도</span></div></div>`;
   h += `<h2>기관별 성취도 (기관용)</h2>` + table("기관", Object.entries(orgs).map(([c, items]) => [(ach.org_names || {})[c] ? `${(ach.org_names || {})[c]} (${c})` : c, grp(items)]));
   h += `<h2>학생·일반인별 성취도 (개인용)</h2>` + table("대상", Object.entries(tg).map(([t, items]) => [TARGET[t] || t, grp(items)]));
@@ -213,7 +214,8 @@ function renderStats(d) {
   if (!d.connected) { $("stats").innerHTML = `<div class="notice">${esc(d.message)}</div>`; return; }
   LAST = d;
   const extra = achievementHTML(d.achievement) + trainHTML(d.train);
-  const bind = () => { const f = $("firstOnly"); if (f) f.onchange = () => { FIRST_ONLY = f.checked; renderStats(LAST); }; };
+  const bind = () => { const f = $("firstOnly"); if (f) f.onchange = () => { FIRST_ONLY = f.checked; renderStats(LAST); };
+    const t = $("trialOnly"); if (t) t.onchange = () => { TRIAL_ONLY = t.checked; renderStats(LAST); }; };
   if (!d.participants) { $("stats").innerHTML = extra + `<h2>직군별 통계 (기관용)</h2><div class="notice">아직 기관용 체험 기록이 없어요. 직원들이 체험을 하면 여기에 숫자가 나타나요.</div>`; bind(); return; }
   const gap = d.confidence_gap || {};
   let h = `<div class="cards">
