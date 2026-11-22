@@ -98,6 +98,8 @@ SETS = ("A", "B")
 # 기관 코드 (A 11/20, 교수님 피드백 "기관별 성취도"): 기관용 체험 첫 화면에서 받고 장부에 org_code로 남긴다
 # 참고: 비밀 값이 아니라 기관을 묶는 이름표다 (관리자 화면은 회사 코드로 들어가서 겹치지 않음). 코드가 없는 사람은 DEMO
 ORG_CODES = {"DEMO": "체험용 (코드 없음)", "ORG1": "시연 기관 1", "ORG2": "시연 기관 2"}
+# 3차 시범 운영 기간 (A 11/22): 한국 11/21 0시 ~ 11/22 19시 = 세계 표준시 11/20 15:00 ~ 11/22 10:00. 장부 시각은 세계 표준시
+TRIAL_START, TRIAL_END = "2026-11-20T15:00:00", "2026-11-22T10:00:00"
 
 
 def pick_scenarios(job):
@@ -544,7 +546,13 @@ def achievement(entries):
         if not (isinstance(r, dict) and r.get("mode") in MODES) or r.get("practice"):
             continue
         p = people.setdefault(r.get("anon_id"), {"mode": r["mode"], "org_code": r.get("org_code"), "target": r.get("target"),
-                                                  "revisit": r.get("revisit"), "device_repeat": False, 1: {}, 2: {}})
+                                                  "revisit": r.get("revisit"), "device_repeat": False, 1: {}, 2: {},
+                                                  "first_at": e.get("created_at"), "last_at": e.get("created_at")})
+        # 하는 일: 이 사람의 첫 기록과 마지막 기록 시각 (A 11/22, 관리자 화면 "시범 운영 기간만 보기"에 씀)
+        at = e.get("created_at")
+        if at:
+            p["first_at"] = min(p["first_at"] or at, at)
+            p["last_at"] = max(p["last_at"] or at, at)
         if r.get("device_repeat"):
             p["device_repeat"] = True
         rnd = 2 if r.get("round") == 2 else 1
@@ -558,7 +566,8 @@ def achievement(entries):
             continue
         pre, post = sum(p[1].values()), sum(p[2].values())
         rows.append({"anon_id": anon, "mode": p["mode"], "org_code": p["org_code"], "target": p["target"],
-                     "revisit": p["revisit"], "device_repeat": p["device_repeat"], "pre": pre, "post": post, "gain": post - pre})
+                     "revisit": p["revisit"], "device_repeat": p["device_repeat"], "pre": pre, "post": post, "gain": post - pre,
+                     "trial": bool(p["first_at"] and p["last_at"] and TRIAL_START <= str(p["first_at"]) and str(p["last_at"]) < TRIAL_END)})
     # 참고: 기관별·대상별 평균은 관리자 화면이 계산한다 ("처음 참여만 보기"를 화면에서 바로 바꿀 수 있게)
     return {"people": rows, "org_names": ORG_CODES}
 
