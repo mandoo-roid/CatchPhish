@@ -86,7 +86,7 @@ main:focus { outline: none; }
 .play { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
 .time { white-space: nowrap; }
 .panel { position: sticky; top: 4.4rem; z-index: 10; padding: .8rem 1rem; display: grid; gap: .55rem .9rem; align-items: center;
-  grid-template-columns: auto 1fr auto; grid-template-areas: "score time quit" "bar bar bar" "lv lv lv"; }
+  grid-template-columns: auto 1fr auto auto; grid-template-areas: "score time snd quit" "bar bar bar bar" "lv lv lv lv"; }
 .panel .score { grid-area: score; } .panel .time { grid-area: time; } .panel .tbar { grid-area: bar; } .panel .lv { grid-area: lv; } .panel .quit { grid-area: quit; }
 .p-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
 .score { font-family: var(--title); font-size: 2rem; line-height: 1; color: var(--navy); white-space: nowrap; }
@@ -101,13 +101,29 @@ main:focus { outline: none; }
 .combo { margin-left: .4rem; white-space: nowrap; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; padding: .05rem .7rem; font-weight: 900; font-size: .85rem; opacity: 0; transition: opacity .2s; }
 .quit { white-space: nowrap; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px; padding: .25rem .9rem; font-weight: 700; font-size: .85rem; }
 .panel .hint { font-size: .85rem; color: var(--muted); }
+/* 소리 켜기·끄기 버튼과 콤보 알림 (A 11/23) */
+.snd { white-space: nowrap; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px; padding: .2rem .65rem; font-size: .95rem; line-height: 1.2; }
+.snd[aria-pressed="true"] { background: var(--field); color: var(--muted); }
+.panel .snd { grid-area: snd; }
+.combo.bump { animation: bump .35s; }
+@keyframes bump { 40% { transform: scale(1.45); } }
+.pop { position: fixed; left: 50%; top: 42%; z-index: 45; transform: translate(-50%, -50%); font-family: var(--title); color: var(--navy);
+  font-size: clamp(2.2rem, 1.6rem + 3vw, 3.6rem); background: var(--point); border: 3px solid var(--navy); border-radius: 22px; padding: .3rem 1.3rem;
+  box-shadow: 5px 6px 0 var(--navy); pointer-events: none; opacity: 0; white-space: nowrap; }
+.pop.on { animation: popin .9s ease-out forwards; }
+@keyframes popin { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+  35% { transform: translate(-50%, -50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .pop.on { animation: none; opacity: 1; } }
 .board { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; align-content: start; }
 /* 수정 (A 11/20): 폰에서 카드 8장이 스크롤 없이 한 화면에. 점수판은 두 줄로 줄이고, 판 높이를 남은 화면에 맞춰 4줄로 나눈다 */
 @media (max-width: 55.99rem) {
   #play .main, #play { margin-top: -.4rem; }
-  .panel { top: 3.9rem; padding: .55rem .8rem; gap: .4rem .7rem; grid-template-columns: auto auto 1fr auto; grid-template-areas: "score time lv quit" "bar bar bar bar"; }
+  .panel { top: 3.9rem; padding: .55rem .8rem; gap: .4rem .7rem; grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "score time lv snd quit" "bar bar bar bar bar"; }
   .panel .lv { justify-self: end; }
   .quit { padding: .2rem .7rem; font-size: .8rem; }
+  .snd { padding: .15rem .5rem; font-size: .85rem; }
+  /* 폰: 콤보 뱃지는 점수판 위쪽 모서리에 스티커처럼 띄워서 한 줄이 넘치지 않게 (A 11/23) */
+  .panel .lv .combo { position: absolute; right: .8rem; top: -.85rem; margin: 0; box-shadow: 2px 2px 0 var(--navy); }
   .lv i { width: .65rem; height: .65rem; }
   .score { font-size: 1.6rem; }
   .board { height: calc(100svh - 15.9rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 20rem; grid-template-rows: repeat(4, 1fr); gap: .55rem; }
@@ -117,7 +133,7 @@ main:focus { outline: none; }
 }
 @media (max-width: 24.99rem) { .lv i { display: none; } }
 @media (min-width: 56rem) {
-  .panel { grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "score time bar lv quit"; padding: .9rem 1.3rem; gap: 1.2rem; }
+  .panel { grid-template-columns: auto auto 1fr auto auto auto; grid-template-areas: "score time bar lv snd quit"; padding: .9rem 1.3rem; gap: 1.2rem; }
   .panel .tbar { height: 1.1rem; }
   .board { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
 }
@@ -179,7 +195,8 @@ main:focus { outline: none; }
         <span class="peek"><svg viewBox="0 0 110 80" aria-hidden="true"><g transform="rotate(-5 50 40)"><rect x="5" y="8" width="84" height="60" rx="12" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/><path d="M11 16 L47 42 L83 16" fill="none" stroke="#DCE8FB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="34" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="58" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="37" cy="50" r="3.3" fill="#0F1F45"/><circle cx="61" cy="50" r="3.3" fill="#0F1F45"/><path d="M26 38 l14 2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M52 37 q6 -6 13 -1" fill="none" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M41 60 l10 -2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/></g><line x1="92" y1="62" x2="83" y2="75" stroke="#2B5FB8" stroke-width="6" stroke-linecap="round"/><circle cx="96" cy="50" r="13" fill="#DCE8FB" fill-opacity=".6" stroke="#2B5FB8" stroke-width="4"/></svg></span>
         <h1 class="title">생활 속 피싱 신호 익히기</h1>
         <p class="muted" style="margin-top:.4rem">60초 동안 오는 문자 알림 중에서 피싱만 골라 눌러요.</p>
-        <div class="row" style="margin-top:1.4rem"><button class="btn" id="gobtn">시작하기</button></div>
+        <div class="row" style="margin-top:1.4rem;align-items:center"><button class="btn" id="gobtn">시작하기</button><button class="snd" id="snd0" aria-pressed="false" aria-label="소리 끄기">🔊 소리 켜짐</button></div>
+        <p class="muted" style="margin-top:.7rem;font-size:.88rem">게임 중에 소리가 나와요. 끄려면 🔊 버튼을 누르세요.</p>
       </div>
       <div>
         <ul class="rules card">
@@ -200,6 +217,7 @@ main:focus { outline: none; }
         <span class="time" id="tt">60초</span>
         <div class="tbar" id="tbar"><i id="bar"></i></div>
         <span class="lv" id="lv"><i class="on"></i><i></i><i></i><span id="lvt">1단계</span><span class="combo" id="cb">2 콤보</span></span>
+        <button class="snd" id="snd1" aria-pressed="false" aria-label="소리 끄기">🔊</button>
         <button class="quit" id="quit">그만하기</button>
       </aside>
       <div class="board" id="g" aria-label="문자 알림 판"></div>
@@ -210,6 +228,7 @@ main:focus { outline: none; }
   <section id="res" hidden></section>
 </main>
 <div class="toast" id="toast" role="status"></div>
+<div class="pop" id="pop" aria-hidden="true"></div>
 
 <script>
 // [보낸 곳, 내용, 피싱(1)/정상(0), 난이도 1~3, 이유, 수법] — 시안 예시 20개 + A 11/20 30개 = 50개 (C 데이터 대신). 출처는 수법 유형 단위 (A 11/20 결정)
@@ -292,10 +311,12 @@ function hit(b) {
   if (!run || b._busy) return; const d = b._d; taps++; b._busy = 1;
   if (d[2]) {
     cb++; okc++; best = Math.max(best, cb); sc += 10 * d[3] + (cb > 1 ? (cb - 1) * 2 : 0); caught.push(d); b.classList.add("ok");
+    SFX.hit(cb); if (MILE(cb)) popCombo(cb);
+    const cbEl = $("cb"); cbEl.classList.remove("bump"); void cbEl.offsetWidth; cbEl.classList.add("bump");
     b.insertAdjacentHTML("beforeend", `<span class="bd">${esc(d[5])}!</span>`);
     setTimeout(() => b.classList.add("gone"), 420); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 600);
   } else {
-    cb = 0; sc = Math.max(0, sc - 5);
+    cb = 0; sc = Math.max(0, sc - 5); SFX.wrong();
     if (b._re) { const r = retry.find(x => x.d === d && x.st === 0); if (r) r.st = -1; }
     else { wrong.push(d); if (!retry.find(x => x.d === d)) { retry.push({ d: d, st: 0 }); queue.push({ d: d, at: tm - 12 }); } }
     b.classList.add("ng"); b.insertAdjacentHTML("beforeend", `<span class="why r">정상 문자예요. ${esc(d[4])}</span>`);
@@ -305,7 +326,7 @@ function hit(b) {
 }
 function expire() {
   [...g.children].forEach(b => { if (b._d[2] === 1 && !b._busy && (b._t - tm) >= LIFE) {
-    b._busy = 1; cb = 0; lost.push(b._d);
+    b._busy = 1; cb = 0; lost.push(b._d); SFX.miss();
     b.insertAdjacentHTML("beforeend", `<span class="why y">놓쳤어요! ${esc(b._d[5])}: ${esc(b._d[4])}</span>`);
     setTimeout(() => b.classList.add("gone"), 1400); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 1580);
   } }); upd();
@@ -319,14 +340,15 @@ function start() {
   show("play"); fill(); upd(); $("tt").textContent = tm + "초"; $("tbar").classList.remove("late"); $("bar").style.width = "100%";
   iv = setInterval(() => {
     tm--; $("tt").textContent = tm + "초"; $("bar").style.width = (tm / T * 100) + "%";
-    if (tm === 40) { setLv(2); toast("2단계: 비슷한 문자가 섞여요!"); }
-    if (tm === 20) { setLv(3); toast("3단계: 보낸 곳이 같은 짝 주의!"); $("tbar").classList.add("late"); }
+    if (tm === 40) { setLv(2); toast("2단계: 비슷한 문자가 섞여요!"); SFX.level(); }
+    if (tm === 20) { setLv(3); toast("3단계: 보낸 곳이 같은 짝 주의!"); $("tbar").classList.add("late"); SFX.level(); }
+    if (tm > 0 && tm <= 5) SFX.tick();
     expire(); if (tm % 3 === 0) refreshSome(); if (tm <= 0) end();
   }, 1000);
 }
 function uniq(a) { return [...new Map(a.map(d => [d[0] + d[1], d])).values()]; }
 function end() {
-  run = false; clearInterval(iv); $("cb").style.opacity = 0; [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
+  run = false; clearInterval(iv); $("cb").style.opacity = 0; SFX.end(); [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
   const acc = taps ? Math.round(okc / taps * 100) : 0; const rd = retry.filter(x => x.st !== 0), rok = rd.filter(x => x.st === 1).length;
   sendLog({ score: sc, caught: caught.length, lost: lost.length, wrong: wrong.length, taps, retry_total: rd.length, retry_ok: rok, best_combo: best });
   const top = uniq(wrong.concat(lost)).slice(0, 3);
@@ -349,6 +371,46 @@ function end() {
     </div>`;
   show("res"); $("again").onclick = start;
 }
+// ===== 소리 (A 11/23) =====
+// 하는 일: 게임처럼 "뿅" 소리를 브라우저가 직접 만들어 낸다 (웹 오디오, 소리 파일 없음)
+// 참고: 폰은 사용자가 먼저 눌러야 소리를 낼 수 있어서 [시작하기]를 누를 때 소리 장치를 켠다. 끄면 이 기기에 기억한다
+let AC = null, MUTED = false;
+try { MUTED = localStorage.getItem("cp_game_muted") === "1"; } catch (e) { /* 저장 안 되면 켜진 채로 */ }
+function audio() {
+  try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) { AC = null; }
+  return AC;
+}
+function tone(freq, dur, type = "sine", vol = .18, delay = 0, slide = 0) {
+  if (MUTED) return; const a = audio(); if (!a) return;
+  const t = a.currentTime + delay, o = a.createOscillator(), gn = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
+  gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol, t + .01); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(gn).connect(a.destination); o.start(t); o.stop(t + dur + .02);
+}
+const SCALE = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];   // 도 레 미 파 솔 라 시 도 레 미
+const SFX = {
+  hit: c => { const f = SCALE[Math.min(c - 1, SCALE.length - 1)]; tone(f, .12, "square", .09); tone(f * 2, .1, "sine", .06, .05); },   // 콤보마다 음이 한 칸씩 올라감
+  fanfare: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, .16, "square", .09, i * .08)); tone(1568, .35, "triangle", .1, .32); },
+  wrong: () => tone(220, .28, "sawtooth", .08, 0, 110),
+  miss: () => tone(330, .14, "triangle", .12, 0, 180),
+  level: () => [659, 784, 988].forEach((f, i) => tone(f, .14, "triangle", .12, i * .09)),
+  tick: () => tone(1400, .05, "square", .05),
+  end: () => [784, 659, 523, 784].forEach((f, i) => tone(f, .2, "triangle", .12, i * .14))
+};
+function setMuted(m) {
+  MUTED = m; try { localStorage.setItem("cp_game_muted", m ? "1" : "0"); } catch (e) { /* 저장 안 되면 넘어감 */ }
+  [["snd0", "🔊 소리 켜짐", "🔇 소리 꺼짐"], ["snd1", "🔊", "🔇"]].forEach(([id, on, off]) => {
+    const b = $(id); b.textContent = m ? off : on; b.setAttribute("aria-pressed", String(m)); b.setAttribute("aria-label", m ? "소리 켜기" : "소리 끄기"); });
+}
+["snd0", "snd1"].forEach(id => $(id).onclick = () => { setMuted(!MUTED); if (!MUTED) { audio(); tone(880, .08, "square", .07); } });
+setMuted(MUTED);
+// 하는 일: 3, 5, 10, 15, 20... 콤보마다 팡파르와 큰 글씨 (보통 게임처럼 콤보를 강조)
+const MILE = c => c === 3 || c === 5 || (c >= 10 && c % 5 === 0);
+function popCombo(c) {
+  const p = $("pop"); p.textContent = `${c} 콤보${"!".repeat(c >= 10 ? 3 : c >= 5 ? 2 : 1)}`;
+  p.classList.remove("on"); void p.offsetWidth; p.classList.add("on"); SFX.fanfare();
+}
+
 // 하는 일: 한 판이 끝나면 숫자만 서버에 보낸다 (서버 약속 10번, 장부와 다른 표, A 11/20)
 // 이유: 게임의 교육 효과(틀렸다가 다시 나온 문자를 맞힌 비율, 판을 거듭할수록 정확도)를 시범 운영 숫자로 보여 주려고
 // 참고: 이 기기에서만 쓰는 익명 게임 번호(G+6자리)와 몇 번째 판인지를 브라우저에 남긴다. 이름·별명은 보내지 않는다.
@@ -373,7 +435,7 @@ $("quit").onclick = () => {
   if (!confirm("게임을 그만하고 처음 화면으로 갈까요?")) return;
   run = false; clearInterval(iv); show("st");
 };
-$("gobtn").onclick = start;
+$("gobtn").onclick = () => { audio(); start(); };   // 참고: 누르는 순간 소리 장치를 켠다 (폰 정책)
 
 // 하는 일: ☰ 메뉴 열고 닫기
 const side = $("side"), menuBtn = $("menuBtn");
