@@ -3,11 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>자유 훈련 · 캐치피싱</title>
+<title>캐치피싱 피싱 대응 체험</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* =====================================================================
+   캐치피싱 체험 화면 (A 11/19)
+   하는 일: 개인용·기관용 체험. 사전 4문제 → 연쇄형 연습 → (개인용 게임 / 기관용 따라 쓰기) → 사후 4문제 → 전후 결과
+   참고: 동작은 11/14 시안, 해설·결과 세부는 예전 game.html, 겉모양은 포스터 테마 (첫 화면과 같은 색·글꼴·카드)
+   ===================================================================== */
 /* ===== 포스터 테마 (A 11/19, 포스터 2장 색·글꼴·카드 모양을 사이트에 옮김) =====
    색: 포스터 파일에서 뽑은 값 (A 개인 메모 5번). 글꼴: 제목 주아체(Jua), 본문 본고딕(Noto Sans KR), 둘 다 OFL (B 11/16)
    카드: 흰 바탕 + 남색 두꺼운 테두리 + 오른쪽 아래 진한 그림자 (포스터 "이런 걸 할 수 있어요" 카드) */
@@ -52,7 +57,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .side a { display: block; padding: .75rem .9rem; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 500; }
 .side a:hover { background: var(--blue-soft); }
 .side .side-head { font-family: var(--title); font-size: 1.2rem; color: var(--navy); padding: .2rem .9rem .5rem; }
-.main { padding: 1rem 1rem 2.5rem; max-width: 72rem; margin: 0 auto; }
+.main { padding: 1rem 1rem 2.5rem; max-width: 64rem; margin: 0 auto; }
 main:focus { outline: none; }
 
 /* 공통 조각 */
@@ -69,380 +74,1113 @@ main:focus { outline: none; }
 .btn.sub { background: var(--paper); color: var(--navy); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* ===== 자유 훈련: 생활 속 피싱 신호 익히기 (A 11/19, docs/game_draft.html 시안을 사이트로 옮기고 포스터 테마로) =====
-   규칙은 시안 그대로: 60초, 20초마다 1·2·3단계, 피싱 카드를 8초 안 누르면 놓침, 틀린 정상 문자는 약 12초 뒤 다시 나옴
-   카드 수(8장)와 시간은 폰과 PC가 같다 (팀 결정 20번). 폰은 2열, 넓은 화면은 4열 + 왼쪽 점수판 */
+/* ===== 체험 화면 (A 11/19, 포스터 테마) ===== */
+.step { font-size: .88rem; color: var(--blue); font-weight: 700; margin-bottom: .35rem; }
+.title { font-family: var(--title); font-weight: 400; font-size: clamp(1.55rem, 1.25rem + 1.3vw, 2.2rem); color: var(--navy); line-height: 1.3; margin-bottom: .5rem; }
+.lead { color: var(--muted); max-width: 38rem; margin-bottom: 1.2rem; }
+.note { font-size: .85rem; color: var(--muted); margin-top: .8rem; }
+.muted { color: var(--muted); }
+.row { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 1.5rem; }
+.error { color: var(--danger); font-size: .9rem; font-weight: 500; margin-top: .8rem; }
+.data-tag { display: inline-block; font-size: .75rem; font-weight: 700; color: var(--navy); background: var(--point); border: 2px solid var(--navy); border-radius: 999px; padding: 0 .55rem; margin-left: .3rem; vertical-align: middle; }
+
+/* 진행 표시 (포스터 "체험은 이렇게 흘러가요") */
+.stepper { list-style: none; margin: .2rem 0 1.4rem; padding: .65rem .9rem; display: flex; gap: .3rem; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.stepper::-webkit-scrollbar { display: none; }
+.stepper li { display: flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.stepper li:not(:last-child)::after { content: ""; width: 1.3rem; border-top: 2.5px dashed var(--line); margin: 0 .15rem; }
+.stepper .n { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); background: var(--paper); font-family: var(--title); font-size: .95rem; }
+.stepper .done { color: var(--navy); }
+.stepper .done .n { background: var(--blue); border-color: var(--navy); color: #fff; }
+.stepper .now { color: var(--navy); }
+.stepper .now .n { background: var(--point); border-color: var(--navy); color: var(--navy); }
+@media (max-width: 39.99rem) { .mail { min-height: 0; } .mail-list { padding-bottom: .4rem; } .stepper .n { width: 1.45rem; height: 1.45rem; font-size: .8rem; } .stepper li:not(.now) .t { display: none; } .stepper li:not(:last-child)::after { width: .55rem; } .stepper { gap: .15rem; padding: .55rem .7rem; } }
+
+/* 고르기·사전질문 */
+.go3 { display: grid; gap: 1.1rem; margin-top: 1.2rem; }
+.go { display: flex; flex-direction: column; gap: .2rem; padding: 1.2rem 1.2rem 1.1rem; text-decoration: none; color: var(--navy); text-align: left;
+  border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); transition: transform .12s, box-shadow .12s; }
+.go:hover { transform: translate(-2px, -3px); box-shadow: 8px 10px 0 var(--shadow); }
+.go svg { width: 2.4rem; height: 2.4rem; padding: .35rem; border-radius: 12px; margin-bottom: .8rem; flex: none; }
+.go b { font-family: var(--title); font-weight: 400; font-size: 1.7rem; line-height: 1.2; }
+.go .kw { font-weight: 700; font-size: .9rem; }
+.go .ds { margin-top: .3rem; font-size: .93rem; line-height: 1.55; }
+.go.p { background: var(--blue); color: #fff; }
+.go.p svg { background: rgba(255,255,255,.18); }
+.go.o { background: var(--paper); }
+.go.o svg { background: var(--blue-soft); color: var(--blue); }
+.go.o .kw { color: var(--blue); }
+@media (min-width: 40rem) { .go3 { grid-template-columns: repeat(2, minmax(0, 20rem)); } .go { min-height: 12rem; } }
 .back-btn { border: 0; background: none; color: var(--navy); font-weight: 700; padding: .2rem 0; margin-bottom: .8rem; text-decoration: none; display: inline-block; }
-.title { font-family: var(--title); font-weight: 400; font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.5rem); color: var(--navy); line-height: 1.25; }
-.intro { display: grid; gap: 1.6rem; align-items: center; max-width: 60rem; }
-.intro .peek { display: block; width: 7rem; }
-.intro .peek svg { display: block; width: 100%; height: auto; }
-.rules { padding: 1.2rem 1.3rem; margin: 1rem 0 0; display: grid; gap: .6rem; list-style: none; }
-.rules li { display: flex; gap: .7rem; align-items: baseline; }
-.rules li::before { content: ""; flex: none; width: .65rem; height: .65rem; border-radius: 50%; background: var(--point); border: 2px solid var(--navy); transform: translateY(.05rem); }
-.credit { font-size: .82rem; color: var(--muted); margin-top: 1rem; }
-@media (min-width: 56rem) { .intro { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); } }
+.pick { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+.pick.scale { grid-template-columns: repeat(5, 1fr); }
+.pick.scale button { text-align: center; font-family: var(--title); font-size: 1.3rem; padding: .6rem 0; }
+.scale-cap { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-top: .4rem; }
+.pick button { border: var(--bw) solid var(--navy); background: var(--paper); border-radius: var(--r-btn); padding: .85rem 1rem; text-align: left; font-weight: 500;
+  box-shadow: 3px 4px 0 var(--shadow); transition: transform .08s, box-shadow .08s; }
+.pick button:hover { background: var(--blue-soft); }
+.pick button[aria-pressed="true"] { background: var(--blue); color: #fff; box-shadow: 1px 1px 0 var(--shadow); transform: translate(2px, 3px); }
+.q { margin: 1.5rem 0 .65rem; font-weight: 700; color: var(--navy); }
+.field { width: 100%; max-width: 24rem; padding: .8rem 1rem; border: var(--bw) solid var(--navy); border-radius: var(--r-btn); background: var(--paper); }
 
-.play { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr); }
-.time { white-space: nowrap; }
-.panel { position: sticky; top: 4.4rem; z-index: 10; padding: .8rem 1rem; display: grid; gap: .55rem .9rem; align-items: center;
-  grid-template-columns: auto 1fr auto auto; grid-template-areas: "score time snd quit" "bar bar bar bar" "lv lv lv lv"; }
-.panel .score { grid-area: score; } .panel .time { grid-area: time; } .panel .tbar { grid-area: bar; } .panel .lv { grid-area: lv; } .panel .quit { grid-area: quit; }
-.p-row { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
-.score { font-family: var(--title); font-size: 2rem; line-height: 1; color: var(--navy); white-space: nowrap; }
-.score small { font-family: var(--sans); font-size: .8rem; color: var(--muted); font-weight: 700; margin-left: .3rem; }
-.tbar { height: .9rem; border-radius: 999px; background: var(--field); border: 2px solid var(--navy); overflow: hidden; }
-.tbar i { display: block; height: 100%; width: 100%; background: var(--blue); transition: width 1s linear, background .3s; }
-.tbar.late i { background: var(--point); }
-.time { font-weight: 700; color: var(--navy); font-size: .92rem; }
-.lv { white-space: nowrap; display: flex; align-items: center; gap: .35rem; font-size: .85rem; font-weight: 700; color: var(--navy); }
-.lv i { width: .8rem; height: .8rem; border-radius: 50%; background: var(--paper); border: 2px solid var(--navy); display: inline-block; }
-.lv i.on { background: var(--blue); }
-.combo { margin-left: .4rem; white-space: nowrap; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; padding: .05rem .7rem; font-weight: 900; font-size: .85rem; opacity: 0; transition: opacity .2s; }
-.quit { white-space: nowrap; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px; padding: .25rem .9rem; font-weight: 700; font-size: .85rem; }
-.panel .hint { font-size: .85rem; color: var(--muted); }
-/* 소리 켜기·끄기 버튼과 콤보 알림 (A 11/23) */
-.snd { white-space: nowrap; border: 2px solid var(--navy); background: var(--paper); color: var(--navy); border-radius: 999px; padding: .2rem .65rem; font-size: .95rem; line-height: 1.2; }
-.snd[aria-pressed="true"] { background: var(--field); color: var(--muted); }
-.panel .snd { grid-area: snd; }
-.combo.bump { animation: bump .35s; }
-@keyframes bump { 40% { transform: scale(1.45); } }
-.pop { position: fixed; left: 50%; top: 42%; z-index: 45; transform: translate(-50%, -50%); font-family: var(--title); color: var(--navy);
-  font-size: clamp(2.2rem, 1.6rem + 3vw, 3.6rem); background: var(--point); border: 3px solid var(--navy); border-radius: 22px; padding: .3rem 1.3rem;
-  box-shadow: 5px 6px 0 var(--navy); pointer-events: none; opacity: 0; white-space: nowrap; }
-.pop.on { animation: popin .9s ease-out forwards; }
-@keyframes popin { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); } 20% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
-  35% { transform: translate(-50%, -50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } }
-@media (prefers-reduced-motion: reduce) { .pop.on { animation: none; opacity: 1; } }
-.board { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; align-content: start; }
-/* 수정 (A 11/20): 폰에서 카드 8장이 스크롤 없이 한 화면에. 점수판은 두 줄로 줄이고, 판 높이를 남은 화면에 맞춰 4줄로 나눈다 */
-@media (max-width: 55.99rem) {
-  #play .main, #play { margin-top: -.4rem; }
-  .panel { top: 3.9rem; padding: .55rem .8rem; gap: .4rem .7rem; grid-template-columns: auto auto 1fr auto auto; grid-template-areas: "score time lv snd quit" "bar bar bar bar bar"; }
-  .panel .lv { justify-self: end; }
-  .quit { padding: .2rem .7rem; font-size: .8rem; }
-  .snd { padding: .15rem .5rem; font-size: .85rem; }
-  /* 폰: 콤보 뱃지는 점수판 위쪽 모서리에 스티커처럼 띄워서 한 줄이 넘치지 않게 (A 11/23) */
-  .panel .lv .combo { position: absolute; right: .8rem; top: -.85rem; margin: 0; box-shadow: 2px 2px 0 var(--navy); }
-  .lv i { width: .65rem; height: .65rem; }
-  .score { font-size: 1.6rem; }
-  .board { height: calc(100svh - 15.9rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 20rem; grid-template-rows: repeat(4, 1fr); gap: .55rem; }
-  .c { min-height: 0; padding: .5rem .65rem; gap: .15rem; }
-  .c .m { font-size: .86rem; line-height: 1.35; }
-  .c .why { font-size: .76rem; padding: .5rem .6rem; }
-}
-@media (max-width: 24.99rem) { .lv i { display: none; } }
-@media (min-width: 56rem) {
-  .panel { grid-template-columns: auto auto 1fr auto auto auto; grid-template-areas: "score time bar lv snd quit"; padding: .9rem 1.3rem; gap: 1.2rem; }
-  .panel .tbar { height: 1.1rem; }
-  .board { grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-}
-.c { position: relative; min-height: 6.4rem; border: var(--bw) solid var(--navy); border-radius: 18px; background: var(--paper); color: var(--ink); padding: .7rem .8rem;
-  text-align: left; display: flex; flex-direction: column; gap: .3rem; overflow: hidden; box-shadow: 4px 5px 0 var(--shadow); transition: transform .1s, box-shadow .1s, background .15s; }
-@media (min-width: 56rem) { .c { min-height: 9rem; padding: .9rem 1rem; } }
-.c:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
-.c .f { font-size: .78rem; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: .35rem; }
-.c .f::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: var(--blue); display: inline-block; flex: none; }
-.c .m { font-size: .92rem; line-height: 1.4; font-weight: 500; }
-.c.ok { background: var(--blue); color: #fff; } .c.ok .f { color: #DCE8FB; } .c.ok .f::before { background: #fff; }
-.c.ng { animation: shk .3s; }
-.c.gone { opacity: 0; transform: scale(.7); transition: all .18s; }
-.c.in { animation: pin .25s; }
-.c .why { position: absolute; inset: 0; color: #fff; font-size: .82rem; line-height: 1.45; padding: .7rem .8rem; display: flex; align-items: center; font-weight: 500; }
-.c .why.r { background: var(--danger); } .c .why.y { background: var(--caution); }
-.c .bd { position: absolute; right: .5rem; top: .5rem; background: var(--point); color: var(--navy); border: 2px solid var(--navy); font-size: .75rem; font-weight: 900; border-radius: 999px; padding: 0 .55rem; animation: pin .2s; }
-@keyframes pin { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-@keyframes shk { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-.toast { position: fixed; left: 50%; top: 5.5rem; transform: translateX(-50%); background: var(--navy); color: #fff; font-weight: 700; padding: .55rem 1.1rem; border-radius: 999px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 40; white-space: nowrap; box-shadow: 3px 4px 0 var(--shadow); }
+/* 메시지 화면 배치: 폰은 위아래, 넓은 화면은 메시지 | 선택지 */
+.stage { position: relative; display: grid; gap: 1.4rem; }
+@media (min-width: 56rem) { .stage { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; } .choices { position: sticky; top: 5rem; } }
 
-.res { display: grid; gap: 1.1rem; max-width: 60rem; }
-.big { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; padding: 1.1rem; text-align: center; }
-@media (min-width: 40rem) { .big { grid-template-columns: repeat(4, 1fr); } }
-.big .n { font-family: var(--title); font-size: 2rem; color: var(--navy); line-height: 1.1; }
-.big .l { font-size: .85rem; color: var(--muted); font-weight: 700; }
-.two { display: grid; gap: 1.1rem; }
-@media (min-width: 56rem) { .two { grid-template-columns: 1fr 1fr; align-items: start; } }
-.learn { background: var(--blue); color: #fff; padding: 1.1rem 1.2rem; }
-.learn .n { font-family: var(--title); font-size: 1.8rem; }
-.tip { background: var(--point); color: var(--navy); padding: 1.1rem 1.2rem; font-weight: 500; }
-.box { padding: 1.1rem 1.2rem; }
-.box h2 { font-family: var(--title); font-weight: 400; font-size: 1.3rem; color: var(--navy); margin-bottom: .5rem; }
-.it { font-size: .9rem; padding: .6rem 0; border-top: 2px dashed var(--line); line-height: 1.55; }
-.it:first-of-type { border-top: 0; }
-.mt { display: inline-block; font-size: .82rem; font-weight: 700; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; padding: 0 .65rem; margin: .2rem .35rem .2rem 0; }
-.muted { color: var(--muted); font-size: .9rem; }
-.row { display: flex; gap: .7rem; flex-wrap: wrap; }
+/* 문자: 포스터의 남색 폰 */
+.sms { position: relative; max-width: 24rem; width: 100%; margin: 0 auto; background: var(--paper); border: 11px solid var(--navy); border-radius: 42px;
+  box-shadow: 8px 10px 0 var(--shadow); overflow: hidden; display: flex; flex-direction: column; min-height: 26rem; }
+.sms::before { content: ""; display: block; width: 5.2rem; height: .42rem; border-radius: 999px; background: var(--navy); margin: .55rem auto .1rem; flex: none; }
+.sms-top { display: flex; align-items: center; gap: .6rem; padding: .5rem 1rem .75rem; border-bottom: 1.5px solid var(--line); }
+.sms-top .back { font-size: 1.5rem; line-height: 1; color: var(--muted); }
+.avatar { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: var(--circle); display: grid; place-items: center; color: var(--navy); font-weight: 900; flex: none; }
+.sms-top .who { font-weight: 700; color: var(--navy); }
+.sms-top .who small { display: block; font-size: .75rem; color: var(--muted); font-weight: 400; }
+.sms-thread { flex: 1; padding: 1rem .95rem; display: flex; flex-direction: column; gap: .5rem; }
+.day { text-align: center; font-size: .75rem; color: var(--muted); margin-bottom: .2rem; }
+.sms-thread .day:not(:first-child) { margin-top: .8rem; }
+.bubble-row { display: flex; align-items: flex-end; gap: .4rem; }
+.bubble { background: var(--field); border: 1.5px solid var(--line); border-radius: 20px 20px 20px 6px; padding: .7rem .9rem; max-width: 86%; font-size: .95rem; }
+.bubble .lnk { color: var(--blue); text-decoration: underline; word-break: break-all; }
+.bubble-row time { font-size: .7rem; color: var(--muted); flex: none; white-space: nowrap; }
+.sms-input { display: flex; gap: .5rem; align-items: center; padding: .6rem .9rem 1rem; color: var(--muted); }
+.sms-input .box { flex: 1; border: 1.5px solid var(--line); border-radius: 999px; padding: .35rem .9rem; font-size: .85rem; }
+@media (max-width: 39.99rem) { .sms { min-height: 0; border-width: 9px; border-radius: 34px; } .sms-thread { padding-bottom: 1.4rem; } }
+
+/* 메일: 남색 테두리 카드 */
+.mail-wrap { container-type: inline-size; }
+.mail { border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); overflow: hidden; background: var(--paper); min-height: 26rem; display: flex; flex-direction: column; }
+.mail-bar { display: flex; align-items: center; gap: .6rem; padding: .75rem 1rem; border-bottom: 2px solid var(--navy); font-weight: 700; color: #fff; background: var(--navy); }
+.mail-bar .search { margin-left: auto; font-weight: 400; font-size: .8rem; color: var(--navy); background: var(--paper); border-radius: 999px; padding: .2rem .8rem; }
+.mail-body { flex: 1; display: grid; }
+.mail-row { display: grid; grid-template-columns: auto 1fr auto; gap: .2rem .6rem; width: 100%; text-align: left; padding: .85rem 1rem; border: 0; border-bottom: 1.5px solid var(--line); background: none; }
+.mail-row .dot { grid-row: span 2; width: .6rem; height: .6rem; border-radius: 50%; margin-top: .5rem; background: transparent; }
+.mail-row.new .dot { background: var(--blue); }
+.mail-row .nm { font-size: .95rem; }
+.mail-row.new .nm, .mail-row.new .sj { font-weight: 700; color: var(--navy); }
+.mail-row time { font-size: .75rem; color: var(--muted); }
+.mail-row .sj { grid-column: 2 / -1; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row.old { opacity: .5; cursor: default; }
+.mail-row.on { background: var(--blue-soft); }
+.mail-read { padding: 1.1rem 1.2rem 1.4rem; display: none; }
+.mail[data-view="read"] .mail-read { display: block; }
+.mail[data-view="read"] .mail-list { display: none; }
+.mail-read .back { border: 0; background: none; color: var(--muted); padding: 0 0 .6rem; font-size: .9rem; }
+.mail-read h3 { font-size: 1.15rem; line-height: 1.4; margin-bottom: .8rem; color: var(--navy); }
+.from { display: flex; gap: .6rem; align-items: flex-start; }
+.from .meta { flex: 1; min-width: 0; }
+.from-name { border: 0; background: none; padding: 0; font-weight: 700; text-align: left; color: var(--navy); }
+.from-name::after { content: "세부정보 ▾"; display: inline-block; margin-left: .5rem; font-weight: 700; color: var(--blue); font-size: .75rem; border: 1.5px solid var(--blue); border-radius: 999px; padding: 0 .5rem; vertical-align: middle; }
+.from-name[aria-expanded="true"]::after { content: "세부정보 ▴"; }
+.from .to { display: block; font-size: .8rem; color: var(--muted); }
+.from time { font-size: .78rem; color: var(--muted); }
+.from-detail { margin: .5rem 0 0; background: var(--field); border-radius: 12px; padding: .6rem .8rem; font-size: .82rem; display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; }
+.from-detail dt { color: var(--muted); }
+.from-detail dd { margin: 0; word-break: break-all; }
+.mail-text { margin-top: 1.1rem; font-size: .95rem; white-space: pre-line; }
+.mail-text .lnk { color: var(--blue); text-decoration: underline; word-break: break-all; }
+.attach { margin-top: 1rem; display: inline-flex; gap: .6rem; align-items: center; border: 2px solid var(--line); border-radius: 12px; padding: .55rem .8rem; font-size: .85rem; }
+.attach i { width: 1.6rem; height: 2rem; border-radius: 4px; background: var(--field); border: 1.5px solid var(--line); }
+.empty-read { display: none; }
+@container (min-width: 34rem) {
+  .mail-body { grid-template-columns: 16.5rem 1fr; }
+  .mail-list { border-right: 1.5px solid var(--line); }
+  .mail[data-view] .mail-list { display: block; }
+  .mail[data-view] .mail-read { display: block; }
+  .mail-read .back { display: none; }
+  .mail[data-view="list"] .mail-read > * { display: none; }
+  .mail[data-view="list"] .mail-read .empty-read { display: grid; place-items: center; height: 100%; color: var(--muted); font-size: .9rem; }
+}
+
+/* 선택지 */
+.choices { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); padding: 1.2rem; }
+.choices h2 { font-family: var(--title); font-weight: 400; font-size: 1.35rem; color: var(--navy); margin-bottom: .7rem; }
+.timer { height: .7rem; border-radius: 999px; background: var(--field); border: 2px solid var(--navy); overflow: hidden; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--blue); transition: width 1s linear; }
+.timer.over i { background: var(--point); }
+.timer-txt { font-size: .8rem; color: var(--muted); margin: .35rem 0 .9rem; font-weight: 500; }
+.opt { display: block; width: 100%; text-align: left; border: var(--bw) solid var(--navy); background: var(--paper); border-radius: var(--r-btn); padding: .85rem 1rem;
+  margin-bottom: .7rem; font-size: .96rem; font-weight: 500; color: var(--ink); box-shadow: 3px 4px 0 var(--shadow); transition: transform .08s, box-shadow .08s, background .12s; }
+.opt:hover:not(:disabled) { background: var(--blue-soft); }
+/* 답 고르기 버튼: 마우스를 올리면 테두리를 진하고 두껍게 (B 10/26). box-shadow로 두께를 더해 버튼 크기는 그대로 */
+@media (hover: hover) { .opt:hover:not(:disabled), .pick button:hover { border-color: var(--blue); box-shadow: inset 0 0 0 2px var(--blue), 3px 4px 0 var(--shadow); } }
+.opt:active:not(:disabled) { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+.opt:disabled { opacity: .45; cursor: not-allowed; }
+.wait-open { font-size: .95rem; color: var(--navy); font-weight: 700; margin-bottom: .8rem; background: var(--point); border: 2px solid var(--navy); border-radius: 12px; padding: .5rem .7rem; }
+.wait-open .up { display: none; }
+@media (max-width: 55.99rem) { .wait-open .left { display: none; } .wait-open .up { display: inline; } }
+.mail-row.new { position: relative; animation: ring 1.4s ease-in-out infinite; }
+.tap-me { grid-column: 2 / -1; justify-self: start; margin-top: .35rem; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; font-size: .72rem; font-weight: 900; padding: 0 .5rem; }
+@keyframes ring { 0%, 100% { box-shadow: inset 0 0 0 0 var(--point); } 50% { box-shadow: inset 0 0 0 4px var(--point); } }
+.mail-row.on .tap-me { display: none; }
+
+/* 선택 미리보기 */
+.preview { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 85%, transparent); border-radius: var(--r-card); }
+.preview .box { max-width: 24rem; width: calc(100% - 2rem); background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); padding: 1.3rem; }
+.preview .lbl { font-size: .8rem; color: var(--muted); }
+.preview .ch { font-weight: 700; margin: .2rem 0 .8rem; }
+.preview .st { font-family: var(--title); font-size: 1.25rem; color: var(--navy); }
+.preview .st.wait { color: var(--caution); }
+.preview .bar { height: .6rem; background: var(--field); border: 2px solid var(--navy); border-radius: 999px; margin-top: .9rem; overflow: hidden; }
+.preview .bar i { display: block; height: 100%; width: 0; background: var(--blue); animation: fill 2.2s linear forwards; }
+@keyframes fill { to { width: 100%; } }
+
+/* 해설 */
+.verdict-big { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; margin-bottom: 1.3rem; border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); }
+.verdict-big .ico { flex: none; width: 3.2rem; height: 3.2rem; border-radius: 50%; display: grid; place-items: center; font-family: var(--title); font-size: 1.8rem; background: var(--paper); border: var(--bw) solid var(--navy); color: var(--navy); }
+.verdict-big b { display: block; font-family: var(--title); font-weight: 400; font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem); line-height: 1.2; }
+.verdict-big span.sub { display: block; font-size: .95rem; font-weight: 500; margin-top: .15rem; }
+.verdict-big .time-line { display: inline-block; font-size: .85rem; font-weight: 700; margin-top: .4rem; padding: .05rem .6rem; border-radius: 999px; background: rgba(255,255,255,.22); }
+.verdict-big.wait .time-line { background: rgba(15,31,69,.08); }
+.verdict-big.good { background: var(--blue); color: #fff; }
+.verdict-big.bad { background: var(--danger); color: #fff; }
+.verdict-big.wait { background: var(--point); color: var(--navy); }
+.explain { display: grid; gap: 1.4rem; }
+@media (min-width: 56rem) { .explain { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); align-items: start; } }
+.explain .sms, .explain .mail-wrap { pointer-events: none; }
+.explain .mail .from-name::after { content: ""; }
+.explain .mail-read .back { display: none; }
+.verdict { display: inline-block; border: 2px solid var(--navy); border-radius: 999px; padding: .2rem .9rem; font-weight: 700; margin-bottom: .8rem; }
+.verdict.good { background: var(--blue); color: #fff; }
+.verdict.bad { background: var(--danger); color: #fff; border-color: var(--navy); }
+.verdict.wait { background: var(--point); color: var(--navy); }
+.ex-box { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); padding: 1.2rem 1.25rem; display: grid; gap: .85rem; }
+.ex-box .short { font-weight: 700; color: var(--navy); font-size: 1.02rem; }
+.ex-box h3 { font-size: 1rem; color: var(--navy); }
+.ex-box .hint { font-size: .85rem; color: var(--muted); margin-top: -.55rem; }
+mark.clue { background: var(--point); color: var(--navy); border-radius: 3px; padding: 0 .1em; }
+.pin { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; border-radius: 50%; padding: 0 .2rem;
+  background: var(--danger); color: #fff; font-size: .72rem; font-weight: 700; line-height: 1; margin: 0 .15rem; vertical-align: middle; }
+.pin.safe { background: var(--safe); }
+.clue-wrap { outline: 2.5px solid var(--danger); outline-offset: 2px; border-radius: 6px; }
+.clue-wrap.safe { outline-color: var(--safe); }
+.harm-now { background: var(--danger-soft); color: var(--danger); border-radius: 14px; padding: .75rem .95rem; font-size: .92rem; }
+.chain-steps { background: var(--field); border-radius: 14px; padding: .75rem .95rem; font-size: .9rem; font-weight: 500; color: var(--navy); }
+.list { list-style: none; padding: 0; margin: 0; display: grid; gap: .55rem; }
+.list li { display: flex; justify-content: space-between; gap: .6rem; border: 2px solid var(--line); border-radius: 12px; padding: .65rem .8rem; font-size: .9rem; background: var(--paper); }
+.list .factor { font-weight: 700; display: flex; align-items: center; gap: .2rem; color: var(--navy); }
+.list .text { display: block; color: var(--muted); }
+.list .pts { color: var(--danger); font-weight: 700; flex: none; }
+details.detail { border-top: 2px dashed var(--line); padding-top: .8rem; }
+details.detail > summary { cursor: pointer; font-weight: 700; color: var(--blue); }
+details.detail[open] > summary { margin-bottom: .6rem; }
+details.detail h4 { font-size: .92rem; margin: .9rem 0 .35rem; color: var(--navy); }
+details.detail p { font-size: .9rem; }
+.score-line { font-size: .9rem; margin-top: .4rem; }
+
+/* 체험 시작 안내와 화면 예시 (B 10/23 안내문, B 11/03 예시 그림을 새 테마로) */
+.intro-steps { padding-left: 1.2rem; margin: .4rem 0 1rem; max-width: 46rem; }
+.intro-steps li { margin-bottom: .45rem; }
+.ex-wrap { padding: 1.1rem 1.2rem 1.2rem; margin-top: .4rem; }
+.ex-tag { display: inline-block; font-size: .8rem; font-weight: 700; color: var(--navy); background: var(--point); border: 2px solid var(--navy); border-radius: 999px; padding: 0 .7rem; margin-bottom: 1rem; }
+.ex-grid { display: grid; gap: 1.2rem; }
+@media (min-width: 40rem) { .ex-grid { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+.ex-msg, .ex-time, .ex-choices { position: relative; }
+.ex-msg { border: 2px solid var(--line); border-radius: 18px; padding: .9rem; background: var(--field); }
+.ex-from { font-size: .8rem; color: var(--muted); margin-bottom: .4rem; }
+.ex-bubble { background: var(--paper); border: 1.5px solid var(--line); border-radius: 16px 16px 16px 5px; padding: .6rem .8rem; font-size: .9rem; }
+.ex-side { display: grid; gap: 1rem; }
+.ex-time { font-size: .85rem; color: var(--muted); font-weight: 700; }
+.ex-time .timer { margin-top: .35rem; }
+.ex-time, .ex-choices { padding-left: 1.6rem; }
+.ex-side .ex-num { left: 0; top: -.15rem; }
+.ex-choice { border: 2px solid var(--navy); border-radius: 12px; padding: .45rem .8rem; font-size: .88rem; margin-bottom: .45rem; background: var(--paper); }
+.ex-num { position: absolute; left: -.7rem; top: -.7rem; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--point); border: 2px solid var(--navy); color: var(--navy); font-family: var(--title); display: grid; place-items: center; font-size: .9rem; line-height: 1; }
+.ex-legend { list-style: none; padding: 0; margin: 1.2rem 0 0; display: grid; gap: .55rem; }
+.ex-legend li { display: flex; gap: .6rem; align-items: baseline; font-size: .93rem; }
+.ex-legend b { flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--point); border: 2px solid var(--navy); color: var(--navy); font-family: var(--title); font-weight: 400; display: grid; place-items: center; font-size: .85rem; }
+
+/* 배우기: 따라 쓰기, 게임 끝 문장 */
+.copy-src { margin: 0; padding: 1.1rem 1.2rem; border: var(--bw) solid var(--navy); border-radius: var(--r-card); background: var(--point); color: var(--navy); font-weight: 700; font-size: 1.05rem; max-width: 42rem; box-shadow: 5px 6px 0 var(--shadow); }
+.copy-in { max-width: 42rem !important; margin-top: 1rem; resize: vertical; }
+.copy-in.ok { border-color: var(--safe); }
+.copy-msg { font-size: .88rem; margin-top: .4rem; color: var(--caution); font-weight: 500; }
+.copy-msg.ok { color: var(--safe); }
+
+/* 개인용 게임 */
+.game-top { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; margin-bottom: 1.3rem; max-width: 60rem; }
+.game-top .peek { width: 4.4rem; flex: none; }
+.gbar { flex: 1; }
+.gbar .lbl { display: flex; justify-content: space-between; font-weight: 700; color: var(--navy); font-size: .92rem; margin-bottom: .35rem; }
+.gbar .track { height: 1rem; border-radius: 999px; background: var(--field); border: 2px solid var(--navy); overflow: hidden; }
+.gbar .track i { display: block; height: 100%; width: 0; background: var(--point); transition: width .3s; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; max-width: 60rem; }
+@media (min-width: 48rem) { .grid { grid-template-columns: repeat(4, 1fr); } }
+.blk { position: relative; min-height: 7rem; border: var(--bw) solid var(--navy); border-radius: 18px; background: var(--paper); padding: .9rem; text-align: left;
+  font-size: .95rem; font-weight: 700; color: var(--navy); box-shadow: 4px 5px 0 var(--shadow); transition: transform .08s, box-shadow .08s; }
+.blk:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+.blk .why { display: block; font-size: .8rem; margin-top: .4rem; font-weight: 500; }
+.blk.ok { background: var(--blue); color: #fff; }
+.blk.ng { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); animation: shk .3s; }
+.blk .bd { position: absolute; right: -.5rem; top: -.75rem; font-size: .78rem; font-weight: 900; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; padding: .05rem .6rem; transform: rotate(6deg); }
+@keyframes shk { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+.done-box { display: flex; align-items: center; gap: 1.2rem; max-width: 42rem; padding: 1.2rem; }
+.done-box svg { width: 6rem; flex: none; }
+
+/* 결과 */
+.headline { font-family: var(--title); font-size: clamp(1.25rem, 1.1rem + .7vw, 1.6rem); color: var(--navy); margin-bottom: .2rem; }
+.headline + .muted { font-size: .95rem; margin-bottom: 1.3rem; }
+.result { display: grid; gap: 1.2rem; }
+@media (min-width: 56rem) { .result { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; } }
+.score { background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); padding: 1.15rem 1.25rem; }
+.score + .score { margin-top: 1.2rem; }
+.score h3 { font-family: var(--title); font-weight: 400; font-size: 1.3rem; color: var(--navy); }
+.score p { font-size: .85rem; color: var(--muted); margin-bottom: .7rem; }
+.pp { display: grid; grid-template-columns: 2.8rem 1fr 3rem; gap: .6rem; align-items: center; font-size: .9rem; font-weight: 700; margin-top: .5rem; color: var(--navy); }
+.pp .track { height: 1rem; border-radius: 999px; background: var(--field); border: 2px solid var(--navy); overflow: hidden; }
+.pp .track i { display: block; height: 100%; background: var(--circle); }
+.pp.post .track i { background: var(--blue); }
+.pp b { text-align: right; }
+.level { --lv: var(--blue); background: var(--paper); border: var(--bw) solid var(--navy); border-radius: var(--r-card); box-shadow: 6px 7px 0 var(--shadow); padding: 1.1rem 1.2rem; display: grid; gap: .55rem; }
+.lv-top { display: flex; justify-content: space-between; align-items: center; gap: .6rem; font-size: .88rem; color: var(--navy); }
+.lv-meter { display: flex; gap: .25rem; }
+.lv-meter i { width: 1.15rem; height: .55rem; border-radius: 3px; background: var(--field); border: 1.5px solid var(--line); }
+.lv-meter i.on { background: var(--lv); border-color: var(--navy); }
+.level h2 { font-size: 1.02rem; color: var(--navy); }
+.level p { font-size: .92rem; }
+.level ul { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.lv-note { font-size: .8rem; color: var(--muted); }
+.harm { background: var(--danger-soft); color: var(--danger); border: 2px solid var(--danger); border-radius: 18px; padding: .95rem 1.05rem; font-size: .9rem; }
+.harm ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+.slow-box { background: var(--caution-soft); color: var(--caution); border: 2px solid var(--caution); border-radius: 18px; padding: .85rem 1rem; font-size: .9rem; }
+.sub-h { font-family: var(--title); font-weight: 400; font-size: 1.4rem; color: var(--navy); margin: 2rem 0 .7rem; }
+.log-h { font-size: .85rem; color: var(--blue); font-weight: 700; margin: .8rem 0 .4rem; }
+.mylog { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.mylog li { display: flex; gap: .65rem; align-items: flex-start; font-size: .93rem; background: var(--paper); border: 2px solid var(--line); border-radius: 14px; padding: .65rem .8rem; }
+.mylog small { display: block; color: var(--muted); font-size: .82rem; }
+.mylog .harm-line { color: var(--danger); }
+.mark { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-size: .8rem; font-weight: 900; border: 2px solid var(--navy); }
+.mark.ok { background: var(--blue); color: #fff; }
+.mark.slow { background: var(--point); color: var(--navy); }
+.mark.bad { background: var(--danger); color: #fff; }
+.cmp { display: grid; gap: .45rem; max-width: 32rem; }
+.cmp-row { display: grid; grid-template-columns: 6.5rem 1fr 3rem; gap: .6rem; align-items: center; font-size: .9rem; font-weight: 700; color: var(--navy); }
+.cmp-row .track { height: 1rem; border-radius: 999px; background: var(--field); border: 2px solid var(--navy); overflow: hidden; }
+.cmp-row .fill { display: block; height: 100%; background: var(--circle); }
+.cmp-row.me .fill { background: var(--blue); }
+.cmp-row .val { text-align: right; }
+.more { display: flex; gap: .7rem; flex-wrap: wrap; align-items: center; margin-top: 1.6rem; padding-top: 1.1rem; border-top: 2px dashed var(--line); font-weight: 700; color: var(--navy); }
+.more a { color: var(--blue); }
 </style>
 </head>
 <body>
-<header class="top">
-  <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
-  <a class="logo" href="/"><span class="app"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="4" fill="#fff"/><path d="M5 9l9 6 9-6" fill="none" stroke="#2563C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>캐치피싱</a>
-</header>
-<nav class="side" id="side" aria-label="메뉴">
-  <p class="side-head">메뉴</p>
-  <a href="/">첫 화면</a>
-  <a href="/check">링크 검사</a>
-  <a href="/manual">대응 매뉴얼</a>
-</nav>
-<main class="main" id="main" tabindex="-1">
-
-  <!-- 시작 화면 -->
-  <section id="st">
-    <a class="back-btn" href="/">‹ 처음으로</a>
-    <div class="intro">
-      <div>
-        <span class="peek"><svg viewBox="0 0 110 80" aria-hidden="true"><g transform="rotate(-5 50 40)"><rect x="5" y="8" width="84" height="60" rx="12" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/><path d="M11 16 L47 42 L83 16" fill="none" stroke="#DCE8FB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="34" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="58" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="37" cy="50" r="3.3" fill="#0F1F45"/><circle cx="61" cy="50" r="3.3" fill="#0F1F45"/><path d="M26 38 l14 2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M52 37 q6 -6 13 -1" fill="none" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M41 60 l10 -2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/></g><line x1="92" y1="62" x2="83" y2="75" stroke="#2B5FB8" stroke-width="6" stroke-linecap="round"/><circle cx="96" cy="50" r="13" fill="#DCE8FB" fill-opacity=".6" stroke="#2B5FB8" stroke-width="4"/></svg></span>
-        <h1 class="title">생활 속 피싱 신호 익히기</h1>
-        <p class="muted" style="margin-top:.4rem">60초 동안 오는 문자 알림 중에서 피싱만 골라 눌러요.</p>
-        <div class="row" style="margin-top:1.4rem;align-items:center"><button class="btn" id="gobtn">시작하기</button><button class="snd" id="snd0" aria-pressed="false" aria-label="소리 끄기">🔊 소리 켜짐</button></div>
-        <p class="muted" style="margin-top:.7rem;font-size:.88rem">게임 중에 소리가 나와요. 끄려면 🔊 버튼을 누르세요.</p>
-      </div>
-      <div>
-        <ul class="rules card">
-          <li><span>문자 알림이 계속 와요. <b>피싱 문자만</b> 빠르게 누르세요</span></li>
-          <li><span>피싱 문자를 그냥 두면 놓친 걸로 쳐요</span></li>
-          <li><span>틀린 문자는 나중에 다시 나와요</span></li>
-          <li><span>20초마다 1단계, 2단계, 3단계로 어려워져요</span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- 게임 -->
-  <section id="play" hidden>
-    <div class="play">
-      <aside class="panel card" aria-label="점수판">
-        <span class="score" id="s" role="status">0<small>점</small></span>
-        <span class="time" id="tt">60초</span>
-        <div class="tbar" id="tbar"><i id="bar"></i></div>
-        <span class="lv" id="lv"><i class="on"></i><i></i><i></i><span id="lvt">1단계</span><span class="combo" id="cb">2 콤보</span></span>
-        <button class="snd" id="snd1" aria-pressed="false" aria-label="소리 끄기">🔊</button>
-        <button class="quit" id="quit">그만하기</button>
-      </aside>
-      <div class="board" id="g" aria-label="문자 알림 판"></div>
-    </div>
-  </section>
-
-  <!-- 결과 -->
-  <section id="res" hidden></section>
-</main>
-<div class="toast" id="toast" role="status"></div>
-<div class="pop" id="pop" aria-hidden="true"></div>
+  <header class="top">
+    <button class="menu-btn" id="menuBtn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="side">☰</button>
+    <a class="logo" href="/"><span class="app"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect x="3" y="6" width="22" height="16" rx="4" fill="#fff"/><path d="M5 9l9 6 9-6" fill="none" stroke="#2563C9" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>캐치피싱</a>
+  </header>
+  <nav class="side" id="side" aria-label="메뉴">
+    <p class="side-head">메뉴</p>
+    <a href="/">첫 화면</a>
+    <a href="/check" target="_blank" rel="noopener">링크 검사</a>
+    <a href="/manual" target="_blank" rel="noopener">대응 매뉴얼</a>
+  </nav>
+  <main class="main" id="main" tabindex="-1"></main>
 
 <script>
-// [보낸 곳, 내용, 피싱(1)/정상(0), 난이도 1~3, 이유, 수법] — 시안 예시 20개 + A 11/20 30개 = 50개 (C 데이터 대신). 출처는 수법 유형 단위 (A 11/20 결정)
-const D=[
-["검찰청","계좌가 범죄에 연루, 이 번호로 연락",1,1,"수사기관은 문자로 계좌·돈을 요구하지 않아요","보이스피싱"],
-["엄마","폰 고장, 친구 폰이야. 상품권 좀 사 줘",1,1,"가족인 척 돈·상품권을 요구해요","메신저 피싱"],
-["고객센터","원격 지원 앱 설치해 주세요",1,1,"원격 앱으로 휴대폰을 조종해요","보이스피싱"],
-["엄마","저녁 먹고 들어와",0,1,"요구하는 행동이 없는 평범한 문자예요",""],
-["학과사무실","수업 장소가 302호로 바뀌었어요",0,1,"요구하는 행동이 없는 공지예요",""],
-["병원","내일 10시 진료 예약 알림",0,1,"요구하는 행동이 없는 알림이에요",""],
-["중고거래 판매자","안전결제 링크 보내 드릴게요",1,2,"가짜 안전결제 사이트로 유도해요","스미싱"],
-["구청","주차 위반, QR 찍고 과태료 납부",1,2,"QR로 가짜 사이트에 보내요","큐싱"],
-["택배사","주소 불일치, 링크에서 수정",1,2,"링크로 주소·개인정보를 입력하게 해요","스미싱"],
-["택배사","배송 완료, 문 앞에 두었어요",0,2,"링크도 요구도 없는 알림이에요",""],
-["중고거래 앱","판매자가 메시지를 보냈어요",0,2,"앱 안에서 온 알림이라 앱에서 확인하면 돼요",""],
-["[Web발신] 쇼핑몰","주문하신 상품이 출고되었어요",0,2,"[Web발신] 표시만으로는 판단 못 해요. 요구가 없어요",""],
-["카드사","해외 결제 승인, 문의는 이 번호로",1,3,"문자 속 번호로 전화하게 만들어요","스미싱"],
-["카드사","결제 완료, 자세한 건 카드 앱에서",0,3,"공식 앱에서 확인하라는 안내라 정상이에요",""],
-["OO은행","보안 강화, 앱 설치 링크",1,3,"설치 파일로 악성 앱을 깔게 해요","스미싱"],
-["OO은행","본인 인증은 은행 앱에서 해 주세요",0,3,"공식 앱 안에서 인증하라는 안내라 정상이에요",""],
-["국세청","환급금 있음, 링크에서 조회",1,3,"기관인 척 링크로 개인정보를 받아 가요","스미싱"],
-["국세청","환급 결과는 홈택스에서 확인",0,3,"공식 사이트에서 직접 확인하라는 안내예요",""],
-["친구","나 급해, 인증번호 좀 불러 줘",1,3,"인증번호는 누구에게도 알려 주면 안 돼요","메신저 피싱"],
-["인증 알림","요청하신 인증번호 482913",0,3,"내가 요청한 인증번호면 정상 (알려 주지만 않으면)",""],
-// A 11/20 추가 30개: 같은 보낸 곳의 피싱·정상 짝 중심 (3단계는 보낸 곳만으로 못 맞히게). 출처는 수법 유형 단위 (경찰청·금감원·KISA 안내 유형)
-["모르는 번호", "대출 한도 상향, 이 링크에서 바로 신청", 1, 1, "모르는 번호의 대출 링크는 개인정보를 빼 가요", "대출 사기"],
-["아빠", "주말에 할머니 댁 가자", 0, 1, "요구하는 행동이 없는 평범한 문자예요", ""],
-["경찰청", "사건 조회, 앱 설치 후 확인하세요", 1, 1, "수사기관은 문자로 앱 설치를 시키지 않아요", "보이스피싱"],
-["동아리", "이번 주 모임은 금요일 7시예요", 0, 1, "요구하는 행동이 없는 공지예요", ""],
-["OO카드", "카드 정지 예정, 링크에서 정보 재입력", 1, 1, "링크로 카드 정보를 입력하게 해요", "스미싱"],
-["도서관", "대출 도서 반납일은 내일이에요", 0, 1, "요구하는 행동이 없는 알림이에요", ""],
-["모르는 번호", "고수익 보장 투자방 초대, 링크 참여", 1, 1, "큰 수익을 약속하며 돈을 넣게 해요", "투자 사기"],
-["편의점 앱", "적립 포인트 1,200점이 쌓였어요", 0, 1, "요구하는 행동이 없는 알림이에요", ""],
-["택배사", "관세 미납, 링크에서 결제해야 배송돼요", 1, 2, "링크로 결제·카드 정보를 받아 가요", "스미싱"],
-["택배사", "내일 오전 중 도착 예정이에요", 0, 2, "링크도 요구도 없는 알림이에요", ""],
-["아들", "엄마 나 폰 깨졌어. 이 번호로 문자 줘", 1, 2, "가족인 척 새 번호로 연락하게 해요", "메신저 피싱"],
-["아들", "폰 수리 맡겼어, 저녁에 집에서 봐", 0, 2, "요구하는 행동이 없는 평범한 문자예요", ""],
-["구인 광고", "재택 부업, 계좌만 빌려주면 일당 지급", 1, 2, "빌려준 계좌가 범죄에 쓰여요", "구인 사기"],
-["알바 사장님", "내일은 1시간 늦게 나와도 돼요", 0, 2, "요구하는 행동이 없는 연락이에요", ""],
-["지인", "모바일 청첩장 보내요 (링크)", 1, 2, "모르는 링크의 청첩장·부고는 악성 앱일 수 있어요", "스미싱"],
-["지인", "결혼식 날짜 정해졌어! 12월 둘째 주", 0, 2, "링크 없이 알려 주는 문자예요", ""],
-["통신사", "요금 미납, 링크로 납부 안 하면 정지", 1, 2, "링크로 결제 정보를 받아 가요", "스미싱"],
-["중고거래 판매자", "택배로 보낼게요, 주소 알려 주세요", 0, 2, "거래에 필요한 주소만 묻는 평범한 연락이에요", ""],
-["건강보험", "건강검진 결과 확인, 링크 클릭", 1, 3, "기관 이름을 빌려 링크로 유도해요", "스미싱"],
-["건강보험", "올해 건강검진 대상자예요. 가까운 병원에서 받으세요", 0, 3, "링크 없이 안내만 하는 문자예요", ""],
-["학과사무실", "장학금 지급, 계좌 정보를 링크에 입력", 1, 3, "학교 이름을 빌려 계좌 정보를 받아 가요", "스미싱"],
-["학과사무실", "장학금 결과는 학교 포털에서 확인하세요", 0, 3, "공식 사이트에서 직접 확인하라는 안내예요", ""],
-["집주인", "관리비 계좌 바뀌었어요, 이번 달부터 여기로", 1, 3, "계좌가 바뀌었다는 말은 꼭 전화로 확인해요", "계좌 변경 사기"],
-["집주인", "관리비 고지서 우편함에 넣었어요", 0, 3, "요구하는 행동이 없는 알림이에요", ""],
-["정부24", "민생지원금 신청, 링크에서 본인인증", 1, 3, "지원금은 공식 누리집에서 직접 신청해요", "스미싱"],
-["주민센터", "지원금은 주민센터나 공식 누리집에서 신청", 0, 3, "직접 찾아가는 길을 알려 주는 안내예요", ""],
-["카드사", "포인트 소멸 예정, 링크에서 현금 전환", 1, 3, "혜택을 미끼로 링크를 누르게 해요", "스미싱"],
-["카드사", "이번 달 적립 포인트 2,300점", 0, 3, "요구하는 행동이 없는 알림이에요", ""],
-["친구", "이거 너 아니야? ㅋㅋ (링크)", 1, 3, "지인인 척 사진 링크로 악성 앱을 깔게 해요", "스미싱"],
-["친구", "어제 찍은 사진 단톡방에 올렸어", 0, 3, "링크 없이 알려 주는 문자예요", ""]];
-const T = 60, LIFE = 8, $ = id => document.getElementById(id), g = $("g");
-let sc, cb, best, tm, run = false, iv, taps, okc, lvl, caught, wrong, lost, queue, retry;
+/* =====================================================================
+   정해 둔 값
+   ===================================================================== */
+
+// 직군 (팀 결정)
+const JOBS = [["hr", "인사"], ["finance", "재무·회계"], ["sales", "영업·고객"], ["dev", "개발·IT"], ["office", "일반 사무"]];
+// 문진표 (B 설계 3번 그대로). 기관용은 Q1~Q4, 개인용은 Q1만 (전시에서 짧게, A 11/14 시안)
+const SURVEY = [
+  { id: "Q1", text: "수상한 메일이나 문자를 받으면 피싱인지 구분할 자신이 있다.", scale: true },
+  { id: "Q2", text: "최근 1년 안에 피싱이 의심되는 메일·문자를 받아 본 적이 있나요?",
+    options: ["없다", "있었지만 그냥 지웠다", "있었고 링크나 첨부를 열어 본 적이 있다", "있었고 공식 경로로 확인했다", "잘 모르겠다"] },
+  { id: "Q3", text: "모르는 링크가 담긴 문자를 받으면 보통 어떻게 하나요?",
+    options: ["링크를 눌러 확인한다", "문자에 적힌 번호로 전화해 본다", "공식 앱이나 대표번호로 직접 확인한다", "무시한다"] },
+  { id: "Q4", text: "최근 1년 안에 정보보안(피싱) 교육을 받은 적이 있나요?", options: ["있다", "없다", "기억나지 않는다"] }
+];
+// 제한 시간 (팀 결정 4번). 시간이 지나도 고를 수 있고, 시간 안에 못 고른 수만 결과에 표시
+const LIMIT = { sms: 15, email: 25 };
+const PREVIEW_MS = 2200;   // 선택 미리보기 시간 (B 11/09)
+const UNAVAILABLE = { whois: "도메인이 언제 만들어졌는지", spf: "메일 서버 검사 결과", auth: "메일 서버 인증 결과" };
+const DEFAULT_LABELS = { click: "안내대로 바로 처리한다", call: "적힌 연락처로 문의한다", official: "따로 확인한다" };
+
+// 받은편지함에 함께 보이는 지난 메일 (누를 수 없음, 목록을 실제처럼 보이게. A 11/14 시안)
+const OLD_MAIL = {
+  personal: [["학교 도서관", "대출 도서 반납일 안내", "어제"], ["동아리 회장", "이번 주 정기 모임 장소", "11월 10일"]],
+  org: [["총무팀", "이번 주 회의실 예약 현황", "어제"], ["경영지원팀", "11월 사내 소식지", "11월 10일"]]
+};
+// 문제마다 화면에 보일 받은 시각 (꾸밈용, 채점과 상관없음)
+const TIMES = ["오전 9:12", "오전 11:30", "오후 1:05", "오후 3:41"];
+
+// 개인용 게임 행동 문구 (A 11/14 시안 데이터. 위험한 행동이면 1)
+const ACTIONS = [
+  ["문자 속 번호로 전화해 문의하기", 1, "보낸 사람이 정한 번호라 그쪽 사람이 받아요"],
+  ["대표번호를 직접 찾아 문의하기", 0, "내가 찾은 번호라 진짜 기관으로 연결돼요"],
+  ["메일 속 주소로 들어가 로그인하기", 1, "가짜 로그인 화면일 수 있어요"],
+  ["앱을 직접 열어 알림 확인하기", 0, "공식 앱 안의 알림은 내가 연 경로라 안전해요"],
+  ["문자가 알려 준 앱 설치하기", 1, "설치 파일로 악성 앱이 깔릴 수 있어요"],
+  ["앱 스토어에서 공식 앱 찾아 설치하기", 0, "앱 스토어에서 직접 찾은 공식 앱이에요"],
+  ["메일에 답장해 진짜인지 묻기", 1, "답장은 보낸 사람에게 가요. 가짜라면 가짜가 대답해요"],
+  ["담당자에게 따로 연락해 확인하기", 0, "내가 아는 연락처로 확인하는 방법이에요"]
+];
+
+// 따라 쓰기 문장 (B의 대응 매뉴얼 문장 그대로, 예전 game.html)
+const COPY_LINES = {
+  call: "메일이나 문자에 적힌 번호로 전화하지 마세요.",
+  "기관 사칭": "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하세요.",
+  "도메인 위조": "주소를 한 글자씩 읽어 보세요. 한 글자만 달라도 가짜일 수 있어요.",
+  "심리 압박": "서두르게 하는 말이 보이면 일단 멈추세요. 급하다고 할수록 따로 확인할 이유예요.",
+  "연쇄형 공격": "앱 설치나 정보 입력을 요구하면 거기서 멈추세요.",
+  over: "돈, 개인정보, 로그인, 앱 설치를 요구하지 않는 평소 업무라면 바로 처리해도 돼요.",
+  all: "돈, 개인정보, 로그인, 앱 설치, 첨부 열기를 요구하면 처리를 멈추고 따로 확인해요."
+};
+
+/* =====================================================================
+   상태와 도우미
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const main = $("main");
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-function show(id) { ["st", "play", "res"].forEach(x => $(x).hidden = x !== id); window.scrollTo(0, 0); }
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+let S = {};
+let timer = null;
 
-// 아래 게임 규칙 함수들은 시안(docs/game_draft.html)과 같은 동작이다. 화면 이름표만 새 테마에 맞췄다
-function pick(fr) {
-  if (!fr && queue.length && queue[0].at >= tm) return queue.shift().d;
-  const pref = Math.random() < 0.65 ? lvl : Math.ceil(Math.random() * lvl); const r = fr || Math.random() < 0.45;
-  let p = D.filter(d => d[2] === (r ? 1 : 0) && d[3] === pref); if (!p.length) p = D.filter(d => d[2] === (r ? 1 : 0) && d[3] <= lvl);
-  const on = [...g.children].map(x => x._d); const p2 = p.filter(d => !on.includes(d)); p = p2.length ? p2 : p; return p[Math.floor(Math.random() * p.length)];
+function reset(mode) {
+  S = { mode, job: null, target: mode === "org" ? "worker" : null, revisit: null, survey: {},
+        anon: null, phase: "pre", round: 1, cards: [], idx: 0,
+        answers: { pre: [], post: [] }, log: { pre: [], post: [] }, late: { pre: 0, post: 0 }, res: { pre: null, post: null },
+        chainCard: null, chainSteps: [], chainResult: null };
 }
-function mk(fr) {
-  const d = pick(fr), b = document.createElement("button"); b.className = "c in";
-  b.innerHTML = `<span class="f">${esc(d[0])}</span><span class="m">${esc(d[1])}</span>`; b._d = d; b._t = tm;
-  if (retry.find(x => x.d === d && x.st === 0)) b._re = 1; b.onclick = () => hit(b); return b;
+// 하는 일: 서버로 보낼 때마다 붙는 공통 값 (서버 약속 1번 새 모양, 장부 새 칸)
+const base = () => ({ mode: S.mode, job: S.mode === "org" ? S.job : null, org_code: S.mode === "org" ? S.orgCode : null, target: S.target, revisit: S.revisit, self_check: S.survey, device_repeat: S.deviceRepeat === true });
+// 하는 일: 이 기기(브라우저)에서 체험을 끝까지 한 적이 있는지 (A 11/20). 결과 화면이 뜰 때 표시를 남기고, 다음 체험부터 장부에 device_repeat로 알린다
+// 참고: 개인정보가 아니라 "완료" 표시 하나. 저장이 안 되는 브라우저(사생활 보호 모드 등)에서는 그냥 넘어간다
+const DONE_KEY = "cp_experience_done";
+const deviceDone = () => { try { return localStorage.getItem(DONE_KEY) === "1"; } catch (e) { return false; } };
+const markDone = () => { try { localStorage.setItem(DONE_KEY, "1"); } catch (e) { /* 저장 안 되면 넘어감 */ } };
+// 기관 코드 (A 11/20, 교수님 피드백 "기관별 성취도"). 서버 ORG_CODES와 같은 목록. 비밀 값이 아니라 기관을 묶는 이름표
+const ORG_CODES = ["DEMO", "ORG1", "ORG2"];
+
+async function post(url, body) {
+  let res, data;
+  try {
+    res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    data = await res.json();
+  } catch (e) { throw new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."); }
+  if (!res.ok) throw new Error(data.error || "서버에 연결하지 못했어요. 다시 눌러 주세요.");
+  return data;
 }
-function settle(b) { if (b._re) { const r = retry.find(x => x.d === b._d && x.st === 0); if (r) r.st = 1; } }
-function swap(b, n) { if (b._d[2] === 0) settle(b); b.replaceWith(n); }
-function ensure() { const ts = [...g.children]; const rk = ts.filter(x => x._d[2] === 1 && !x._busy).length;
-  if (rk < 2) { const dec = ts.filter(x => x._d[2] === 0 && !x._busy && !x._re); for (let i = 0; i < 2 - rk && i < dec.length; i++) swap(dec[i], mk(true)); } }
-function fill() { g.innerHTML = ""; for (let i = 0; i < 8; i++) g.appendChild(mk()); ensure(); }
-function upd() { $("s").innerHTML = `${sc}<small>점</small>`; const c = $("cb"); if (cb > 1) { c.textContent = cb + " 콤보"; c.style.opacity = 1; } else c.style.opacity = 0; }
-function hit(b) {
-  if (!run || b._busy) return; const d = b._d; taps++; b._busy = 1;
-  if (d[2]) {
-    cb++; okc++; best = Math.max(best, cb); sc += 10 * d[3] + (cb > 1 ? (cb - 1) * 2 : 0); caught.push(d); b.classList.add("ok");
-    SFX.hit(cb); if (MILE(cb)) popCombo(cb);
-    const cbEl = $("cb"); cbEl.classList.remove("bump"); void cbEl.offsetWidth; cbEl.classList.add("bump");
-    b.insertAdjacentHTML("beforeend", `<span class="bd">${esc(d[5])}!</span>`);
-    setTimeout(() => b.classList.add("gone"), 420); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 600);
-  } else {
-    cb = 0; sc = Math.max(0, sc - 5); SFX.wrong();
-    if (b._re) { const r = retry.find(x => x.d === d && x.st === 0); if (r) r.st = -1; }
-    else { wrong.push(d); if (!retry.find(x => x.d === d)) { retry.push({ d: d, st: 0 }); queue.push({ d: d, at: tm - 12 }); } }
-    b.classList.add("ng"); b.insertAdjacentHTML("beforeend", `<span class="why r">정상 문자예요. ${esc(d[4])}</span>`);
-    setTimeout(() => b.classList.add("gone"), 1500); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 1680);
-  }
-  upd();
+// 하는 일: 맨 위 진행 표시 (포스터 "체험은 이렇게 흘러가요" 6단계). 기관용은 게임 대신 따라 쓰기, 연쇄형 앞에 둔다
+const STEPS = { personal: ["사전 체험", "해설", "연쇄형 연습", "게임 훈련", "사후 체험", "전후 비교"],
+                org: ["사전 체험", "해설", "따라 쓰기", "연쇄형 연습", "사후 체험", "전후 비교"] };
+function stepper(n) {
+  return `<ol class="stepper card" aria-label="체험 순서">${STEPS[S.mode].map((t, i) => {
+    const k = i + 1, cls = k < n ? "done" : k === n ? "now" : "";
+    return `<li class="${cls}"${k === n ? ' aria-current="step"' : ""}><span class="n">${k}</span><span class="t">${t}</span></li>`; }).join("")}</ol>`;
 }
-function expire() {
-  [...g.children].forEach(b => { if (b._d[2] === 1 && !b._busy && (b._t - tm) >= LIFE) {
-    b._busy = 1; cb = 0; lost.push(b._d); SFX.miss();
-    b.insertAdjacentHTML("beforeend", `<span class="why y">놓쳤어요! ${esc(b._d[5])}: ${esc(b._d[4])}</span>`);
-    setTimeout(() => b.classList.add("gone"), 1400); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 1580);
-  } }); upd();
+function render(html, n) {
+  clearInterval(timer);
+  main.innerHTML = (n !== undefined && S.mode ? stepper(n) : "") + html;
+  window.scrollTo(0, 0);
+  main.focus({ preventScroll: true });
 }
-function toast(m) { const t = $("toast"); t.textContent = m; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1400); }
-function setLv(n) { lvl = n; [...$("lv").querySelectorAll("i")].forEach((x, i) => x.classList.toggle("on", i < n)); $("lvt").textContent = n + "단계"; }
-function refreshSome() { const dec = [...g.children].filter(x => x._d[2] === 0 && !x._busy && (x._t - tm) >= 5);
-  if (dec.length) swap(dec[Math.floor(Math.random() * dec.length)], mk()); ensure(); }
-function start() {
-  sc = 0; cb = 0; best = 0; tm = T; taps = 0; okc = 0; caught = []; wrong = []; lost = []; queue = []; retry = []; run = true; setLv(1);
-  show("play"); fill(); upd(); $("tt").textContent = tm + "초"; $("tbar").classList.remove("late"); $("bar").style.width = "100%";
-  iv = setInterval(() => {
-    tm--; $("tt").textContent = tm + "초"; $("bar").style.width = (tm / T * 100) + "%";
-    if (tm === 40) { setLv(2); toast("2단계: 비슷한 문자가 섞여요!"); SFX.level(); }
-    if (tm === 20) { setLv(3); toast("3단계: 보낸 곳이 같은 짝 주의!"); $("tbar").classList.add("late"); SFX.level(); }
-    if (tm > 0 && tm <= 5) SFX.tick();
-    expire(); if (tm % 3 === 0) refreshSome(); if (tm <= 0) end();
-  }, 1000);
+const phaseName = () => S.phase === "pre" ? "사전 체험" : "사후 체험";
+const modeName = () => S.mode === "org" ? "기관용" : "개인용";
+// 하는 일: 버튼을 누르면 서버를 기다리는 동안 잠그고, 실패하면 오류 문장을 보여 주고 다시 누를 수 있게 한다
+async function busy(btn, fn) {
+  btn.disabled = true;
+  main.querySelectorAll(".error").forEach(e => e.remove());
+  try { await fn(); }
+  catch (err) { btn.disabled = false; btn.insertAdjacentHTML("afterend", `<p class="error" role="alert">${esc(err.message)}</p>`); }
 }
-function uniq(a) { return [...new Map(a.map(d => [d[0] + d[1], d])).values()]; }
-function end() {
-  run = false; clearInterval(iv); $("cb").style.opacity = 0; SFX.end(); [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
-  const acc = taps ? Math.round(okc / taps * 100) : 0; const rd = retry.filter(x => x.st !== 0), rok = rd.filter(x => x.st === 1).length;
-  sendLog({ score: sc, caught: caught.length, lost: lost.length, wrong: wrong.length, taps, retry_total: rd.length, retry_ok: rok, best_combo: best });
-  const top = uniq(wrong.concat(lost)).slice(0, 3);
-  const lessons = top.length ? top.map(d => `<p class="it"><b>${esc(d[0])} · ${esc(d[1])}</b> (${d[2] ? "피싱" : "정상"})<br>${esc(d[4])}</p>`).join("") : `<p class="it">헷갈린 문자가 없었어요!</p>`;
-  const by = {}; caught.forEach(d => { by[d[5]] = (by[d[5]] || 0) + 1; });
-  const tags = Object.keys(by).length ? Object.entries(by).map(([k, v]) => `<span class="mt">${esc(k)} ${v}</span>`).join("") : `<p class="it">아직 없어요</p>`;
-  $("res").innerHTML = `
-    <div class="res">
-      <h1 class="title">끝! 이번 판 결과예요</h1>
-      <div class="card big"><div><div class="n">${sc}</div><div class="l">점수</div></div><div><div class="n">${caught.length}</div><div class="l">잡은 피싱</div></div>
-        <div><div class="n">${lost.length}</div><div class="l">놓친 피싱</div></div><div><div class="n">${acc}%</div><div class="l">정확도</div></div></div>
-      ${rd.length ? `<div class="card learn">틀렸다가 다시 나온 문자<div class="n">${rok} / ${rd.length} 맞힘</div>한 판 안에서 고쳐 배운 정도예요</div>` : ""}
-      <div class="card tip">보낸 곳이나 단어 하나로 판단하지 말고, <b>무엇을 하라고 하는지</b>와 <b>어디서 확인하라고 하는지</b>를 보세요</div>
-      <div class="two">
-        <div class="card box"><h2>오늘 배운 것</h2><p class="muted" style="margin-bottom:.3rem">헷갈린 문자</p>${lessons}</div>
-        <div class="card box"><h2>잡은 피싱 수법</h2>${tags}</div>
+
+/* =====================================================================
+   1. 고르기 → 직군 → 사전질문
+   ===================================================================== */
+function choose() {
+  S = {};
+  render(`
+    <a class="back-btn" href="/">‹ 처음으로</a>
+    <h1 class="title">어떤 체험을 할까요?</h1>
+    <p class="lead">문자와 메일을 받고 어떻게 할지 골라 보는 체험이에요. 이름은 저장하지 않고, 결과는 익명으로 모여요.</p>
+    <nav class="go3" aria-label="체험 고르기">
+      <button class="go p" data-start="personal"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="7" y="3" width="14" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M11 9h6M11 13h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12.5 21h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>개인용</b><span class="kw">체험 · 게임 훈련</span><span class="ds">진짜 같은 문자·메일로 체험하고, 해설과 훈련 게임으로 반복 연습해요</span></button>
+      <button class="go o" data-start="org"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 24V6l10-2v20M15 9h8v15M3 24h22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><path d="M9 10h2M9 14h2M9 18h2M19 13h0.01M19 17h0.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b>기관용</b><span class="kw">직원 교육 · 통계</span><span class="ds">직원은 직군별 메시지로 체험하고, 담당자는 약한 유형을 통계로 봐요</span></button>
+    </nav>`);
+  main.querySelectorAll("[data-start]").forEach(b => b.onclick = () => start(b.dataset.start));
+}
+
+function start(mode) { reset(mode); S.deviceRepeat = deviceDone(); mode === "org" ? job() : survey(); }
+
+// 하는 일: 문제를 풀기 전 화면에만 뒤로가기를 둔다. 답을 고르면 장부에 기록되어, 뒤로 가서 다시 고르면 전후 비교 숫자가 틀어지기 때문
+function backBtn(label) { return `<button class="back-btn" id="back">‹ ${label}</button>`; }
+function job() {
+  render(`
+    ${backBtn("체험 고르기")}
+    <p class="step">기관용 체험</p>
+    <!-- 제목·안내는 B 11/03 피드백 문구 그대로 (11/19 새 화면으로 옮길 때 빠졌던 것을 11/20 되살림) -->
+    <h1 class="title">간단한 문진을 시작합니다</h1>
+    <p class="lead">체험 전 현재 내 보안 인식을 점검합니다. 결과 피드백에 내용이 반영됩니다.<br>이름은 저장하지 않고, 결과는 익명으로 모입니다.</p>
+    <p class="q"><label for="orgCode">기관 코드</label></p>
+    <input class="field" id="orgCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="예: ORG1" value="${esc(S.orgCode || "")}">
+    <p class="note" style="margin-top:.4rem">기관에서 받은 코드를 넣어 주세요. 코드가 없으면 <b>DEMO</b>를 넣으면 돼요.</p>
+    <p class="q">내 직군</p>
+    <div class="pick">${JOBS.map(([v, t]) => `<button data-v="${v}" aria-pressed="false">${t}</button>`).join("")}</div>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`, 0);
+  $("back").onclick = choose;
+  // 하는 일: 기관 코드와 직군이 둘 다 맞아야 [다음]이 눌린다
+  const ok = () => { const c = $("orgCode").value.trim().toUpperCase(); $("next").disabled = !(S.job && ORG_CODES.includes(c)); };
+  $("orgCode").oninput = ok;
+  if (S.job) { const on = main.querySelector(`[data-v="${S.job}"]`); if (on) { on.setAttribute("aria-pressed", "true"); $("next").disabled = false; } }
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(".pick button").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); S.job = b.dataset.v; ok();
+  });
+  ok();
+  $("next").onclick = () => { S.orgCode = $("orgCode").value.trim().toUpperCase(); survey(); };
+}
+
+function survey() {
+  // 하는 일: 개인용은 대상, 해 본 적 있는지, 자신감(Q1). 기관용은 해 본 적 있는지와 문진표 Q1~Q4
+  // 이유: 흐름 문서 1번. 대상과 해 본 적 있는지는 장부 새 칸(target, revisit)으로 들어가 관리자 통계에서 나눠 본다
+  const qs = [];
+  if (S.mode === "personal") qs.push(["target", "어느 쪽에 해당하세요?", [["student", "학생"], ["general", "일반인"]]]);
+  qs.push(["revisit", "캐치피싱을 해 본 적 있나요?", [["true", "있어요"], ["false", "처음이에요"]]]);
+  qs.push(["Q1", SURVEY[0].text, [1, 2, 3, 4, 5].map(n => [String(n), n === 1 ? "1 전혀 아니다" : n === 5 ? "5 매우 그렇다" : String(n)])]);
+  if (S.mode === "org") SURVEY.slice(1).forEach(q => qs.push([q.id, q.text, q.options.map(o => [o, o])]));
+  const ans = S.draft || (S.draft = {});   // 참고: 뒤로 갔다 와도 고른 답이 남아 있게
+  render(`
+    ${backBtn(S.mode === "org" ? "직군 고르기" : "체험 고르기")}
+    <p class="step">${modeName()} 체험 · 시작 전</p>
+    <h1 class="title">체험 전 사전질문</h1>
+    <p class="lead">정답이 있는 질문이 아닙니다. 평소 모습 그대로 답해 주세요. 답은 익명 번호로만 저장됩니다.</p>
+    ${S.deviceRepeat ? `<p class="wait-open" role="note" style="max-width:46rem">이 기기에서 이미 체험을 끝까지 한 기록이 있어요. 다시 하면 "다시 참여"로 기록돼요.</p>` : ""}
+    ${qs.map(([k, q, opts]) => `<p class="q" id="q-${k}">${esc(q)}</p>
+      <div class="pick${k === "Q1" ? " scale" : ""}" role="group" aria-labelledby="q-${k}">${opts.map(([v, t]) => `<button data-k="${k}" data-v="${esc(v)}" aria-pressed="false"${k === "Q1" ? ` aria-label="${esc(t)}"` : ""}>${esc(k === "Q1" ? v : t)}</button>`).join("")}</div>
+      ${k === "Q1" ? `<p class="scale-cap" aria-hidden="true"><span>1 전혀 아니다</span><span>5 매우 그렇다</span></p>` : ""}`).join("")}
+    <div class="row"><button class="btn" id="next" disabled>체험 시작</button></div>`, 0);
+  $("back").onclick = () => S.mode === "org" ? job() : choose();
+  main.querySelectorAll(".pick button").forEach(b => { if (ans[b.dataset.k] === b.dataset.v) b.setAttribute("aria-pressed", "true"); });
+  $("next").disabled = !qs.every(q => ans[q[0]] != null);
+  main.querySelectorAll(".pick button").forEach(b => b.onclick = () => {
+    main.querySelectorAll(`[data-k="${b.dataset.k}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true"); ans[b.dataset.k] = b.dataset.v;
+    $("next").disabled = !qs.every(q => ans[q[0]] != null);
+  });
+  $("next").onclick = () => busy($("next"), async () => {
+    if (S.mode === "personal") S.target = ans.target;
+    S.revisit = ans.revisit === "true";
+    S.survey = { Q1: Number(ans.Q1) };
+    if (S.mode === "org") ["Q2", "Q3", "Q4"].forEach(k => S.survey[k] = ans[k]);
+    // 서버 약속 1번: 서버가 세트 A·B 중 하나를 무작위로 골라 4문제를 준다
+    const d = await post("/api/start", base());
+    Object.assign(S, { anon: d.anon_id, round: 1, phase: "pre", cards: d.scenarios, idx: 0 });
+    intro();
+  });
+}
+
+/* =====================================================================
+   2. 문자·메일 4개 (사전과 사후가 같은 화면)
+   ===================================================================== */
+function intro() {
+  // 참고: 팀 결정 5번. 시작 안내에는 정답 힌트("보낸 곳을 보세요" 등)를 넣지 않는다
+  // 수정 (A 11/20): 11/19 새 화면으로 옮길 때 빠졌던 B의 시작 안내 목록(10/23 확정 안내문)과 화면 예시 그림(B 11/03)을 되살림.
+  //   예시 그림은 화면 쓰는 법만 알려 준다. 예시 메시지는 실제 문제와 겹치지 않는 가짜이고 눌러도 아무 일이 없다
+  const pre = S.phase === "pre";
+  const org = S.mode === "org";
+  const steps = pre ? [
+    "체험은 약 10분 걸려요.",
+    org ? "평소 업무 중이라고 생각하고, 실제로 할 행동을 골라 주세요." : "평소처럼 받은 메시지라고 생각하고, 실제로 할 행동을 골라 주세요.",
+    org ? "진짜 업무 메시지도 섞여 있어요. 모든 메시지를 의심하면 업무가 늦어진 것으로 기록돼요." : "진짜 메시지도 섞여 있어요. 모든 메시지를 의심하면 할 일이 늦어진 것으로 기록돼요.",
+    "행동을 고르면 그 행동이 어떻게 진행되는지 먼저 보여 주고, 이어서 해설이 나와요.",
+    `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`
+  ] : ["처음 보는 메시지예요. 배운 대로 골라 보세요.", `문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 제한이 있어요. 시간이 지나도 고를 수 있어요.`];
+  const example = !pre ? "" : `
+    <p class="q">아래와 같은 방식으로 문제가 나와요.</p>
+    <div class="ex-wrap card">
+      <span class="ex-tag">화면 예시 (실제 문제가 아니에요)</span>
+      <div class="ex-grid" role="img" aria-label="문제 화면 예시: 왼쪽에 받은 문자, 오른쪽에 남은 시간 막대와 선택지 세 개">
+        <div class="ex-msg" aria-hidden="true"><span class="ex-num">1</span>
+          <p class="ex-from">예시 문자</p><div class="ex-bubble">[예시] 오늘 오후 3시 2층 회의실 예약이 확정되었습니다.</div></div>
+        <div class="ex-side" aria-hidden="true">
+          <div class="ex-time"><span class="ex-num">2</span>남은 시간<div class="timer"><i style="width:65%"></i></div></div>
+          <div class="ex-choices"><span class="ex-num">3</span><div class="ex-choice">선택지 하나</div><div class="ex-choice">선택지 둘</div><div class="ex-choice">선택지 셋</div></div>
+        </div>
       </div>
-      <div class="card box"><h2>순위표</h2><p class="muted">순위표는 준비 중이에요.</p></div>
-      <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
+      <ol class="ex-legend">
+        <li><b aria-hidden="true">1</b><span>받은 메일이나 문자가 실제 화면처럼 나와요. 메일은 받은편지함에서 새 메일을 눌러 열어요.</span></li>
+        <li><b aria-hidden="true">2</b><span>남은 시간이 줄어들어요. 시간이 지나도 고를 수 있어요.</span></li>
+        <li><b aria-hidden="true">3</b><span>실제로 할 행동을 하나 골라요. 고른 행동이 진행되는 모습을 본 뒤 해설이 나와요.</span></li>
+      </ol>
     </div>`;
-  show("res"); $("again").onclick = start;
-}
-// ===== 소리 (A 11/23) =====
-// 하는 일: 게임처럼 "뿅" 소리를 브라우저가 직접 만들어 낸다 (웹 오디오, 소리 파일 없음)
-// 참고: 폰은 사용자가 먼저 눌러야 소리를 낼 수 있어서 [시작하기]를 누를 때 소리 장치를 켠다. 끄면 이 기기에 기억한다
-let AC = null, MUTED = false;
-try { MUTED = localStorage.getItem("cp_game_muted") === "1"; } catch (e) { /* 저장 안 되면 켜진 채로 */ }
-function audio() {
-  try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) { AC = null; }
-  return AC;
-}
-function tone(freq, dur, type = "sine", vol = .18, delay = 0, slide = 0) {
-  if (MUTED) return; const a = audio(); if (!a) return;
-  const t = a.currentTime + delay, o = a.createOscillator(), gn = a.createGain();
-  o.type = type; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + dur);
-  gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(vol, t + .01); gn.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(gn).connect(a.destination); o.start(t); o.stop(t + dur + .02);
-}
-const SCALE = [523, 587, 659, 698, 784, 880, 988, 1047, 1175, 1319];   // 도 레 미 파 솔 라 시 도 레 미
-const SFX = {
-  hit: c => { const f = SCALE[Math.min(c - 1, SCALE.length - 1)]; tone(f, .12, "square", .09); tone(f * 2, .1, "sine", .06, .05); },   // 콤보마다 음이 한 칸씩 올라감
-  fanfare: () => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, .16, "square", .09, i * .08)); tone(1568, .35, "triangle", .1, .32); },
-  wrong: () => tone(220, .28, "sawtooth", .08, 0, 110),
-  miss: () => tone(330, .14, "triangle", .12, 0, 180),
-  level: () => [659, 784, 988].forEach((f, i) => tone(f, .14, "triangle", .12, i * .09)),
-  tick: () => tone(1400, .05, "square", .05),
-  end: () => [784, 659, 523, 784].forEach((f, i) => tone(f, .2, "triangle", .12, i * .14))
-};
-function setMuted(m) {
-  MUTED = m; try { localStorage.setItem("cp_game_muted", m ? "1" : "0"); } catch (e) { /* 저장 안 되면 넘어감 */ }
-  [["snd0", "🔊 소리 켜짐", "🔇 소리 꺼짐"], ["snd1", "🔊", "🔇"]].forEach(([id, on, off]) => {
-    const b = $(id); b.textContent = m ? off : on; b.setAttribute("aria-pressed", String(m)); b.setAttribute("aria-label", m ? "소리 켜기" : "소리 끄기"); });
-}
-["snd0", "snd1"].forEach(id => $(id).onclick = () => { setMuted(!MUTED); if (!MUTED) { audio(); tone(880, .08, "square", .07); } });
-setMuted(MUTED);
-// 하는 일: 3, 5, 10, 15, 20... 콤보마다 팡파르와 큰 글씨 (보통 게임처럼 콤보를 강조)
-const MILE = c => c === 3 || c === 5 || (c >= 10 && c % 5 === 0);
-function popCombo(c) {
-  const p = $("pop"); p.textContent = `${c} 콤보${"!".repeat(c >= 10 ? 3 : c >= 5 ? 2 : 1)}`;
-  p.classList.remove("on"); void p.offsetWidth; p.classList.add("on"); SFX.fanfare();
+  render(`
+    ${pre ? backBtn("사전질문") : ""}
+    <p class="step">${modeName()} 체험 · ${phaseName()}</p>
+    <h1 class="title">${pre ? "이제부터 체험을 시작해요" : "새 문자와 메일 4개가 도착해요"}</h1>
+    <ul class="intro-steps">${steps.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+    ${example}
+    <div class="row"><button class="btn" id="next">체험 시작</button></div>`, pre ? 1 : 5);
+  if (pre) $("back").onclick = survey;   // 참고: 아직 답한 문제가 없어 기록이 남지 않는다. 다시 시작하면 새 익명 번호를 받는다
+  $("next").onclick = message;
 }
 
-// 하는 일: 한 판이 끝나면 숫자만 서버에 보낸다 (서버 약속 10번, 장부와 다른 표, A 11/20)
-// 이유: 게임의 교육 효과(틀렸다가 다시 나온 문자를 맞힌 비율, 판을 거듭할수록 정확도)를 시범 운영 숫자로 보여 주려고
-// 참고: 이 기기에서만 쓰는 익명 게임 번호(G+6자리)와 몇 번째 판인지를 브라우저에 남긴다. 이름·별명은 보내지 않는다.
-//       저장이 안 되는 브라우저(사생활 보호 모드 등)에서는 번호를 판마다 새로 만들고, 보내기가 실패해도 화면은 그대로
-function sendLog(nums) {
-  let player = null, playNo = 1;
-  try {
-    player = localStorage.getItem("cp_game_player");
-    if (!/^G[0-9A-F]{6}$/.test(player || "")) { player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase(); localStorage.setItem("cp_game_player", player); }
-    playNo = Math.min(1000, (parseInt(localStorage.getItem("cp_game_plays") || "0", 10) || 0) + 1);
-    localStorage.setItem("cp_game_plays", String(playNo));
-  } catch (e) {
-    player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+function smsParts(c) {
+  const [name, num] = (c.sender || "").split(" / ");
+  return { name, head: num || name };
+}
+function smsHTML(c, time, bubbles) {
+  const { head } = smsParts(c);
+  const link = c.link ? `<br><span class="lnk">${esc(c.link)}</span>` : "";
+  const thread = bubbles || `<p class="day">오늘</p><div class="bubble-row"><div class="bubble">${esc(c.body)}${link}</div><time>${time}</time></div>`;
+  return `<div class="sms" role="group" aria-label="휴대폰으로 받은 문자">
+    <div class="sms-top"><span class="back" aria-hidden="true">‹</span><span class="avatar" aria-hidden="true">?</span>
+      <span class="who">${esc(head)}<small>저장되지 않은 번호</small></span></div>
+    <div class="sms-thread">${thread}</div>
+    <div class="sms-input" aria-hidden="true"><span>＋</span><span class="box">문자 메시지</span></div>
+  </div>`;
+}
+// 하는 일: 메일 보낸 사람을 "표시 이름"과 "주소"로 나눈다
+// 참고: 새 카드(B 11/16)는 sender에 이름만, from에 "이름 <주소>". 예전 카드는 sender에 "이름 <주소>"
+function mailParts(c) {
+  const name = (c.sender || "").split("<")[0].trim();
+  const src = c.from || c.sender || "";
+  const m = src.match(/<([^>]+)>/);
+  return { name, addr: m ? m[1] : (src.includes("@") ? src.trim() : "") };
+}
+function mailHTML(c, time, open) {
+  // 하는 일: 처음엔 받은편지함 목록. 메일을 누르면 열리고, 표시 이름을 누르면 보낸 주소와 답장 주소가 펼쳐진다
+  const { name, addr } = mailParts(c);
+  const old = OLD_MAIL[S.mode].map(([n, s, t]) => `<div class="mail-row old" aria-disabled="true"><span class="dot"></span><span class="nm">${n}</span><time>${t}</time><span class="sj">${s}</span></div>`).join("");
+  const link = c.link ? `\n\n<span class="lnk">${esc(c.link)}</span>` : "";
+  return `<div class="mail-wrap"><div class="mail" id="mail" data-view="${open ? "read" : "list"}" role="group" aria-label="메일 앱">
+    <div class="mail-bar"><span>받은편지함</span><span class="search">메일 검색</span></div>
+    <div class="mail-body">
+      <div class="mail-list">
+        <button class="mail-row ${open ? "on" : "new"}" id="openMail"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(name)}</span><time>${time}</time><span class="sj">${esc(c.subject)}</span>${open ? "" : `<span class="tap-me" aria-hidden="true">눌러서 열기</span>`}</button>
+        ${old}
+      </div>
+      <div class="mail-read">
+        <p class="empty-read">← 왼쪽 새 메일을 눌러 열어 보세요</p>
+        <button class="back" id="backList">‹ 받은편지함</button>
+        <h3>${esc(c.subject)}</h3>
+        <div class="from"><span class="avatar" aria-hidden="true">${esc(name.charAt(0))}</span>
+          <div class="meta"><button class="from-name" id="fromBtn" aria-expanded="${open ? "true" : "false"}" aria-controls="fromDetail">${esc(name)}</button>
+            <span class="to">받는 사람: 나</span>
+            <dl class="from-detail" id="fromDetail" ${open ? "" : "hidden"}>
+              <dt>보낸 사람</dt><dd class="addr">${esc(addr || "주소 없음")}</dd>
+              ${c.reply_to ? `<dt>답장 주소</dt><dd class="reply">${esc(c.reply_to)}</dd>` : ""}
+              <dt>받는 사람</dt><dd>나</dd></dl></div>
+          <time>${time}</time></div>
+        <div class="mail-text">${esc(c.body)}${link}</div>
+        ${c.attachment ? `<div class="attach"><i aria-hidden="true"></i><span><b>${esc(c.attachment)}</b><br>첨부파일 1개</span></div>` : ""}
+      </div>
+    </div></div></div>`;
+}
+function cardHTML(c, open) {
+  const t = TIMES[S.idx % TIMES.length];
+  return c.channel === "email" ? mailHTML(c, t, open) : smsHTML(c, t);
+}
+
+// 하는 일: 메시지에 없는 수단의 선택지는 같은 뜻의 행동으로 바꾼다 (팀 결정 6번, 예전 game.html 그대로)
+const PHONE_RE = /\d{2,3}-\d{3,4}-\d{4}/;
+const noPhone = c => !PHONE_RE.test(`${c.sender || ""} ${c.body || ""}`);
+const noOpen = c => !c.link && !c.attachment;
+function choiceLabel(c, k) {
+  const own = c && c.choice_labels && c.choice_labels[k];
+  const where = c && c.channel === "email" ? "메일" : "문자";
+  if (k === "call" && c && noPhone(c)) return own && !/전화|번호/.test(own) ? own : `${where}에 답장해 물어본다`;
+  if (k === "click" && c && noOpen(c)) return own && !/주소|링크|첨부|열어/.test(own) ? own : `${where} 안내대로 바로 처리한다`;
+  return own || DEFAULT_LABELS[k];
+}
+
+function message() {
+  const c = S.cards[S.idx];
+  const keys = shuffle(["click", "call", "official"]);   // 하는 일: 보이는 순서만 섞는다. 서버로 보내는 값은 그대로 (흐름 문서 6번)
+  const isMail = c.channel === "email";
+  render(`
+    <p class="step">${phaseName()} · ${S.idx + 1} / ${S.cards.length}</p>
+    <div class="stage" id="stage">
+      ${cardHTML(c, false)}
+      <aside class="choices" aria-label="행동 고르기">
+        <h2>이 메시지, 어떻게 할까요?</h2>
+        <div class="timer" id="tbar"><i></i></div><p class="timer-txt" id="ttxt"></p>
+        ${isMail ? `<p class="wait-open" id="waitOpen"><span class="left">← 왼쪽</span><span class="up">↑ 위</span> 받은편지함에서 새 메일을 눌러 열면 고를 수 있어요</p>` : ""}
+        ${keys.map(k => `<button class="opt" data-k="${k}" ${isMail ? "disabled" : ""}>${esc(choiceLabel(c, k))}</button>`).join("")}
+        <div id="msgErr"></div>
+      </aside>
+    </div>`, S.phase === "pre" ? 1 : 5);
+  if (isMail) {
+    const mail = $("mail");
+    $("openMail").onclick = () => {
+      mail.dataset.view = "read"; $("openMail").classList.add("on"); $("openMail").classList.remove("new");
+      main.querySelectorAll(".opt").forEach(b => b.disabled = false); $("waitOpen").hidden = true;
+    };
+    $("backList").onclick = () => mail.dataset.view = "list";
+    $("fromBtn").onclick = e => { const open = e.currentTarget.getAttribute("aria-expanded") === "true";
+      e.currentTarget.setAttribute("aria-expanded", String(!open)); $("fromDetail").hidden = open; };
   }
-  try {
-    fetch("/api/train-log", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
-      body: JSON.stringify({ player, play_no: playNo, ...nums }) }).catch(() => {});
-  } catch (e) { /* 보내기 실패는 무시 */ }
+  startTimer(LIMIT[c.channel] || LIMIT.sms);
+  c.shownAt = c.shownAt || performance.now();   // 참고: 서버 오류로 다시 그려도 처음 뜬 시각을 유지
+  main.querySelectorAll(".opt").forEach(b => b.onclick = () => pickAction(c, b.dataset.k));
 }
-// 하는 일: 게임 중에 나가기. 점수는 아직 어디에도 저장하지 않아서 중간에 나가도 기록 문제는 없다
-$("quit").onclick = () => {
-  if (!confirm("게임을 그만하고 처음 화면으로 갈까요?")) return;
-  run = false; clearInterval(iv); show("st");
-};
-$("gobtn").onclick = () => { audio(); start(); };   // 참고: 누르는 순간 소리 장치를 켠다 (폰 정책)
 
-// 하는 일: ☰ 메뉴 열고 닫기
+function startTimer(sec) {
+  let left = sec; const bar = $("tbar"), txt = $("ttxt");
+  S.over = false;
+  const draw = () => { bar.firstElementChild.style.width = Math.max(0, left / sec * 100) + "%";
+    txt.textContent = left > 0 ? `남은 시간 ${left}초` : "시간이 지났어요. 그래도 고를 수 있어요"; bar.classList.toggle("over", left <= 0); };
+  draw(); timer = setInterval(() => { left--; draw(); if (left <= 0) { S.over = true; clearInterval(timer); } }, 1000);
+}
+
+function previewText(c, k) {
+  const num = (`${c.sender || ""} ${c.body || ""}`.match(PHONE_RE) || [])[0];
+  if (k === "click") {
+    if (c.attachment) return ["첨부 파일을 여는 중이에요", false];
+    if (c.link) return ["링크로 이동하는 중이에요", false];
+    return ["안내대로 처리하는 중이에요", false];
+  }
+  if (k === "call") return [num ? `${num}로 전화를 거는 중이에요` : "답장을 보내는 중이에요", false];
+  return ["따로 확인하는 중이에요", true];
+}
+
+async function pickAction(c, k) {
+  clearInterval(timer);
+  main.querySelectorAll(".opt").forEach(b => b.disabled = true);
+  // 참고: 서버 오류로 다시 누를 때 두 번 세지 않도록 문제마다 한 번만 센다
+  if (S.over && !c.lateCounted) { S.late[S.phase]++; c.lateCounted = true; }
+  if (c.sec == null) c.sec = Math.round((performance.now() - c.shownAt) / 100) / 10;   // 판단 시간(초), 장부 answer_sec
+  c.inTime = !c.lateCounted;
+  const [st, wait] = previewText(c, k);
+  const pv = document.createElement("div");
+  pv.className = "preview";
+  pv.innerHTML = `<div class="box" role="status"><p class="lbl">내가 고른 행동</p><p class="ch">${esc(choiceLabel(c, k))}</p>
+    <p class="st ${wait ? "wait" : ""}">${esc(st)}</p>${wait ? `<p class="note">그동안 ${S.mode === "org" ? "업무가" : "할 일이"} 미뤄지고 있어요</p>` : ""}<div class="bar"><i></i></div></div>`;
+  $("stage").appendChild(pv);
+  try {
+    // 서버 약속 2번: 채점은 서버가 한다. 미리보기를 보여 주는 동안 함께 기다린다
+    const [r] = await Promise.all([
+      post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: k, round: S.round, answer_sec: c.sec }),
+      sleep(reduced() ? 600 : PREVIEW_MS)]);
+    S.answers[S.phase][S.idx] = { scenario_id: c.scenario_id, choice: k };
+    const harm = fullyFooled(r) ? harmOf(c, k, r) : null;
+    addLog(c, r, choiceLabel(c, k), harm);
+    explain(c, r, harm, choiceLabel(c, k), c);
+  } catch (err) {
+    pv.remove();
+    main.querySelectorAll(".opt").forEach(b => b.disabled = false);
+    $("msgErr").innerHTML = `<p class="error" role="alert">${esc(err.message)}</p>`;
+  }
+}
+
+/* ----- 해설 (예전 game.html의 형광펜·실제였다면·자세히 보기를 그대로 가져옴) ----- */
+const fullyFooled = r => r.is_phishing && !r.is_correct && !(r.stopped_step === 2 || r.stopped_step === 3);
+// 하는 일: 피싱에 속었을 때 "실제였다면 일어났을 피해" (카드의 consequence가 먼저, A 11/02)
+function harmOf(c, choice, r) {
+  if (r.consequence && r.consequence.title) return r.consequence;
+  const org = S.mode === "org";
+  if (choice === "call" && noPhone(c)) return { title: "답장이 공격자에게 전달됐어요", detail: "보낸 주소와 답장 주소는 공격자가 정한 곳이에요. 이어진 대화에서 개인정보나 송금을 요구해요." };
+  if (choice === "click" && noOpen(c)) return { title: "공격자가 시킨 대로 처리했어요", detail: "메시지가 요구한 처리(송금, 정보 전달)가 그대로 공격자에게 가요." };
+  if (choice === "call") return { title: "사기범과 통화가 연결됐어요", detail: `상대는 ${org ? "기관이나 회사 직원" : "기관이나 학교 직원"}처럼 말하며 개인정보, 인증번호, 송금을 요구해요.` };
+  if (r.stopped_step === 0) return { title: "휴대폰 정보가 빠져나가고 있어요", detail: "설치한 가짜 앱이 문자, 화면, 저장된 정보를 몰래 보내요." };
+  if (c.attachment) return { title: `${org ? "회사 PC" : "내 컴퓨터"}에서 악성 프로그램이 실행됐어요`, detail: `문서처럼 보인 '${c.attachment}'은 실제로는 프로그램이었어요.` };
+  if (c.channel === "email") return { title: `${org ? "사내 " : ""}계정 비밀번호가 넘어갔어요`, detail: "가짜 로그인 화면에 입력한 아이디와 비밀번호가 공격자에게 전송돼요." };
+  return { title: "개인정보가 넘어갔어요", detail: "가짜 사이트에 입력한 이름, 전화번호, 인증번호가 공격자에게 전송돼요." };
+}
+// 하는 일: 결과 화면 "내가 한 일"에 이번 문제를 한 줄 남긴다 (화면에만 쓰고 서버로 보내지 않음)
+function addLog(c, r, did, harm) {
+  const tag = ((c.body || "").match(/^\[([^\]]+)\]/) || [])[1];   // 문자 맨 앞 [보낸 곳] (번호만 있는 문자도 무슨 문자였는지 알 수 있게)
+  const what = c.channel === "email" ? (c.subject || "메일") : `${tag || smsParts(c).name} 문자`;
+  const kind = r.is_correct ? (r.over_suspicion ? "slow" : "ok") : "bad";
+  S.log[S.phase][S.idx] = { what, did, kind, phishing: r.is_phishing, harm: harm ? harm.title : "", call: did && c.choice_labels && did === choiceLabel(c, "call") };
+}
+
+// 하는 일: 해설 화면 왼쪽 메시지 위에 단서 위치를 형광펜과 번호로 표시한다 (A 11/02, 새 화면 틀에 맞춰 이름표만 바꿈)
+function annotate(root, clues, phishing) {
+  const pin = n => { const p = document.createElement("span"); p.className = "pin" + (phishing ? "" : " safe"); p.textContent = n; p.setAttribute("aria-hidden", "true"); return p; };
+  const box = (el, n) => { if (!el) return false; el.classList.add("clue-wrap"); if (!phishing) el.classList.add("safe"); el.appendChild(pin(n)); return true; };
+  const body = root.querySelector(".mail-text, .bubble");
+  const markWord = (word, n) => {
+    if (!body || !word) return false;
+    const walk = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, { acceptNode: t => t.parentElement.closest(".lnk, mark") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let t;
+    while ((t = walk.nextNode())) {
+      const i = t.data.indexOf(word); if (i < 0) continue;
+      const m = document.createElement("mark"); m.className = "clue";
+      const rest = t.splitText(i); rest.splitText(word.length);
+      rest.parentNode.replaceChild(m, rest); m.textContent = word; m.after(pin(n));
+      return true;
+    }
+    return false;
+  };
+  const words = text => (text.match(/"([^"]+)"/g) || []).map(w => w.slice(1, -1));
+  (clues || []).forEach((c, k) => {
+    const n = k + 1, f = c.factor || "", tx = c.text || "";
+    const ws = words(tx);
+    if (ws.length) {
+      let done = false;
+      ws.forEach(w => { if (markWord(w, n)) done = true; else if (!done) { const last = w.split(" ").pop(); if (last.length >= 2) done = markWord(last, n); } });
+      if (done) return;
+    }
+    const ASK = [[/설치/, ["앱을 설치", "설치"]], [/재로그인|로그인 유도/, ["재로그인", "본인 확인"]], [/계좌/, ["새 계좌로 보내", "새 계좌"]],
+      [/비밀번호를 묻지/, ["비밀번호를 회신하실 필요는 없습니다"]], [/공식 경로/, ["[내 정보 > 비밀번호 변경]"]],
+      [/지원금|미끼/, ["[정부24] 민생 지원금", "지원금"]], [/링크 없이도/, ["사내 포털에서 볼 수 있습니다"]]];
+    const ask = ASK.find(([re]) => re.test(f));
+    if (ask && ask[1].some(w => markWord(w, n))) return;
+    if (/확장자|첨부/.test(f)) { box(root.querySelector(".attach"), n); return; }
+    if (/답장/.test(f)) { box(root.querySelector(".from-detail .reply"), n); return; }   // 새 화면은 답장 주소가 보여서 표시한다
+    if (/발신|보낸 주소|기관 사칭|회사 번호|주소만으로|표시 이름/.test(f)) { box(root.querySelector(".from-detail .addr") || root.querySelector(".sms-top .who"), n); return; }
+    if (/전화/.test(f) && body) { const m = (body.textContent.match(PHONE_RE) || [])[0]; if (m && markWord(m, n)) return; }
+    if (/주소|도메인|링크|로그인|설치|경로/.test(f)) { box(root.querySelector(".lnk"), n); return; }
+  });
+}
+
+function engineHTML(r) {
+  const a = r.analysis;
+  if (!a) return `<p class="muted">이 메시지는 탐지 엔진으로 분석할 링크나 메일 정보가 없어요.</p>`;
+  let h = `<p class="score-line">${a.type === "email" ? "메일" : "링크"} 위험 점수 <b>${a.score}</b> / 100</p>`;
+  if (a.reasons.length) h += `<ul class="list">${a.reasons.map(x => `<li><div><span class="factor">${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div><span class="pts">+${x.points}</span></li>`).join("")}</ul>`;
+  else h += `<p class="muted">위험 신호를 찾지 못했어요.</p>`;
+  if (a.unavailable.length) h += `<p class="note">확인하지 못한 항목: ${a.unavailable.map(u => esc(UNAVAILABLE[u] || u)).join(", ")}</p>`;
+  // AI 모델 확률: 60% 이상만 숫자, 아래는 "구별하기 어려워요" (A 10/29 결정)
+  if (typeof a.model_probability === "number") h += a.model_probability >= 0.6
+    ? `<p class="score-line">AI 판단: 주소 모양이 피싱과 비슷해요 (${Math.round(a.model_probability * 100)}%)</p>`
+    : `<p class="score-line">AI 판단: 주소 모양만으로는 구별하기 어려워요</p>`;
+  if (r.text_clues && r.text_clues.length) h += `<p class="score-line">문자 본문에서 찾은 압박 문구: <b>${r.text_clues.map(w => "'" + esc(w) + "'").join(", ")}</b></p><p class="note">위 링크 점수에는 들어가지 않아요.</p>`;
+  if (r.is_phishing && a.score < 30) h += `<p class="note">탐지 점수가 낮아도 피싱일 수 있어요. 공격자가 진짜처럼 꾸민 주소로 보내면 기계 검사를 통과하기도 해요. 그래서 위의 수상한 점을 사람이 직접 확인하는 게 중요해요.</p>`;
+  return h;
+}
+
+function explain(c, r, harm, did, tc) {
+  // 하는 일: 맨 위 큰 띠 하나로 "피싱이었는지, 내가 막았는지"를 먼저 보여 준다 (A 11/20: 한눈에 안 보임)
+  let v;
+  if (r.is_phishing) v = r.is_correct ? ["good", "✓", "피싱을 막았어요!", "이 메시지는 피싱이었어요"] : ["bad", "✕", "속았어요", "이 메시지는 피싱이었어요"];
+  else v = r.over_suspicion ? ["wait", "△", "정상 메시지였어요", `확인하느라 ${S.mode === "org" ? "업무가" : "할 일이"} 늦어졌어요`] : ["good", "✓", "잘 처리했어요", "이 메시지는 정상이었어요"];
+  const last = S.idx === S.cards.length - 1;
+  render(`
+    <p class="step">${phaseName()} · 문제 ${S.idx + 1}번 결과</p>
+    <div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}${did ? ` · 내 선택: ${esc(did)}` : ""}</span>${tc && tc.sec != null ? `<span class="time-line">${tc.inTime ? "⏱ 제한 시간 안에 골랐어요" : "⏱ 제한 시간이 지난 뒤에 골랐어요"} (${tc.sec}초)</span>` : ""}</div></div>
+    <div class="explain">
+      <div id="exCard">${cardHTML(c, true)}</div>
+      <div>
+        <div class="ex-box">
+          ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
+          <p class="short">${esc(r.explanation_short || r.explanation)}</p>
+          ${(() => {
+            // 수정 (A 11/20): 사후는 재는 단계라 해설을 짧게. 결과 띠와 요점 한 줄만 보이고, 단서 목록은 [자세히 보기] 안에 (빼지 않음)
+            const clues = `<h3>${r.is_phishing ? "수상한 점" : "확인한 점"} <small class="muted" style="font-weight:400;font-size:.8rem">(메시지에 번호로 표시)</small></h3>
+          <ul class="list">${(r.clues || []).map((x, k) => `<li><div><span class="factor"><span class="pin${r.is_phishing ? "" : " safe"}" aria-hidden="true">${k + 1}</span>${esc(x.factor)}</span><span class="text">${esc(x.text)}</span></div></li>`).join("")}</ul>`;
+            return S.phase === "post" ? `<details class="detail"><summary>자세히 보기 (수상한 점, 해설 전체, 탐지 엔진 분석)</summary>${clues}` : `${clues}<details class="detail"><summary>자세히 보기 (해설 전체, 탐지 엔진 분석)</summary>`;
+          })()}
+            <h4>해설</h4><p>${esc(r.explanation)}</p>
+            <h4>탐지 엔진 분석</h4>${engineHTML(r)}
+          </details>
+        </div>
+      </div>
+    </div>
+    <div class="row"><button class="btn" id="next">${last ? "다음" : "다음 메시지"}</button></div>`, S.phase === "pre" ? 2 : 5);
+  annotate($("exCard"), r.clues, r.is_phishing);
+  $("next").onclick = () => { if (!last) { S.idx++; message(); } else afterPhase($("next")); };
+}
+
+/* =====================================================================
+   3. 사전이 끝난 뒤: 기관용 따라 쓰기 → 연쇄형 / 개인용 연쇄형 → 게임
+   ===================================================================== */
+function afterPhase(btn) {
+  busy(btn, async () => {
+    // 서버 약속 3번: 이번 단계 답을 보내 서버가 다시 채점한 결과를 받는다
+    const r = await post("/api/result", { ...base(), anon_id: S.anon, answers: S.answers[S.phase] });
+    S.res[S.phase] = r;
+    if (S.phase === "post") return result();
+    S.mode === "org" ? copyLine() : practice();
+  });
+}
+
+function pickCopyLine(r) {
+  if (S.log.pre.some(l => l && l.kind === "bad" && l.call)) return COPY_LINES.call;
+  const t = (r.weak_types || []).find(x => COPY_LINES[x]);
+  if (t) return COPY_LINES[t];
+  if (r.over_suspicion > 0) return COPY_LINES.over;
+  return COPY_LINES.all;
+}
+function copyLine() {
+  // 하는 일: 사전 체험 결과에 맞는 대응 매뉴얼 문장을 직접 따라 쓴다 (기관용, 팀 결정 8번). 붙여 넣기는 막는다
+  const line = pickCopyLine(S.res.pre);
+  const bare = t => (t || "").replace(/[\s.,!?·'"‘’“”…~-]/g, "");
+  render(`
+    <p class="step">기관용 체험 · 배우기</p>
+    <h1 class="title">대응 매뉴얼 문장을 따라 써 보세요</h1>
+    <p class="lead">방금 체험 결과에 맞는 문장이에요. 직접 읽고 쓰면 오래 기억에 남아요.</p>
+    <p class="copy-src">${esc(line)}</p>
+    <textarea class="field copy-in" id="copy" rows="3" style="max-width:40rem;margin-top:.8rem;resize:vertical" aria-label="따라 쓰기"></textarea>
+    <p class="copy-msg" id="copyMsg" role="status"></p>
+    <div class="row"><button class="btn" id="next" disabled>다음</button></div>`, 3);
+  const t = $("copy");
+  t.onpaste = e => { e.preventDefault(); $("copyMsg").classList.remove("ok"); $("copyMsg").textContent = "붙여 넣기 대신 직접 입력해 주세요."; };
+  const check = () => { const ok = bare(t.value) === bare(line); t.classList.toggle("ok", ok); $("copyMsg").classList.toggle("ok", ok);
+    $("copyMsg").textContent = ok ? "잘 입력했어요." : ""; $("next").disabled = !ok; };
+  t.oninput = check; t.addEventListener("compositionend", check);
+  $("next").onclick = practice;
+}
+
+/* ----- 연쇄형 연습 (서버 약속 9번, 점수에 안 들어감) ----- */
+async function practice() {
+  const cn = S.mode === "org" ? 4 : 3;
+  render(`<p class="step">연습 · 연쇄형 체험</p><p class="lead">문자를 불러오는 중이에요.</p>`, cn);
+  try {
+    const d = await post("/api/practice", {});
+    S.chainCard = d.scenarios[0]; S.chainSteps = []; S.chainResult = null;
+    chainScreen();
+  } catch (err) {
+    render(`<p class="step">연습 · 연쇄형 체험</p><p class="error" role="alert">${esc(err.message)}</p>
+      <div class="row"><button class="btn" id="again">다시 불러오기</button></div>`, cn);
+    $("again").onclick = practice;
+  }
+}
+function chainThread() {
+  const c = S.chainCard;
+  const link = c.link ? `<br><span class="lnk">${esc(c.link)}</span>` : "";
+  let h = `<p class="day">오늘</p><div class="bubble-row"><div class="bubble">${esc(c.body)}${link}</div><time>오후 2:14</time></div>`;
+  S.chainSteps.forEach(st => { h += `<p class="day">${esc(st.title)}</p><div class="bubble-row"><div class="bubble">${esc(st.body)}</div><time>오후 3:02</time></div>`; });
+  return h;
+}
+function chainScreen() {
+  const c = S.chainCard, st = S.chainSteps[S.chainSteps.length - 1];
+  const step = st ? st.step : 1;
+  const opts = st ? shuffle([["continue", st.continue_label], ["stop", st.stop_label]]) : shuffle(["click", "call", "official"]).map(k => [k, choiceLabel(c, k)]);
+  render(`
+    <p class="step">연습 · 연쇄형 체험 ${step}단계 <span class="data-tag">점수에 안 들어가요</span></p>
+    <div class="stage">
+      ${smsHTML(c, "", chainThread())}
+      <aside class="choices" aria-label="행동 고르기"><h2>${st ? "다음 화면이 나왔어요. 어떻게 하시겠어요?" : "이 문자, 어떻게 할까요?"}</h2>
+        ${opts.map(([k, t]) => `<button class="opt" data-k="${k}">${esc(t)}</button>`).join("")}
+        <div id="msgErr"></div></aside>
+    </div>`, S.mode === "org" ? 4 : 3);
+  const btns = main.querySelectorAll(".opt");
+  // 하는 일: 새 단계가 뜬 뒤 0.8초 동안 버튼을 잠근다 (읽지도 않고 연달아 누르는 것을 막으려고, 예전 game.html)
+  if (st) { btns.forEach(b => b.disabled = true); setTimeout(() => btns.forEach(b => b.disabled = false), 800); }
+  btns.forEach(b => b.onclick = async () => {
+    btns.forEach(x => x.disabled = true);
+    try {
+      const r = st
+        ? await post("/api/chain", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, step: st.step, action: b.dataset.k })
+        : await post("/api/answer", { ...base(), anon_id: S.anon, scenario_id: c.scenario_id, choice: b.dataset.k, chain: true });
+      if (r.chain_step) { S.chainSteps.push(r.chain_step); return chainScreen(); }
+      S.chainResult = { step: r.stopped_step, call: !st && b.dataset.k === "call", titles: r.chain_titles };
+      chainDone(r);
+    } catch (err) {
+      btns.forEach(x => x.disabled = false);
+      $("msgErr").innerHTML = `<p class="error" role="alert">${esc(err.message)}</p>`;
+    }
+  });
+}
+function chainLine(cr) {
+  // 하는 일: 어디서 멈췄는지를 한 줄로 (단계 이름은 카드의 단계 제목에서 가져온다)
+  const t = cr.titles || [];
+  if (cr.step === 1) return "첫 문자에서 멈추고 따로 확인했어요.";
+  if (cr.step >= 2) return `'${t[cr.step - 2] || cr.step + "단계"}'에서 멈췄어요.`;
+  return cr.call ? "문자에 적힌 번호로 전화했어요." : "마지막 단계까지 따라갔어요.";
+}
+function chainDone(r) {
+  const cr = S.chainResult;
+  const harm = cr.step === 0 ? harmOf(S.chainCard, cr.call ? "call" : "click", r) : null;
+  render(`
+    <p class="step">연습 · 연쇄형 체험 결과 <span class="data-tag">점수에 안 들어가요</span></p>
+    ${(() => {
+      // 하는 일: 2·3단계에서 멈췄으면 빨간 "속았어요" 대신 노란 "중간에 멈췄어요" (B 10/29). 멈춘 행동을 인정해 "단계마다 멈춰라"를 가르치려고
+      const v = cr.step === 1 ? ["good", "✓", "피싱을 막았어요!", "첫 문자에서 멈췄어요"]
+              : cr.step >= 2 ? ["wait", "△", "중간에 멈췄어요", "이 메시지는 피싱입니다. 첫 문자에서 멈춰야 가장 안전해요"]
+              : ["bad", "✕", "속았어요", "이 메시지는 피싱이었어요"];
+      return `<div class="verdict-big ${v[0]}" role="status"><span class="ico" aria-hidden="true">${v[1]}</span><div><b>${v[2]}</b><span class="sub">${v[3]}</span></div></div>`;
+    })()}
+    <h1 class="title" style="font-size:1.3rem">${esc(chainLine(cr))}</h1>
+    <p class="chain-steps">${esc(["첫 문자", ...(cr.titles || [])].join(" → "))}</p>
+    <div class="ex-box" style="margin-top:1.2rem;max-width:44rem">
+      ${harm ? `<p class="harm-now"><b>실제였다면:</b> ${esc(harm.title)}. ${esc(harm.detail || "")}</p>` : ""}
+      <p class="short">${esc(r.explanation_short)}</p>
+      <p>${esc(r.explanation)}</p>
+    </div>
+    <div class="row"><button class="btn" id="next">${S.mode === "personal" ? "게임으로 훈련하기" : "사후 체험 시작"}</button></div>`, S.mode === "org" ? 4 : 3);
+  $("next").onclick = () => S.mode === "personal" ? game() : beginPost($("next"));
+}
+
+/* ----- 개인용 게임: 위험한 행동만 골라 누르기 (시간 제한 없음, 팀 결정 19번) ----- */
+function game() {
+  const cards = shuffle(ACTIONS);
+  const total = cards.filter(a => a[1]).length;
+  let found = 0;
+  render(`
+    <section class="game">
+      <p class="step">개인용 체험 · 게임 훈련</p>
+      <h1 class="title">위험한 행동만 골라 눌러요</h1>
+      <p class="lead">시간 제한은 없어요. 위험한 행동을 다 찾으면 끝나요.</p>
+      <div class="card game-top"><span class="peek"><svg viewBox="0 0 110 80" aria-hidden="true"><g transform="rotate(-5 50 40)"><rect x="5" y="8" width="84" height="60" rx="12" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/><path d="M11 16 L47 42 L83 16" fill="none" stroke="#DCE8FB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="34" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="58" cy="48" r="7" fill="#fff" stroke="#2B5FB8" stroke-width="2"/><circle cx="37" cy="50" r="3.3" fill="#0F1F45"/><circle cx="61" cy="50" r="3.3" fill="#0F1F45"/><path d="M26 38 l14 2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M52 37 q6 -6 13 -1" fill="none" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/><path d="M41 60 l10 -2" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/></g><line x1="92" y1="62" x2="83" y2="75" stroke="#2B5FB8" stroke-width="6" stroke-linecap="round"/><circle cx="96" cy="50" r="13" fill="#DCE8FB" fill-opacity=".6" stroke="#2B5FB8" stroke-width="4"/></svg></span><div class="gbar"><div class="lbl"><span>찾은 위험한 행동</span><span id="found" role="status">0 / ${total}</span></div><div class="track"><i id="gfill"></i></div></div></div>
+      <div class="grid" id="grid">${cards.map((a, i) => `<button class="blk" data-i="${i}">${esc(a[0])}</button>`).join("")}</div>
+      <div class="row" id="gameDone" hidden><p style="font-weight:700;color:var(--navy);align-self:center">위험한 행동을 모두 찾았어요! 이유를 읽어 보고 넘어가요.</p><button class="btn" id="gameNext">다음</button></div>
+    </section>`, 4);
+  $("gameNext").onclick = gameEnd;
+  main.querySelectorAll(".blk").forEach(b => b.onclick = () => {
+    if (b.dataset.done) return;
+    const a = cards[b.dataset.i];
+    if (a[1]) {
+      b.dataset.done = 1; b.classList.add("ok"); found++;
+      b.insertAdjacentHTML("beforeend", `<span class="bd">위험!</span><span class="why">${esc(a[2])}</span>`);
+      $("found").textContent = `${found} / ${total}`; $("gfill").style.width = `${found / total * 100}%`;
+      // 수정 (A 11/20): 다 찾아도 자동으로 넘기지 않는다. 마지막 이유까지 읽고 [다음]을 누르게
+      if (found === total) { $("gameDone").hidden = false; $("gameDone").scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); }
+    } else {
+      b.classList.remove("ng"); void b.offsetWidth; b.classList.add("ng");
+      if (!b.querySelector(".why")) b.insertAdjacentHTML("beforeend", `<span class="why">안전한 행동이에요. ${esc(a[2])}</span>`);
+    }
+  });
+}
+function gameEnd() {
+  render(`
+    <p class="step">개인용 체험 · 게임 훈련 끝</p>
+    <h1 class="title">위험한 행동을 모두 찾았어요</h1>
+    <div class="card done-box"><svg viewBox="0 0 100 76" aria-hidden="true"><g transform="rotate(-7 50 40)"><rect x="5" y="8" width="90" height="62" rx="12" fill="#3B7BE0" stroke="#2B5FB8" stroke-width="3"/><path d="M11 16 L50 43 L89 16" fill="none" stroke="#DCE8FB" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M30 51 q6 -6 12 0 M58 51 q6 -6 12 0" fill="none" stroke="#0F1F45" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="27" cy="59" rx="5" ry="3" fill="#F4A6B5"/><ellipse cx="73" cy="59" rx="5" ry="3" fill="#F4A6B5"/><path d="M44 58 q6 5 12 0" fill="none" stroke="#0F1F45" stroke-width="3" stroke-linecap="round"/></g></svg><p><b style="color:var(--navy)">기억할 한 가지</b><br>메시지가 알려 준 길(링크, 번호, 답장)이 아니라, 내가 직접 찾은 길로 확인해요.</p></div>
+    <div class="row"><button class="btn" id="next">사후 체험 시작</button></div>`, 4);
+  $("next").onclick = () => beginPost($("next"));
+}
+
+/* ----- 사후 체험: 모두, 처음과 반대 세트 (팀 결정 3·8번) ----- */
+function beginPost(btn) {
+  busy(btn, async () => {
+    // 참고: 사전에 푼 카드 번호를 보내면 서버가 그 세트를 확인하고 반대 세트를 준다. 익명 번호는 그대로
+    const d = await post("/api/start", { ...base(), retry: { anon_id: S.anon, answers: S.answers.pre } });
+    Object.assign(S, { phase: "post", round: d.round || 2, cards: d.scenarios, idx: 0 });
+    intro();
+  });
+}
+
+/* =====================================================================
+   4. 결과: 사전·사후 나란히
+   ===================================================================== */
+// 하는 일: 두 점수로 보안 대응 수준을 5단계로 정한다 (B 11/03·11/09, 예전 game.html 그대로)
+const LEVELS = {
+  5: { name: "우수", color: "var(--safe)", head: "보안 대응이 아주 안정적이에요",
+       body: "피싱은 모두 멈추고, 진짜 {work}는 바로 처리하셨어요. 보낸 곳과 요구하는 행동을 보고 판단하는 습관이 잘 자리 잡혀 있어요. 이 기준을 {people}과도 나눠 주세요." },
+  4: { name: "양호", color: "var(--accent)", head: "피싱은 모두 막으셨어요. 판단을 조금만 더 다듬어 보세요",
+       body: "피싱은 모두 막으셨고, 진짜 {work} {stuck}건은 확인하느라 잠시 멈췄어요. 요구하는 행동이 안전한 메시지는 바로 처리하셔도 괜찮아요." },
+  3: { name: "보통", color: "var(--caution)", head: "기본적인 대응은 잘하고 계세요. 몇 가지만 더 챙기면 좋아요",
+       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. {risk} 아래 내용을 함께 살펴보시면 좋아요." },
+  2: { name: "보완 권장", color: "var(--caution)", head: "몇 가지 대응 습관을 함께 보완해 보면 좋겠어요",
+       body: "피싱 {ptotal}개 중 {missed}개는 놓치셨어요. 비슷한 메시지는 실제로도 자주 오니, 아래 내용을 한 번 확인해 보세요." },
+  1: { name: "집중 연습 권장", color: "var(--danger)", head: "이번 체험을 계기로 대응 방법을 차근차근 익혀 보세요",
+       body: "이번에는 피싱을 막지 못하셨어요. 처음에는 누구나 헷갈릴 수 있어요. 아래 내용을 확인하시면 다음에는 훨씬 쉽게 가려내실 수 있어요." }
+};
+const FIX = [[/기관|사칭/, "기관이나 회사 이름이 보여도 믿지 말고, 공식 앱이나 대표번호로 직접 확인하기"],
+  [/도메인|주소/, "주소를 한 글자씩 읽고 진짜 주소와 비교하기"],
+  [/압박|심리/, "'오늘 중', '불이익'처럼 서두르게 하는 말이 보이면 일단 멈추기"],
+  [/연쇄/, "앱 설치나 정보 입력을 요구하면 첫 단계에서 멈추기"]];
+function levelHTML(r) {
+  const org = S.mode === "org";
+  const pt = r.phishing_total, pb = r.phishing_blocked, missed = pt - pb, stuck = r.normal_total - r.normal_handled;
+  const lv = missed === 0 ? (stuck === 0 ? 5 : 4) : pb === 0 ? 1 : pb / pt >= 0.5 ? 3 : 2;
+  const L = LEVELS[lv], work = org ? "업무" : "메시지";
+  let body = L.body.replace("{stuck}", stuck).replace("{ptotal}", pt).replace("{missed}", missed).replace("{work}", work)
+    .replace("{people}", org ? "동료분들" : "주변 사람들")
+    .replace("{risk}", org ? "실제 업무에서는 한 번의 클릭이 회사 계정이나 자료와 이어질 수 있어서," : "실제로는 한 번의 클릭이 계정이나 돈과 이어질 수 있어서,");
+  if (lv <= 3 && stuck > 0) body += ` 진짜 ${work} ${stuck}건은 확인하느라 잠시 멈췄어요.`;
+  const fixes = [];
+  (r.weak_types || []).forEach(t => { const f = FIX.find(([re]) => re.test(t)); if (f && !fixes.includes(f[1])) fixes.push(f[1]); });
+  if (missed > 0 && !fixes.length) fixes.push("돈·개인정보·로그인·앱 설치를 요구하면 시간이 걸려도 멈추고 확인하기");
+  if (stuck > 0) fixes.push(`돈·개인정보·로그인·앱 설치를 요구하지 않는 ${org ? "평소 업무" : "평범한 메시지"}는 바로 처리하기`);
+  const meter = [1, 2, 3, 4, 5].map(n => `<i class="${n <= lv ? "on" : ""}"></i>`).join("");
+  return `<section class="level" style="--lv:${L.color}" aria-label="나의 보안 대응 수준 ${L.name}">
+    <div class="lv-top"><span>나의 보안 대응 수준: <b>${L.name}</b></span><span class="lv-meter" aria-hidden="true">${meter}</span></div>
+    <h2>${esc(L.head)}</h2><p>${esc(body)}</p>` +
+    (fixes.length ? `<p><b>함께 살펴볼 부분</b></p><ul>${fixes.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : "") +
+    (org ? `<p class="lv-note">이 결과는 이름 없이 익명으로 모여, 회사가 직군별로 약한 부분을 찾아 다음 보안 교육에 반영하는 데 쓰여요.</p>` : "") + `</section>`;
+}
+// 하는 일: 사전과 비교해 칭찬 한 줄 + 다음 할 일 한 줄 (A 11/02·11/03, 예전 game.html). 칭찬은 실제 점수에서만 고른다
+function againLine(pv, r) {
+  const better = r.phishing_blocked > pv.phishing_blocked || r.normal_handled > pv.normal_handled;
+  const worse = r.phishing_blocked < pv.phishing_blocked || r.normal_handled < pv.normal_handled;
+  const work = S.mode === "org" ? "업무" : "메시지";
+  const allOk = r.phishing_blocked === r.phishing_total && r.normal_handled === r.normal_total;
+  const good = r.phishing_blocked > 0 ? `처음 보는 피싱 ${r.phishing_blocked}개를 막아 냈어요.`
+             : r.normal_handled > 0 ? `진짜 ${work} ${r.normal_handled}개는 망설이지 않고 처리했어요.` : "끝까지 두 번 체험한 것만으로도 큰 연습이 됐어요.";
+  if (allOk) return [better ? "만점! 사전보다 확실히 나아졌어요." : "사후에도 만점이에요!", "처음 보는 문제에서도 배운 판단 기준을 그대로 썼어요. 실제로도 이렇게 멈추고 확인하면 돼요."];
+  if (better && !worse) return [`사전보다 나아졌어요! ${good}`, "남은 문제는 아래 \"내가 한 일\"에서 한 번만 더 살펴보면 충분해요."];
+  if (worse && !better) return [`이번 문제가 더 까다로웠나 봐요. 그래도 ${good}`, "새 수법은 누구에게나 어려워요. 속은 문제의 해설에서 번호 표시만 다시 봐 두면 다음엔 막을 수 있어요."];
+  if (r.phishing_blocked > pv.phishing_blocked) return ["피싱은 사전보다 더 막았어요!", `다만 진짜 ${work}도 더 멈췄어요. 돈·개인정보·로그인·앱 설치를 요구하지 않으면 바로 처리해도 돼요.`];
+  if (r.normal_handled > pv.normal_handled) return [`${work}는 사전보다 빠르게 처리했어요!`, "다만 피싱을 더 놓쳤어요. 돈·개인정보·로그인·앱 설치를 요구하면 멈추고 따로 확인하세요."];
+  return [`사전과 같은 결과예요. ${good}`, "처음 보는 문제라 쉽지 않았을 거예요. 속은 문제의 해설에서 번호 표시만 다시 봐 두세요."];
+}
+
+function result() {
+  markDone();   // 이 기기에서 체험 완료 표시 (다음 체험은 device_repeat로 기록)
+  const a = S.res.pre, b = S.res.post;
+  const row = (lbl, n, t, cls) => `<div class="pp ${cls}"><span>${lbl}</span><span class="track"><i style="width:${t ? n / t * 100 : 0}%"></i></span><b>${n}/${t}</b></div>`;
+  const [head, tip] = againLine(a, b);
+  const work = S.mode === "org" ? "업무" : "메시지";
+  const harms = [...S.log.pre, ...S.log.post].filter(l => l && l.harm).map(l => l.harm);
+  const logs = [["사전", S.log.pre], ["사후", S.log.post]];
+  const late = S.late.pre + S.late.post, all = S.answers.pre.length + S.answers.post.length;
+  const jc = S.mode === "org" ? a.job_compare : null;   // 같은 직군 비교는 사전(1회차) 기준 (관리자 통계와 같은 기준)
+  let side = levelHTML(b);
+  let fold = "";   // 수정 (A 11/20): 결과를 한눈에 보이게 아래 내용은 접는다 (B 11/03 결과 구조는 그대로, 빼지 않음)
+  if (harms.length) fold += `<div class="harm" role="note"><b>실제였다면 이런 일이 일어났어요</b><ul>${harms.map(h => `<li>${esc(h)}</li>`).join("")}</ul></div>`;
+  if (b.over_suspicion > 0) fold += `<p class="slow-box">사후 체험에서 확인하느라 ${work}가 ${b.over_suspicion}번 늦어졌어요. 보낸 곳과 요구하는 행동(돈·개인정보·로그인·앱 설치)을 먼저 보고, 그래도 애매할 때 확인하세요.</p>`;
+  render(`
+    <p class="step">${modeName()} 체험 · 결과</p>
+    <h1 class="title">체험을 모두 마쳤어요</h1>
+    <p class="headline">${esc(head)}</p><p class="muted">${esc(tip)}</p>
+    ${(() => {
+      // 하는 일: 나의 성취도 = 사후 맞힌 수 - 사전 맞힌 수 (맞힌 수 = 막은 피싱 + 처리한 업무). 교수님 피드백 11/20
+      const pre = a.phishing_blocked + a.normal_handled, post = b.phishing_blocked + b.normal_handled;
+      const tot = a.phishing_total + a.normal_total, tot2 = b.phishing_total + b.normal_total, g = post - pre;
+      // 수정 (A 11/23): 사전·사후 모두 만점이면 "성취도 0" 대신 축하 문구 (참여자들이 0을 보고 헷갈려 함). 통계에는 그대로 0으로 들어간다
+      if (pre === tot && post === tot2) return `<div class="verdict-big good gain-card"><span class="ico" aria-hidden="true">✓</span><div><b>사전·사후 모두 만점!</b><span class="sub">처음부터 끝까지 정확하게 판단했어요. 이미 잘하고 있어서 더 오를 점수가 없었어요. (맞힌 문제 ${pre}/${tot} → ${post}/${tot2})</span></div></div>`;
+      const cls = g > 0 ? "good" : g < 0 ? "bad" : "wait";
+      return `<div class="verdict-big ${cls} gain-card"><span class="ico" aria-hidden="true">${g > 0 ? "▲" : g < 0 ? "▼" : "="}</span><div><b>나의 성취도 ${g > 0 ? "+" : ""}${g}</b><span class="sub">맞힌 문제 사전 ${pre}/${tot} → 사후 ${post}/${tot2} (막은 피싱 + 처리한 업무)</span></div></div>`;
+    })()}
+    <div class="result">
+      <div>
+        <section class="score"><h3>막은 피싱</h3><p>피싱을 잘 멈췄나요?</p>
+          ${row("사전", a.phishing_blocked, a.phishing_total, "pre")}${row("사후", b.phishing_blocked, b.phishing_total, "post")}</section>
+        <section class="score"><h3>처리한 업무</h3><p>정상 메시지까지 의심하지 않고 잘 처리했나요?</p>
+          ${row("사전", a.normal_handled, a.normal_total, "pre")}${row("사후", b.normal_handled, b.normal_total, "post")}</section>
+        <section class="score"><h3>시간 안에 고른 문제</h3><p>문자 ${LIMIT.sms}초, 메일 ${LIMIT.email}초 안에 골랐나요? (점수에는 들어가지 않아요)</p>
+          ${row("사전", S.answers.pre.length - S.late.pre, S.answers.pre.length, "pre")}${row("사후", S.answers.post.length - S.late.post, S.answers.post.length, "post")}</section>
+      </div>
+      <div style="display:grid;gap:1.2rem">${side}</div>
+    </div>
+    <details class="detail" style="margin-top:1.4rem"><summary>내가 한 일과 실제였다면 (문제별로 보기)</summary>
+    <div style="display:grid;gap:1rem;margin-top:.6rem">${fold}</div>
+    <h2 class="sub-h">내가 한 일</h2>
+    ${logs.map(([n, list]) => `<p class="log-h">${n} 체험</p><ul class="mylog">${list.filter(Boolean).map(l => {
+      const [m, t] = l.kind === "ok" ? ["✓", l.phishing ? "막았어요" : "바로 처리했어요"] : l.kind === "slow" ? ["△", `정상인데 멈춰서 ${work === "업무" ? "업무가" : "할 일이"} 늦어졌어요`] : ["✕", "속았어요"];
+      return `<li><span class="mark ${l.kind}" aria-hidden="true">${m}</span><div>${esc(l.what)}<small>내 선택: ${esc(l.did)} · ${t}</small>${l.harm ? `<small class="harm-line">→ ${esc(l.harm)}</small>` : ""}</div></li>`;
+    }).join("")}</ul>`).join("")}
+    ${jc && typeof jc.avg === "number" && typeof jc.mine === "number" ? (() => {
+      const avg = Math.round(jc.avg * 100), mine = Math.round(jc.mine * 100);
+      const bar = (label, v, me) => `<div class="cmp-row${me ? " me" : ""}"><span>${label}</span><span class="track"><i class="fill" style="width:${Math.max(v, 1)}%"></i></span><span class="val">${v}%</span></div>`;
+      return `<h2 class="sub-h">같은 직군과 비교한 오답률 (사전 체험)</h2><div class="cmp" role="img" aria-label="같은 직군 평균 오답률 ${avg}%, 내 오답률 ${mine}%">${bar("같은 직군 평균", avg, false)}${bar("나", mine, true)}</div>
+        <p class="muted" style="font-size:.88rem;margin-top:.4rem">${mine < avg ? "같은 직군 평균보다 덜 속았어요." : mine > avg ? "같은 직군 평균보다 더 속았어요." : "같은 직군 평균과 같아요."}</p>`;
+    })() : ""}
+    </details>
+    ${(b.tips || []).length ? `<h2 class="sub-h">이렇게 해 보세요</h2><ul class="list">${b.tips.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ul>` : ""}
+    <details class="detail" style="margin-top:1.2rem"><summary>자세히 보기</summary>
+      <p>${esc(a.gap_message)}</p>
+      <p class="muted">자신감 ${a.confidence}점 (사전질문)</p>
+      ${S.chainResult ? `<p>연쇄형 연습: ${esc(chainLine(S.chainResult))}</p>` : ""}
+      <p class="note">익명 번호 ${esc(S.anon)}</p>
+    </details>
+    <div class="more"><span>더 알아보기:</span>
+      <a href="/check" target="_blank" rel="noopener">링크 검사</a>
+      <a href="/manual" target="_blank" rel="noopener">대응 매뉴얼</a></div>
+    <div class="row"><a class="btn sub" href="/">처음으로</a></div>`, 6);
+}
+
+/* =====================================================================
+   메뉴, 시작
+   ===================================================================== */
 const side = $("side"), menuBtn = $("menuBtn");
 const setMenu = open => { side.classList.toggle("open", open); menuBtn.setAttribute("aria-expanded", String(open)); };
 menuBtn.onclick = () => setMenu(!side.classList.contains("open"));
 document.addEventListener("click", e => { if (side.classList.contains("open") && !side.contains(e.target) && e.target !== menuBtn) setMenu(false); });
 document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+
+// 하는 일: 주소 끝 꼬리표로 어느 체험인지 정한다 (흐름 문서 6번: game?mode=personal / game?mode=org). 없으면 고르기 화면
+const qm = new URLSearchParams(location.search).get("mode");
+["personal", "org"].includes(qm) ? start(qm) : choose();
 </script>
 </body>
 </html>
