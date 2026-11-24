@@ -396,12 +396,12 @@ function end() {
         <div class="card box"><h2>오늘 배운 것</h2><p class="muted" style="margin-bottom:.3rem">헷갈린 문자</p>${lessons}</div>
         <div class="card box"><h2>잡은 피싱 수법</h2>${tags}</div>
       </div>
-      <div class="card box"><h2>내 최고 기록</h2><p><b>${myBest}점</b>${newBest ? " (새 최고 기록!)" : ""}</p></div>
+      <div class="card box"><h2 id="besth" style="user-select:none">내 최고 기록</h2><p><b>${myBest}점</b>${newBest ? " (새 최고 기록!)" : ""}</p><div id="teambox"></div></div>
       <div class="card box" id="rankbox"><h2>순위표</h2><p class="muted">불러오는 중이에요...</p></div>
       <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
       <p class="muted">[다시 하기]로 이어서 도전하면, 내 최고 점수만 순위표에 올라가요.</p>
     </div>`;
-  show("res"); $("again").onclick = start; rankFlow(sc, gameToken, ev.slice());
+  show("res"); $("again").onclick = start; rankFlow(sc, gameToken, ev.slice()); teamDoor();
 }
 // ===== 순위표 (A 11/24, 서버 약속 11번) =====
 // 하는 일: 별명이 있으면 이번 점수를 바로 올리고, 없으면 순위표와 별명 칸을 보여 준다. 별명은 이 기기에 기억한다
@@ -436,6 +436,33 @@ function rankFlow(score, token, events) {
   rankGame = { score, token, events };
   if (rankNick()) return rankSend();
   fetch("/api/rank").then(r => r.json()).then(d => { rankList = d; rankRender(d, true); }).catch(() => rankRender(null));
+}
+// ===== 제작팀 기록 올리기 (A 11/25, 서버 약속 13번) =====
+// 하는 일: 결과 화면 "내 최고 기록" 제목을 3초 안에 7번 누르면 회사 코드 칸이 나온다. 맞으면 이번 판을 제작팀 기록으로 올린다
+// 이유: 전시 날 기록이 쉽게 깨지면 A가 어디서든 바로 올리려고 (A 아이디어, 카페 키오스크 관리자 입구처럼). 관람객 화면에는 안 보인다
+// 참고: 숨은 입구는 편의일 뿐, 지키는 것은 회사 코드와 틀린 시도 막기다. 점수는 서버가 다시 계산한 값만 쓴다
+function teamDoor() {
+  const h = $("besth"); if (!h) return; let n = 0, first = 0;
+  h.onclick = () => {
+    const now = Date.now(); if (now - first > 3000) { first = now; n = 0; }
+    if (++n < 7 || $("tcode")) return;
+    $("teambox").innerHTML = `<div class="nickrow"><input id="tcode" type="password" autocomplete="off" placeholder="회사 코드"><button class="btn" id="tgo">제작팀 기록으로</button></div><p class="muted" id="tmsg" style="margin-top:.4rem"></p>`;
+    $("tgo").onclick = teamSend;
+  };
+}
+function teamSend() {
+  const code = $("tcode").value, msg = $("tmsg"); if (!code) return;
+  if (!rankGame || !rankGame.token) { msg.textContent = "이번 판은 올릴 수 없어요."; return; }
+  msg.textContent = "확인하는 중이에요...";
+  fetch("/api/rank/team", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ company_code: code, player: gamePlayer(), token: rankGame.token, events: rankGame.events }) })
+    .then(r => r.json()).then(d => {
+      if (d.error) { msg.textContent = d.error; return; }
+      if (!d.ready) { msg.textContent = "지금은 올릴 수 없어요."; return; }
+      msg.textContent = d.updated ? `제작팀 기록이 ${d.score}점으로 바뀌었어요.` : `이번 판(${d.score}점)이 지금 제작팀 기록(${d.team.score}점 ${d.team.acc}%)보다 높지 않아서 그대로예요.`;
+      $("tcode").value = "";
+      if (d.updated) fetch("/api/rank").then(r => r.json()).then(x => rankRender(x, !rankNick())).catch(() => {});
+    }).catch(() => { msg.textContent = "서버에 연결하지 못했어요."; });
 }
 // 다시 온 사람 환영 (A 11/24): 같은 기기로 다시 오면 별명과 내 최고 기록을 보여 준다
 (function welcome() {
