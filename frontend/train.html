@@ -146,6 +146,8 @@ main:focus { outline: none; }
 .c .m { font-size: .92rem; line-height: 1.4; font-weight: 500; }
 .c.ok { background: var(--blue); color: #fff; } .c.ok .f { color: #DCE8FB; } .c.ok .f::before { background: #fff; }
 .c.ng { animation: shk .3s; }
+/* 수정 (A 11/24): 틀리면 0.5초 동안 카드가 흐려지고 안 눌린다 (막 누르기 막기) */
+.g-lock .c:not(.ng) { opacity: .5; transition: opacity .1s; }
 .c.gone { opacity: 0; transform: scale(.7); transition: all .18s; }
 .c.in { animation: pin .25s; }
 .c .why { position: absolute; inset: 0; color: #fff; font-size: .82rem; line-height: 1.45; padding: .7rem .8rem; display: flex; align-items: center; font-weight: 500; }
@@ -286,6 +288,13 @@ const D=[
 ["친구", "어제 찍은 사진 단톡방에 올렸어", 0, 3, "링크 없이 알려 주는 문자예요", ""]];
 const T = 60, LIFE = 8, $ = id => document.getElementById(id), g = $("g");
 let sc, cb, best, tm, run = false, iv, taps, okc, lvl, caught, wrong, lost, queue, retry;
+// 수정 (A 11/24): 막 누르기 막기. 아무거나 빨리 누르면 정확하게 하는 사람보다 점수가 높게 나왔다 (틀려도 5점만 깎여서)
+//   틀리면 지금 단계 x 10점을 깎고 (맞히면 얻는 만큼 잃게), 0.5초 동안 카드를 못 누르게 한다
+const LOCK_MS = 500;
+// 수정 (A 11/24): 콤보 배수. 이어서 맞힐수록 점수가 크게 오르게 (예전에는 콤보마다 2점씩만 더함)
+//   3콤보 x1.5, 5콤보 x2, 10콤보 x3 (가운데에 "콤보!"가 뜨는 순간과 맞춤). 3배에서 멈춘다
+const MULT = c => c >= 10 ? 3 : c >= 5 ? 2 : c >= 3 ? 1.5 : 1;
+let lockUntil = 0;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function show(id) { ["st", "play", "res"].forEach(x => $(x).hidden = x !== id); window.scrollTo(0, 0); }
 
@@ -306,20 +315,21 @@ function swap(b, n) { if (b._d[2] === 0) settle(b); b.replaceWith(n); }
 function ensure() { const ts = [...g.children]; const rk = ts.filter(x => x._d[2] === 1 && !x._busy).length;
   if (rk < 2) { const dec = ts.filter(x => x._d[2] === 0 && !x._busy && !x._re); for (let i = 0; i < 2 - rk && i < dec.length; i++) swap(dec[i], mk(true)); } }
 function fill() { g.innerHTML = ""; for (let i = 0; i < 8; i++) g.appendChild(mk()); ensure(); }
-function upd() { $("s").innerHTML = `${sc}<small>점</small>`; const c = $("cb"); if (cb > 1) { c.textContent = cb + " 콤보"; c.style.opacity = 1; } else c.style.opacity = 0; }
+function upd() { $("s").innerHTML = `${sc}<small>점</small>`; const c = $("cb"); if (cb > 1) { c.textContent = cb + " 콤보" + (MULT(cb) > 1 ? " ×" + MULT(cb) : ""); c.style.opacity = 1; } else c.style.opacity = 0; }
 function hit(b) {
-  if (!run || b._busy) return; const d = b._d; taps++; b._busy = 1;
+  if (!run || b._busy || Date.now() < lockUntil) return; const d = b._d; taps++; b._busy = 1;
   if (d[2]) {
-    cb++; okc++; best = Math.max(best, cb); sc += 10 * d[3] + (cb > 1 ? (cb - 1) * 2 : 0); caught.push(d); b.classList.add("ok");
+    cb++; okc++; best = Math.max(best, cb); sc += Math.round(10 * d[3] * MULT(cb)); caught.push(d); b.classList.add("ok");
     SFX.hit(cb); if (MILE(cb)) popCombo(cb);
     const cbEl = $("cb"); cbEl.classList.remove("bump"); void cbEl.offsetWidth; cbEl.classList.add("bump");
     b.insertAdjacentHTML("beforeend", `<span class="bd">${esc(d[5])}!</span>`);
     setTimeout(() => b.classList.add("gone"), 420); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 600);
   } else {
-    cb = 0; sc = Math.max(0, sc - 5); SFX.wrong();
+    const pen = 10 * lvl; cb = 0; sc = Math.max(0, sc - pen); SFX.wrong();
+    lockUntil = Date.now() + LOCK_MS; g.classList.add("g-lock"); setTimeout(() => g.classList.remove("g-lock"), LOCK_MS);
     if (b._re) { const r = retry.find(x => x.d === d && x.st === 0); if (r) r.st = -1; }
     else { wrong.push(d); if (!retry.find(x => x.d === d)) { retry.push({ d: d, st: 0 }); queue.push({ d: d, at: tm - 12 }); } }
-    b.classList.add("ng"); b.insertAdjacentHTML("beforeend", `<span class="why r">정상 문자예요. ${esc(d[4])}</span>`);
+    b.classList.add("ng"); b.insertAdjacentHTML("beforeend", `<span class="why r">정상 문자예요 (-${pen}점). ${esc(d[4])}</span>`);
     setTimeout(() => b.classList.add("gone"), 1500); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 1680);
   }
   upd();
@@ -336,7 +346,7 @@ function setLv(n) { lvl = n; [...$("lv").querySelectorAll("i")].forEach((x, i) =
 function refreshSome() { const dec = [...g.children].filter(x => x._d[2] === 0 && !x._busy && (x._t - tm) >= 5);
   if (dec.length) swap(dec[Math.floor(Math.random() * dec.length)], mk()); ensure(); }
 function start() {
-  sc = 0; cb = 0; best = 0; tm = T; taps = 0; okc = 0; caught = []; wrong = []; lost = []; queue = []; retry = []; run = true; setLv(1);
+  sc = 0; cb = 0; best = 0; lockUntil = 0; g.classList.remove("g-lock"); tm = T; taps = 0; okc = 0; caught = []; wrong = []; lost = []; queue = []; retry = []; run = true; setLv(1);
   show("play"); fill(); upd(); $("tt").textContent = tm + "초"; $("tbar").classList.remove("late"); $("bar").style.width = "100%";
   iv = setInterval(() => {
     tm--; $("tt").textContent = tm + "초"; $("bar").style.width = (tm / T * 100) + "%";
@@ -348,9 +358,13 @@ function start() {
 }
 function uniq(a) { return [...new Map(a.map(d => [d[0] + d[1], d])).values()]; }
 function end() {
-  run = false; clearInterval(iv); $("cb").style.opacity = 0; SFX.end(); [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
+  run = false; clearInterval(iv); $("cb").style.opacity = 0; $("pop").classList.remove("on"); SFX.end(); [...g.children].forEach(b => { if (b._d[2] === 0 && !b._busy) settle(b); });
   const acc = taps ? Math.round(okc / taps * 100) : 0; const rd = retry.filter(x => x.st !== 0), rok = rd.filter(x => x.st === 1).length;
   sendLog({ score: sc, caught: caught.length, lost: lost.length, wrong: wrong.length, taps, retry_total: rd.length, retry_ok: rok, best_combo: best });
+  // 수정 (A 11/24): 내 최고 기록 (이 기기에 저장). 다시 도전하고 싶게 하려고. 저장이 안 되면 이번 점수만 보여 준다
+  let myBest = sc, newBest = false;
+  try { const prev = parseInt(localStorage.getItem("cp_game_best") || "0", 10) || 0;
+    newBest = sc > prev && prev > 0; myBest = Math.max(prev, sc); localStorage.setItem("cp_game_best", String(myBest)); } catch (e) { /* 저장 안 되면 넘어감 */ }
   const top = uniq(wrong.concat(lost)).slice(0, 3);
   const lessons = top.length ? top.map(d => `<p class="it"><b>${esc(d[0])} · ${esc(d[1])}</b> (${d[2] ? "피싱" : "정상"})<br>${esc(d[4])}</p>`).join("") : `<p class="it">헷갈린 문자가 없었어요!</p>`;
   const by = {}; caught.forEach(d => { by[d[5]] = (by[d[5]] || 0) + 1; });
@@ -366,8 +380,9 @@ function end() {
         <div class="card box"><h2>오늘 배운 것</h2><p class="muted" style="margin-bottom:.3rem">헷갈린 문자</p>${lessons}</div>
         <div class="card box"><h2>잡은 피싱 수법</h2>${tags}</div>
       </div>
-      <div class="card box"><h2>순위표</h2><p class="muted">순위표는 준비 중이에요.</p></div>
+      <div class="card box"><h2>내 최고 기록</h2><p><b>${myBest}점</b>${newBest ? " (새 최고 기록!)" : ""}</p><p class="muted" style="margin-top:.5rem">순위표는 준비 중이에요.</p></div>
       <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
+      <p class="muted">[다시 하기]로 이어서 도전하면 내 최고 기록이 이어져요.</p>
     </div>`;
   show("res"); $("again").onclick = start;
 }
@@ -407,8 +422,10 @@ setMuted(MUTED);
 // 하는 일: 3, 5, 10, 15, 20... 콤보마다 팡파르와 큰 글씨 (보통 게임처럼 콤보를 강조)
 const MILE = c => c === 3 || c === 5 || (c >= 10 && c % 5 === 0);
 function popCombo(c) {
-  const p = $("pop"); p.textContent = `${c} 콤보${"!".repeat(c >= 10 ? 3 : c >= 5 ? 2 : 1)}`;
+  const p = $("pop"); p.textContent = `${c} 콤보${"!".repeat(c >= 10 ? 3 : c >= 5 ? 2 : 1)} ×${MULT(c)}`;
   p.classList.remove("on"); void p.offsetWidth; p.classList.add("on"); SFX.fanfare();
+  // 수정 (A 11/24): "동작 줄이기"를 켠 기기는 애니메이션이 없어 글자가 끝까지 남았다 (체험자 제보). 0.9초 뒤 직접 지운다
+  clearTimeout(popCombo.t); popCombo.t = setTimeout(() => p.classList.remove("on"), 900);
 }
 
 // 하는 일: 한 판이 끝나면 숫자만 서버에 보낸다 (서버 약속 10번, 장부와 다른 표, A 11/20)
