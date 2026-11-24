@@ -173,6 +173,16 @@ main:focus { outline: none; }
 .it:first-of-type { border-top: 0; }
 .mt { display: inline-block; font-size: .82rem; font-weight: 700; background: var(--point); color: var(--navy); border: 2px solid var(--navy); border-radius: 999px; padding: 0 .65rem; margin: .2rem .35rem .2rem 0; }
 .muted { color: var(--muted); font-size: .9rem; }
+/* 순위표 (A 11/24) */
+.rk { list-style: none; margin: .3rem 0 0; padding: 0; }
+.rk li { display: flex; gap: .6rem; align-items: baseline; padding: .45rem .2rem; border-top: 2px dashed var(--line); overflow-wrap: anywhere; }
+.rk li b { min-width: 1.8rem; color: var(--navy); }
+.rk li span { flex: 1; }
+.rk li.me { background: var(--point); border-radius: 10px; }
+.rk li .tag { font-size: .75rem; color: var(--muted); margin-left: .3rem; }
+.newtop { font-family: var(--title); font-size: 1.6rem; color: var(--navy); background: var(--point); border: var(--bw) solid var(--navy); border-radius: 14px; padding: .4rem .9rem; display: inline-block; margin-bottom: .5rem; }
+.nickrow { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+.nickrow input { flex: 1; min-width: 10rem; border: var(--bw) solid var(--navy); border-radius: 12px; padding: .55rem .8rem; background: var(--paper); }
 .row { display: flex; gap: .7rem; flex-wrap: wrap; }
 </style>
 </head>
@@ -380,11 +390,38 @@ function end() {
         <div class="card box"><h2>오늘 배운 것</h2><p class="muted" style="margin-bottom:.3rem">헷갈린 문자</p>${lessons}</div>
         <div class="card box"><h2>잡은 피싱 수법</h2>${tags}</div>
       </div>
-      <div class="card box"><h2>내 최고 기록</h2><p><b>${myBest}점</b>${newBest ? " (새 최고 기록!)" : ""}</p><p class="muted" style="margin-top:.5rem">순위표는 준비 중이에요.</p></div>
+      <div class="card box"><h2>내 최고 기록</h2><p><b>${myBest}점</b>${newBest ? " (새 최고 기록!)" : ""}</p></div>
+      <div class="card box" id="rankbox"><h2>순위표</h2><p class="muted">불러오는 중이에요...</p></div>
       <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
-      <p class="muted">[다시 하기]로 이어서 도전하면 내 최고 기록이 이어져요.</p>
+      <p class="muted">[다시 하기]로 이어서 도전하면, 내 최고 점수만 순위표에 올라가요.</p>
     </div>`;
-  show("res"); $("again").onclick = start;
+  show("res"); $("again").onclick = start; rankFlow(sc);
+}
+// ===== 순위표 (A 11/24, 서버 약속 11번) =====
+// 하는 일: 별명이 있으면 이번 점수를 바로 올리고, 없으면 순위표와 별명 칸을 보여 준다. 별명은 이 기기에 기억한다
+// 참고: 별명과 점수는 화면에 넣을 때 esc()로 바꿔서, 코드가 들어 있어도 글자로만 보인다
+function rankRender(d, form) {
+  const box = $("rankbox"); if (!box) return;
+  if (!d || !d.ready) { box.innerHTML = `<h2>순위표</h2><p class="muted">순위표를 불러오지 못했어요.</p>`; return; }
+  const list = d.top.map((r, i) => `<li class="${r.me ? "me" : ""}"><b>${i + 1}</b><span>${esc(r.nick)}${r.team ? `<span class="tag">기록 깨기 도전!</span>` : ""}</span><strong>${r.score}점</strong></li>`).join("");
+  box.innerHTML = `<h2>순위표</h2>${d.new_top ? `<div class="newtop">새 1등!</div>` : ""}<ol class="rk">${list}</ol>` +
+    (form ? `<p class="muted" style="margin-top:.7rem">별명을 정하면 이번 점수가 순위표에 올라가요.</p>
+      <div class="nickrow"><input id="nick" maxlength="10" placeholder="별명 (10자까지)"><button class="btn" id="nickgo">올리기</button></div>`
+      : `<p class="muted" style="margin-top:.6rem">별명: ${esc(rankNick())} <button class="back-btn" id="nickch" style="margin:0 0 0 .4rem">별명 바꾸기</button></p>`);
+  if (form) $("nickgo").onclick = () => { const v = $("nick").value.trim(); if (!v) return; try { localStorage.setItem("cp_game_nick", v); } catch (e) { /* 넘어감 */ } rankSend(); };
+  else $("nickch").onclick = () => { try { localStorage.removeItem("cp_game_nick"); } catch (e) { /* 넘어감 */ } rankRender(d, true); };
+}
+function rankNick() { try { return localStorage.getItem("cp_game_nick") || ""; } catch (e) { return ""; } }
+let rankScore = 0;
+function rankSend() {
+  fetch("/api/rank", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ player: gamePlayer(), nick: rankNick(), score: rankScore }) })
+    .then(r => r.json()).then(d => rankRender(d, false)).catch(() => rankRender(null));
+}
+function rankFlow(score) {
+  rankScore = score;
+  if (rankNick()) return rankSend();
+  fetch("/api/rank").then(r => r.json()).then(d => rankRender(d, true)).catch(() => rankRender(null));
 }
 // ===== 소리 (A 11/23) =====
 // 하는 일: 게임처럼 "뿅" 소리를 브라우저가 직접 만들어 낸다 (웹 오디오, 소리 파일 없음)
@@ -432,16 +469,22 @@ function popCombo(c) {
 // 이유: 게임의 교육 효과(틀렸다가 다시 나온 문자를 맞힌 비율, 판을 거듭할수록 정확도)를 시범 운영 숫자로 보여 주려고
 // 참고: 이 기기에서만 쓰는 익명 게임 번호(G+6자리)와 몇 번째 판인지를 브라우저에 남긴다. 이름·별명은 보내지 않는다.
 //       저장이 안 되는 브라우저(사생활 보호 모드 등)에서는 번호를 판마다 새로 만들고, 보내기가 실패해도 화면은 그대로
-function sendLog(nums) {
-  let player = null, playNo = 1;
+// 수정 (A 11/24): 게임 번호 만들기를 따로 뺐다. 순위표도 같은 번호를 쓴다
+let tmpPlayer = null;
+function gamePlayer() {
+  const mkId = () => "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
   try {
-    player = localStorage.getItem("cp_game_player");
-    if (!/^G[0-9A-F]{6}$/.test(player || "")) { player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase(); localStorage.setItem("cp_game_player", player); }
+    let p = localStorage.getItem("cp_game_player");
+    if (!/^G[0-9A-F]{6}$/.test(p || "")) { p = mkId(); localStorage.setItem("cp_game_player", p); }
+    return p;
+  } catch (e) { return tmpPlayer || (tmpPlayer = mkId()); }
+}
+function sendLog(nums) {
+  let player = gamePlayer(), playNo = 1;
+  try {
     playNo = Math.min(1000, (parseInt(localStorage.getItem("cp_game_plays") || "0", 10) || 0) + 1);
     localStorage.setItem("cp_game_plays", String(playNo));
-  } catch (e) {
-    player = "G" + Array.from(crypto.getRandomValues(new Uint8Array(3)), b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
-  }
+  } catch (e) { /* 저장 안 되면 1번째 판으로 */ }
   try {
     fetch("/api/train-log", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
       body: JSON.stringify({ player, play_no: playNo, ...nums }) }).catch(() => {});
