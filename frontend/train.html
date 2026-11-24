@@ -305,6 +305,9 @@ const LOCK_MS = 500;
 //   3콤보 x1.5, 5콤보 x2, 10콤보 x3 (가운데에 "콤보!"가 뜨는 순간과 맞춤). 3배에서 멈춘다
 const MULT = c => c >= 10 ? 3 : c >= 5 ? 2 : c >= 3 ? 1.5 : 1;
 let lockUntil = 0;
+// 수정 (A 11/24, 작품 보안 점검 막기): 순위표 점수는 서버가 다시 계산한다. 그래서 "언제 어떤 카드를 눌렀는지"를 모아 보낸다
+//   ev: [시작 뒤 밀리초, 카드 번호(놓침은 -1), 그때 단계]. 시작할 때 서버에서 시작표(token)를 받는다
+let t0 = 0, ev = [], gameToken = null;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function show(id) { ["st", "play", "res"].forEach(x => $(x).hidden = x !== id); window.scrollTo(0, 0); }
 
@@ -327,7 +330,7 @@ function ensure() { const ts = [...g.children]; const rk = ts.filter(x => x._d[2
 function fill() { g.innerHTML = ""; for (let i = 0; i < 8; i++) g.appendChild(mk()); ensure(); }
 function upd() { $("s").innerHTML = `${sc}<small>점</small>`; const c = $("cb"); if (cb > 1) { c.textContent = cb + " 콤보" + (MULT(cb) > 1 ? " ×" + MULT(cb) : ""); c.style.opacity = 1; } else c.style.opacity = 0; }
 function hit(b) {
-  if (!run || b._busy || Date.now() < lockUntil) return; const d = b._d; taps++; b._busy = 1;
+  if (!run || b._busy || Date.now() < lockUntil) return; const d = b._d; taps++; b._busy = 1; ev.push([Date.now() - t0, D.indexOf(d), lvl]);
   if (d[2]) {
     cb++; okc++; best = Math.max(best, cb); sc += Math.round(10 * d[3] * MULT(cb)); caught.push(d); b.classList.add("ok");
     SFX.hit(cb); if (MILE(cb)) popCombo(cb);
@@ -346,7 +349,7 @@ function hit(b) {
 }
 function expire() {
   [...g.children].forEach(b => { if (b._d[2] === 1 && !b._busy && (b._t - tm) >= LIFE) {
-    b._busy = 1; cb = 0; lost.push(b._d); SFX.miss();
+    b._busy = 1; cb = 0; lost.push(b._d); SFX.miss(); ev.push([Date.now() - t0, -1, lvl]);
     b.insertAdjacentHTML("beforeend", `<span class="why y">놓쳤어요! ${esc(b._d[5])}: ${esc(b._d[4])}</span>`);
     setTimeout(() => b.classList.add("gone"), 1400); setTimeout(() => { b.replaceWith(mk()); ensure(); }, 1580);
   } }); upd();
@@ -356,7 +359,10 @@ function setLv(n) { lvl = n; [...$("lv").querySelectorAll("i")].forEach((x, i) =
 function refreshSome() { const dec = [...g.children].filter(x => x._d[2] === 0 && !x._busy && (x._t - tm) >= 5);
   if (dec.length) swap(dec[Math.floor(Math.random() * dec.length)], mk()); ensure(); }
 function start() {
-  sc = 0; cb = 0; best = 0; lockUntil = 0; g.classList.remove("g-lock"); tm = T; taps = 0; okc = 0; caught = []; wrong = []; lost = []; queue = []; retry = []; run = true; setLv(1);
+  sc = 0; cb = 0; best = 0; lockUntil = 0; g.classList.remove("g-lock"); tm = T;
+  t0 = Date.now(); ev = []; gameToken = null;
+  fetch("/api/train-start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ player: gamePlayer() }) })
+    .then(r => r.json()).then(d => { gameToken = d.token || null; }).catch(() => {}); taps = 0; okc = 0; caught = []; wrong = []; lost = []; queue = []; retry = []; run = true; setLv(1);
   show("play"); fill(); upd(); $("tt").textContent = tm + "초"; $("tbar").classList.remove("late"); $("bar").style.width = "100%";
   iv = setInterval(() => {
     tm--; $("tt").textContent = tm + "초"; $("bar").style.width = (tm / T * 100) + "%";
@@ -395,34 +401,52 @@ function end() {
       <div class="row"><button class="btn" id="again">다시 하기</button><a class="btn sub" href="/">처음으로</a></div>
       <p class="muted">[다시 하기]로 이어서 도전하면, 내 최고 점수만 순위표에 올라가요.</p>
     </div>`;
-  show("res"); $("again").onclick = start; rankFlow(sc);
+  show("res"); $("again").onclick = start; rankFlow(sc, gameToken, ev.slice());
 }
 // ===== 순위표 (A 11/24, 서버 약속 11번) =====
 // 하는 일: 별명이 있으면 이번 점수를 바로 올리고, 없으면 순위표와 별명 칸을 보여 준다. 별명은 이 기기에 기억한다
 // 참고: 별명과 점수는 화면에 넣을 때 esc()로 바꿔서, 코드가 들어 있어도 글자로만 보인다
-function rankRender(d, form) {
+function rankRender(d, form, msg) {
   const box = $("rankbox"); if (!box) return;
-  if (!d || !d.ready) { box.innerHTML = `<h2>순위표</h2><p class="muted">순위표를 불러오지 못했어요.</p>`; return; }
-  const list = d.top.map((r, i) => `<li class="${r.me ? "me" : ""}"><b>${i + 1}</b><span>${esc(r.nick)}${r.team ? `<span class="tag">기록 깨기 도전!</span>` : ""}</span><strong>${r.score}점</strong></li>`).join("");
+  if (!d || !d.ready) { box.innerHTML = `<h2>순위표</h2><p class="muted">${esc(msg || "순위표를 불러오지 못했어요.")}</p>`; return; }
+  const list = d.top.map((r, i) => `<li class="${r.me ? "me" : ""}"><b>${i + 1}</b><span>${esc(r.nick)}${r.team ? `<span class="tag">기록 깨기 도전!</span>` : ""}</span><strong>${r.score}점 <small class="muted" style="font-weight:500">${r.acc}%</small></strong></li>`).join("");
   box.innerHTML = `<h2>순위표</h2>${d.new_top ? `<div class="newtop">새 1등!</div>` : ""}<ol class="rk">${list}</ol>` +
-    (form ? `<p class="muted" style="margin-top:.7rem">별명을 정하면 이번 점수가 순위표에 올라가요.</p>
-      <div class="nickrow"><input id="nick" maxlength="10" placeholder="별명 (10자까지)"><button class="btn" id="nickgo">올리기</button></div>`
-      : `<p class="muted" style="margin-top:.6rem">별명: ${esc(rankNick())} <button class="back-btn" id="nickch" style="margin:0 0 0 .4rem">별명 바꾸기</button></p>`);
-  if (form) $("nickgo").onclick = () => { const v = $("nick").value.trim(); if (!v) return; try { localStorage.setItem("cp_game_nick", v); } catch (e) { /* 넘어감 */ } rankSend(); };
-  else $("nickch").onclick = () => { try { localStorage.removeItem("cp_game_nick"); } catch (e) { /* 넘어감 */ } rankRender(d, true); };
+    (form ? `<p class="muted" style="margin-top:.7rem">별명을 정하면 이번 점수가 순위표에 올라가요. 한 번 정한 별명은 바꿀 수 없어요.</p>
+      <div class="nickrow"><input id="nick" maxlength="10" placeholder="별명 (한글, 영어, 숫자 10자까지)"><button class="btn" id="nickgo">올리기</button></div>
+      ${msg ? `<p class="muted" style="color:var(--danger);margin-top:.4rem">${esc(msg)}</p>` : ""}`
+      : `<p class="muted" style="margin-top:.6rem">별명: ${esc(rankNick())}</p>`);
+  if (form) $("nickgo").onclick = () => { const v = $("nick").value.trim(); if (v) rankSend(v); };
 }
 function rankNick() { try { return localStorage.getItem("cp_game_nick") || ""; } catch (e) { return ""; } }
-let rankScore = 0;
-function rankSend() {
+let rankGame = null, rankList = null;
+function rankSend(nick) {
+  // 하는 일: 시작표와 누른 기록을 보내고, 서버가 다시 계산한 점수로 순위표를 보여 준다
+  // 참고: 별명이 문제면(중복, 쓸 수 없는 글자) 서버가 이유를 알려 주고, 별명 칸을 다시 보여 준다
+  if (!rankGame || !rankGame.token) return rankRender(null, false, "이번 판은 순위표에 올릴 수 없어요. 인터넷 연결을 확인하고 다시 해 주세요.");
   fetch("/api/rank", { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ player: gamePlayer(), nick: rankNick(), score: rankScore }) })
-    .then(r => r.json()).then(d => rankRender(d, false)).catch(() => rankRender(null));
+    body: JSON.stringify({ player: gamePlayer(), token: rankGame.token, events: rankGame.events, nick: nick || rankNick() }) })
+    .then(r => r.json().then(d => ({ ok: r.ok, d })))
+    .then(({ ok, d }) => {
+      if (!ok) { if (!rankNick()) return rankRender(rankList || { ready: true, top: [] }, true, d.error); return rankRender(null, false, d.error); }
+      if (d.nick) { try { localStorage.setItem("cp_game_nick", d.nick); } catch (e) { /* 넘어감 */ } }
+      rankRender(d, false);
+    }).catch(() => rankRender(null));
 }
-function rankFlow(score) {
-  rankScore = score;
+function rankFlow(score, token, events) {
+  rankGame = { score, token, events };
   if (rankNick()) return rankSend();
-  fetch("/api/rank").then(r => r.json()).then(d => rankRender(d, true)).catch(() => rankRender(null));
+  fetch("/api/rank").then(r => r.json()).then(d => { rankList = d; rankRender(d, true); }).catch(() => rankRender(null));
 }
+// 다시 온 사람 환영 (A 11/24): 같은 기기로 다시 오면 별명과 내 최고 기록을 보여 준다
+(function welcome() {
+  try {
+    const n = localStorage.getItem("cp_game_nick"), b = parseInt(localStorage.getItem("cp_game_best") || "0", 10) || 0;
+    if (!n && !b) return;
+    const p = document.createElement("p"); p.className = "newtop"; p.style.cssText = "font-size:1.05rem;margin-top:.8rem";
+    p.textContent = n ? `다시 오셨네요! ${n} 님, 내 최고 기록 ${b}점` : `다시 오셨네요! 내 최고 기록 ${b}점`;
+    document.querySelector("#st .title").after(p);
+  } catch (e) { /* 넘어감 */ }
+})();
 // ===== 소리 (A 11/23) =====
 // 하는 일: 게임처럼 "뿅" 소리를 브라우저가 직접 만들어 낸다 (웹 오디오, 소리 파일 없음)
 // 참고: 폰은 사용자가 먼저 눌러야 소리를 낼 수 있어서 [시작하기]를 누를 때 소리 장치를 켠다. 끄면 이 기기에 기억한다
