@@ -55,6 +55,14 @@ except Exception as e:  # noqa: BLE001
     print("feedback 불러오기 실패:", type(e).__name__)
     make_tips = None
 
+# 관리자 틀린 시도 막기 (A 11/24, 작품 보안 점검): 불러오기에 실패해도 회사 코드 검사는 그대로 한다
+try:
+    from admin_guard import locked_seconds, record_fail, record_success  # noqa: E402
+    GUARD_READY = True
+except Exception as e:  # noqa: BLE001
+    print("관리자 막기 코드 불러오기 실패:", type(e).__name__)
+    GUARD_READY = False
+
 # 관리자 통계 계산 코드 (C의 stats.py)
 # 하는 일: 장부 기록 목록을 관리자 화면용 숫자로 바꾸는 compute_stats를 불러온다
 # 이유: 서버 약속 5번 (/api/admin/stats)
@@ -732,13 +740,50 @@ def check_url():
 # ───────── 관리자 (서버 약속 5, 6번) ─────────
 # 회사 코드는 Vercel 환경 변수 COMPANY_CODE에만 둔다. 저장소·문서에 코드 값을 적지 않는다.
 
+def _client_ip():
+    # 하는 일: 접속한 곳(IP)을 찾는다. Vercel이 붙여 주는 x-real-ip를 먼저 쓴다
+    # 참고: x-forwarded-for는 맨 앞 값만 쓴다. 다시 공격 때 이 머리말을 바꿔 보내 우회되는지 확인한다
+    ip = request.headers.get("x-real-ip") or (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    return ip or request.remote_addr or "unknown"
+
+
+def _locked_reply(sec):
+    mins = max(1, -(-sec // 60))   # 남은 분 (올림)
+    res = jsonify({"error": f"여러 번 틀려서 잠시 막혔습니다. {mins}분 뒤 다시 시도해 주세요."})
+    res.headers["Retry-After"] = str(sec)
+    return res, 429
+
+
 def _check_company_code(data):
+    # 수정 (A 11/24, 작품 보안 점검): 틀린 시도를 막는다. 5번 틀리면 10분, 다시 잠길 때마다 두 배 (admin_guard.py)
+    #   잠긴 동안은 맞는 코드도 받지 않는다. 그래야 잠긴 동안 계속 맞혀 보는 공격이 의미가 없다
+    #   막기 기록(DB)에 문제가 생기면 막기만 건너뛰고 회사 코드 검사는 그대로 한다 (관리자 화면이 멈추지 않게)
     expected = os.environ.get("COMPANY_CODE")
     if not expected:
         return jsonify({"error": "관리자 화면이 아직 설정되지 않았습니다. (회사 코드 미설정)"}), 503
+    ip = _client_ip()
+    if GUARD_READY:
+        try:
+            left = locked_seconds(ip)
+            if left:
+                return _locked_reply(left)
+        except Exception as e:  # noqa: BLE001
+            print("관리자 막기 확인 실패:", type(e).__name__)
     given = data.get("company_code")
     if not isinstance(given, str) or not hmac.compare_digest(given, expected):
+        if GUARD_READY:
+            try:
+                left = record_fail(ip)
+                if left:
+                    return _locked_reply(left)
+            except Exception as e:  # noqa: BLE001
+                print("관리자 막기 기록 실패:", type(e).__name__)
         return jsonify({"error": "회사 코드가 맞지 않습니다."}), 401
+    if GUARD_READY:
+        try:
+            record_success(ip)
+        except Exception as e:  # noqa: BLE001
+            print("관리자 막기 초기화 실패:", type(e).__name__)
     return None
 
 
