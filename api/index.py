@@ -6,6 +6,7 @@
 # 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
 # 9(연쇄형 연습): /api/practice. 사전과 사후 사이 연습 카드를 준다 (A 11/19). 1번은 mode(personal/org)를 보내면 새 흐름(세트 A·B, 사후는 반대 세트)
 # 10(자유 훈련 기록): /api/train-log. 한 판 끝난 숫자를 장부와 다른 표에 남긴다 (A 11/20)
+# 11(순위표): /api/rank. GET은 위 10명, POST는 점수와 별명을 받아 한 사람 한 줄 최고 점수로 올린다 (A 11/24)
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -54,6 +55,14 @@ try:
 except Exception as e:  # noqa: BLE001
     print("feedback 불러오기 실패:", type(e).__name__)
     make_tips = None
+
+# 자유 훈련 순위표 (A 11/24): 불러오기에 실패하면 순위표만 "준비 중"으로 보이고 게임은 그대로 돈다
+try:
+    from rank import submit as rank_submit, top as rank_top  # noqa: E402
+    RANK_READY = True
+except Exception as e:  # noqa: BLE001
+    print("순위표 코드 불러오기 실패:", type(e).__name__)
+    RANK_READY = False
 
 # 관리자 틀린 시도 막기 (A 11/24, 작품 보안 점검): 불러오기에 실패해도 회사 코드 검사는 그대로 한다
 try:
@@ -472,6 +481,57 @@ def train_log():
     except Exception as e:  # noqa: BLE001
         print("게임 기록 저장 실패:", type(e).__name__, str(e)[:120])
         return jsonify({"logged": False})
+
+
+# ───────── 순위표 (서버 약속 11번, A 11/24) ─────────
+# 제작팀 기록: 표(rankings)에 넣지 않고 여기 둔다. 지워지거나 덮이지 않게. 바꿀 때는 이 숫자만 고친다
+# 참고: 실제로 낸 점수만 쓴다 (A가 11/24 바뀐 규칙으로 시험한 최고 기록). 전시 전에 다시 하면 갱신
+TEAM_RECORD = {"nick": "캐치피싱 제작팀", "score": 1735}
+
+
+def _rank_list(me=None):
+    # 하는 일: 표의 위 10명과 제작팀 기록을 합쳐 높은 점수 순 10명을 돌려준다. 다른 사람의 게임 번호는 보내지 않는다
+    rows = [{"nick": TEAM_RECORD["nick"], "score": TEAM_RECORD["score"], "team": True}]
+    rows += [{"nick": r["nick"], "score": r["score"], "me": r["player"] == me} for r in rank_top(10)]
+    rows.sort(key=lambda r: -r["score"])   # 같은 점수면 제작팀, 그다음 먼저 낸 사람이 위 (넘어야 1등)
+    return rows[:10]
+
+
+@app.get("/api/rank")
+def rank_get():
+    if not RANK_READY:
+        return jsonify({"ready": False})
+    try:
+        return jsonify({"ready": True, "top": _rank_list()})
+    except Exception as e:  # noqa: BLE001
+        print("순위표 불러오기 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"ready": False})
+
+
+@app.post("/api/rank")
+def rank_post():
+    # 서버 약속 11번: 한 판 끝난 점수와 별명을 받아 순위표에 올린다 (한 사람 한 줄, 최고 점수만)
+    # 받는 것: player(게임 번호), nick(별명), score
+    # 돌려주는 것: {"ready": true, "best": 내 최고, "new_top": 이번에 1등이 되었는지, "top": 위 10명}
+    # 참고 (작품 보안 점검, 막기 전): 지금은 화면이 보낸 점수와 별명을 그대로 믿는다. 점수 조작과 별명 칸 점검 뒤 막는다
+    data = request.get_json(silent=True) or {}
+    player, nick, score = data.get("player"), data.get("nick"), data.get("score")
+    if not (isinstance(player, str) and GAME_ID.match(player)):
+        return bad("게임 번호가 올바르지 않습니다.")
+    if not isinstance(nick, str) or not nick.strip() or len(nick) > 200:
+        return bad("별명이 올바르지 않습니다.")
+    if not (isinstance(score, int) and not isinstance(score, bool) and score >= 0):
+        return bad("점수가 올바르지 않습니다.")
+    if not RANK_READY:
+        return jsonify({"ready": False})
+    try:
+        before = max([TEAM_RECORD["score"]] + [r["score"] for r in rank_top(1)])
+        out = rank_submit(player, nick.strip(), score)
+        return jsonify({"ready": True, "best": out["best"], "new_top": out["improved"] and score > before,
+                        "top": _rank_list(player)})
+    except Exception as e:  # noqa: BLE001
+        print("순위표 저장 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"ready": False})
 
 
 @app.post("/api/answer")
