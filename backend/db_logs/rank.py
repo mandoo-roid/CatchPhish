@@ -123,3 +123,42 @@ def claim_token(nonce: str) -> bool:
         return ok
     finally:
         conn.close()
+
+
+# ── 제작팀 기록 (A 11/25): 관리자 회사 코드로 결과 화면에서 바로 올린다 ──
+TEAM_SQL = """
+CREATE TABLE IF NOT EXISTS team_record (
+    id      INTEGER PRIMARY KEY,
+    score   INTEGER NOT NULL,
+    acc     INTEGER NOT NULL,
+    updated TEXT NOT NULL
+)
+"""
+
+
+def get_team():
+    """DB에 올린 제작팀 기록 (점수, 정확도 천분율). 없으면 None."""
+    conn, _ = _connect()
+    try:
+        cur = conn.cursor()
+        cur.execute(TEAM_SQL)
+        conn.commit()
+        cur.execute("SELECT score, acc FROM team_record WHERE id = 1")
+        row = cur.fetchone()
+        return (row[0], row[1]) if row else None
+    finally:
+        conn.close()
+
+
+def set_team(score: int, acc: int) -> None:
+    """제작팀 기록을 바꾼다 (높은지 확인은 부르는 쪽에서)."""
+    conn, ph = _connect()
+    try:
+        cur = conn.cursor()
+        cur.execute(TEAM_SQL)
+        cur.execute(f"INSERT INTO team_record (id, score, acc, updated) VALUES (1, {ph}, {ph}, {ph}) "
+                    "ON CONFLICT (id) DO UPDATE SET score = excluded.score, acc = excluded.acc, updated = excluded.updated",
+                    (score, acc, datetime.now(timezone.utc).isoformat()))
+        conn.commit()
+    finally:
+        conn.close()
