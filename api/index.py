@@ -6,7 +6,8 @@
 # 8(연쇄형 단계): /api/chain. 연쇄형 카드의 2·3단계 행동을 받아 다음 단계나 해설을 돌려주고, 끝나면 장부에 한 줄 저장 (A 10/29).
 # 9(연쇄형 연습): /api/practice. 사전과 사후 사이 연습 카드를 준다 (A 11/19). 1번은 mode(personal/org)를 보내면 새 흐름(세트 A·B, 사후는 반대 세트)
 # 10(자유 훈련 기록): /api/train-log. 한 판 끝난 숫자를 장부와 다른 표에 남긴다 (A 11/20)
-# 11(순위표): /api/rank. GET은 위 10명, POST는 점수와 별명을 받아 한 사람 한 줄 최고 점수로 올린다 (A 11/24)
+# 11(순위표): /api/rank. GET은 위 10명, POST는 누른 기록과 별명을 받아 서버가 점수를 다시 계산해 올린다 (A 11/24)
+# 12(게임 시작표): /api/train-start. 서버가 서명한 시작표를 준다. 순위표에 낼 때 필요 (A 11/24)
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -17,6 +18,7 @@ import random
 import re
 import secrets
 import sys
+import time
 
 from flask import Flask, jsonify, request, send_from_directory
 
@@ -58,7 +60,7 @@ except Exception as e:  # noqa: BLE001
 
 # 자유 훈련 순위표 (A 11/24): 불러오기에 실패하면 순위표만 "준비 중"으로 보이고 게임은 그대로 돈다
 try:
-    from rank import submit as rank_submit, top as rank_top  # noqa: E402
+    from rank import submit as rank_submit, top as rank_top, nick_of, other_nicks, claim_token  # noqa: E402
     RANK_READY = True
 except Exception as e:  # noqa: BLE001
     print("순위표 코드 불러오기 실패:", type(e).__name__)
@@ -485,15 +487,123 @@ def train_log():
 
 # ───────── 순위표 (서버 약속 11번, A 11/24) ─────────
 # 제작팀 기록: 표(rankings)에 넣지 않고 여기 둔다. 지워지거나 덮이지 않게. 바꿀 때는 이 숫자만 고친다
-# 참고: 실제로 낸 점수만 쓴다 (A가 11/24 바뀐 규칙으로 시험한 최고 기록). 전시 전에 다시 하면 갱신
-TEAM_RECORD = {"nick": "캐치피싱 제작팀", "score": 2910}
+# 참고: 실제로 낸 점수만 쓴다 (A가 11/24 바뀐 규칙으로 낸 최고 기록). 전시 전에 팀원 기록이 더 높으면 갱신
+TEAM_RECORD = {"nick": "캐치피싱 제작팀", "score": 3240, "acc": 1000}   # acc: 정확도 천분율 (3240점 판은 100%)
+
+# ── 작품 보안 점검 막기 (A 11/24): 점수 조작, 별명 칸 ──
+# 11/24 막기 전 공격: 화면이 보낸 점수와 별명을 서버가 그대로 믿어서 999999점, 200자 별명, 코드 별명, 제작팀 사칭이 모두 올라갔다
+# 막기: (1) 점수는 서버가 다시 계산한다. 게임 시작 때 서버가 서명한 시작표를 주고, 끝나면 화면이 "언제 어떤 카드를 눌렀는지"를 보낸다
+#       (2) 별명은 서버에서 검사한다 (10자, 한글, 영어, 숫자, 띄어쓰기만, 사칭 금지, 다른 사람과 중복 금지, 처음 정하면 고정)
+# 한계: 게임 규칙을 그대로 따르는 자동 프로그램이 실제로 플레이하는 것까지는 막지 못한다 (브라우저에서 도는 게임의 한계).
+#       그래서 전시 1등 선물은 부스에서 플레이를 직접 보고 준다 (운영으로 막기)
+
+def _load_train_cards():
+    # 하는 일: 게임 화면(train.html)의 카드 목록 D를 서버도 읽는다. 카드 목록을 한 곳에만 두려고 (따로 두면 어긋날 수 있음)
+    # 참고: 목록 안의 // 설명 줄은 빼고 읽는다. 읽지 못하면 순위표에 점수를 올릴 수 없다 (게임은 그대로)
+    try:
+        with open(os.path.join(FRONTEND, "train.html"), encoding="utf-8") as f:
+            text = f.read()
+        block = re.search(r"const D=(\[.*?\]\]);", text, re.S).group(1)
+        block = "\n".join(line for line in block.split("\n") if not line.strip().startswith("//"))
+        return json.loads(block)
+    except Exception as e:  # noqa: BLE001
+        print("게임 카드 읽기 실패:", type(e).__name__)
+        return None
+
+
+TRAIN_CARDS = _load_train_cards()
+GAME_SECRET = (os.environ.get("HASH_SECRET") or secrets.token_hex(16)).encode()   # 시작표 서명 열쇠 (장부와 같은 비밀 값)
+MIN_GAP_MS, LOCK_GAP_MS, MAX_TAPS = 100, 450, 120   # 누르기 사이 최소 간격, 틀린 뒤 잠김(0.5초, 여유 50), 한 판 최대 누르기
+RATE_WIN_MS, RATE_MAX = 10000, 25   # 10초 안에 25번 넘게 누르면 사람 속도가 아니라고 본다 (정확한 자동 시험이 10초에 약 14번)
+MULT = lambda c: 3 if c >= 10 else 2 if c >= 5 else 1.5 if c >= 3 else 1   # noqa: E731  (train.html의 콤보 배수와 같다)
+NICK_RE = re.compile(r"^[가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9]+( [가-힣ㄱ-ㅎㅏ-ㅣA-Za-z0-9]+)*$")
+NICK_BANNED = ("제작팀", "관리자", "운영자", "캐치피싱", "catchphish", "admin")
+
+
+def _sign(msg):
+    return hmac.new(GAME_SECRET, msg.encode(), "sha256").hexdigest()[:32]
+
+
+def _now_ms():
+    return int(time.time() * 1000)
+
+
+def _nick_norm(n):
+    return n.replace(" ", "").lower()
+
+
+def _check_nick(nick, player):
+    # 하는 일: 새 별명을 검사한다. 문제가 있으면 (오류 문장, 상태 번호), 없으면 None
+    if not isinstance(nick, str):
+        return "별명이 올바르지 않습니다.", 400
+    nick = nick.strip()
+    if not (1 <= len(nick) <= 10) or not NICK_RE.match(nick):
+        return "별명은 한글, 영어, 숫자로 10자까지 쓸 수 있어요.", 400
+    if any(b in _nick_norm(nick) for b in NICK_BANNED):
+        return "쓸 수 없는 별명이에요. 다른 별명을 써 주세요.", 400
+    if _nick_norm(nick) in {_nick_norm(n) for n in other_nicks(player)}:
+        return "이미 있는 별명이에요. 다른 별명을 써 주세요.", 409
+    return None
+
+
+def _stage_at(t):
+    # 시작 뒤 t밀리초에 될 수 있는 가장 높은 단계 (20초마다 1, 2, 3단계. 시계 차이 1.5초 여유)
+    t += 1500
+    return 1 if t < 20000 else 2 if t < 40000 else 3
+
+
+def _replay_score(events):
+    # 하는 일: 화면이 보낸 기록으로 점수와 정확도(천분율)를 다시 계산한다. 규칙을 어긴 기록이면 None
+    # 수정 (A 11/25): 정확도도 돌려준다 (같은 점수일 때 순위를 가르려고). 정확도 = 잡은 피싱 / 누른 횟수
+    # events: [[시작 뒤 밀리초, 카드 번호(놓침은 -1), 그때 단계], ...] 시간 순서
+    if not isinstance(events, list) or len(events) > 400:
+        return None
+    sc = cb = taps = hits = 0
+    last_t, last_tap, last_wrong, stage = 0, None, None, 1
+    tap_times = []
+    for ev in events:
+        if not (isinstance(ev, list) and len(ev) == 3 and all(isinstance(x, int) and not isinstance(x, bool) for x in ev)):
+            return None
+        t, i, st = ev
+        if t < last_t or t > 180000 or st < stage or st > 3 or st > _stage_at(t):
+            return None   # 시간이 거꾸로 가거나, 단계가 내려가거나, 시간보다 빨리 단계가 오르면 거절
+        last_t, stage = t, st
+        if i == -1:       # 놓친 피싱: 콤보만 끊긴다
+            cb = 0
+            continue
+        if not (0 <= i < len(TRAIN_CARDS)):
+            return None
+        d = TRAIN_CARDS[i]
+        if d[3] > st:
+            return None   # 지금 단계에서 나올 수 없는 어려운 카드
+        if last_tap is not None and t - last_tap < MIN_GAP_MS:
+            return None   # 사람이 누를 수 없는 속도
+        if last_wrong is not None and t - last_wrong < LOCK_GAP_MS:
+            return None   # 틀린 뒤 0.5초 잠김 중에 누름
+        taps += 1
+        tap_times.append(t)
+        if taps > MAX_TAPS or (len(tap_times) > RATE_MAX and t - tap_times[-RATE_MAX - 1] < RATE_WIN_MS):
+            return None   # 너무 많이, 너무 빠르게 계속 누름
+        last_tap = t
+        if d[2] == 1:
+            hits += 1
+            cb += 1
+            sc += round(10 * d[3] * MULT(cb))
+        else:
+            cb = 0
+            sc = max(0, sc - 10 * st)
+            last_wrong = t
+    return sc, (hits * 1000 // taps if taps else 0)
 
 
 def _rank_list(me=None):
     # 하는 일: 표의 위 10명과 제작팀 기록을 합쳐 높은 점수 순 10명을 돌려준다. 다른 사람의 게임 번호는 보내지 않는다
-    rows = [{"nick": TEAM_RECORD["nick"], "score": TEAM_RECORD["score"], "team": True}]
-    rows += [{"nick": r["nick"], "score": r["score"], "me": r["player"] == me} for r in rank_top(10)]
-    rows.sort(key=lambda r: -r["score"])   # 같은 점수면 제작팀, 그다음 먼저 낸 사람이 위 (넘어야 1등)
+    # 수정 (A 11/25): 점수가 같으면 정확도가 높은 사람이 위. 정확도는 % (소수점 버림)로 보여 준다
+    rows = [{"nick": TEAM_RECORD["nick"], "score": TEAM_RECORD["score"], "acc": TEAM_RECORD["acc"], "team": True}]
+    rows += [{"nick": r["nick"], "score": r["score"], "acc": r["acc"], "me": r["player"] == me} for r in rank_top(10)]
+    rows.sort(key=lambda r: (-r["score"], -r["acc"]))   # 둘 다 같으면 제작팀, 그다음 먼저 낸 사람이 위 (넘어야 1등)
+    for r in rows:
+        r["acc"] = r["acc"] // 10
     return rows[:10]
 
 
@@ -508,27 +618,60 @@ def rank_get():
         return jsonify({"ready": False})
 
 
-@app.post("/api/rank")
-def rank_post():
-    # 서버 약속 11번: 한 판 끝난 점수와 별명을 받아 순위표에 올린다 (한 사람 한 줄, 최고 점수만)
-    # 받는 것: player(게임 번호), nick(별명), score
-    # 돌려주는 것: {"ready": true, "best": 내 최고, "new_top": 이번에 1등이 되었는지, "top": 위 10명}
-    # 참고 (작품 보안 점검, 막기 전): 지금은 화면이 보낸 점수와 별명을 그대로 믿는다. 점수 조작과 별명 칸 점검 뒤 막는다
+@app.post("/api/train-start")
+def train_start():
+    # 서버 약속 12번 (A 11/24): 게임을 시작할 때 서버가 서명한 시작표를 준다. 순위표에 낼 때 이 시작표가 있어야 한다
+    # 이유: 시작 시각을 서버가 기억해야 "60초를 실제로 했는지" 확인할 수 있다. 서명이 있어 시작표를 지어낼 수 없다
     data = request.get_json(silent=True) or {}
-    player, nick, score = data.get("player"), data.get("nick"), data.get("score")
+    player = data.get("player")
     if not (isinstance(player, str) and GAME_ID.match(player)):
         return bad("게임 번호가 올바르지 않습니다.")
-    if not isinstance(nick, str) or not nick.strip() or len(nick) > 200:
-        return bad("별명이 올바르지 않습니다.")
-    if not (isinstance(score, int) and not isinstance(score, bool) and score >= 0):
-        return bad("점수가 올바르지 않습니다.")
-    if not RANK_READY:
+    body = f"{player}.{_now_ms()}.{secrets.token_hex(8)}"
+    return jsonify({"token": f"{body}.{_sign(body)}"})
+
+
+@app.post("/api/rank")
+def rank_post():
+    # 서버 약속 11번: 한 판 끝난 기록과 별명을 받아 순위표에 올린다 (한 사람 한 줄, 최고 점수만)
+    # 받는 것: player(게임 번호), token(시작표), events(누른 기록), nick(별명. 이미 정한 사람은 무시)
+    # 돌려주는 것: {"ready": true, "score": 서버가 계산한 점수, "best", "new_top", "nick", "top"}
+    # 수정 (A 11/24, 작품 보안 점검 막기): 화면이 보낸 점수는 받지 않는다. 시작표와 누른 기록으로 서버가 다시 계산한다
+    data = request.get_json(silent=True) or {}
+    player, token, events = data.get("player"), data.get("token"), data.get("events")
+    if not (isinstance(player, str) and GAME_ID.match(player)):
+        return bad("게임 번호가 올바르지 않습니다.")
+    if not RANK_READY or TRAIN_CARDS is None:
         return jsonify({"ready": False})
+    # 1) 시작표 확인: 서명이 맞는지, 이 사람 것인지, 60초가 지났는지, 너무 오래되지 않았는지, 처음 쓰는지
     try:
-        before = max([TEAM_RECORD["score"]] + [r["score"] for r in rank_top(1)])
-        out = rank_submit(player, nick.strip(), score)
-        return jsonify({"ready": True, "best": out["best"], "new_top": out["improved"] and score > before,
-                        "top": _rank_list(player)})
+        p, start, nonce, sig = token.split(".")
+        start = int(start)
+    except Exception:  # noqa: BLE001
+        return bad("게임 기록을 확인할 수 없어요.")
+    if not hmac.compare_digest(sig, _sign(f"{p}.{start}.{nonce}")) or p != player:
+        return bad("게임 기록을 확인할 수 없어요.")
+    age = _now_ms() - start
+    if age < 55000 or age > 30 * 60 * 1000:
+        return bad("게임 기록을 확인할 수 없어요.")
+    # 2) 점수 다시 계산
+    replay = _replay_score(events)
+    if replay is None:
+        return bad("게임 기록을 확인할 수 없어요.")
+    score, acc = replay
+    try:
+        # 3) 별명: 이미 정한 사람은 그 별명 그대로, 처음이면 검사
+        nick = nick_of(player)
+        if nick is None:
+            err = _check_nick(data.get("nick"), player)
+            if err:
+                return jsonify({"error": err[0]}), err[1]
+            nick = data.get("nick").strip()
+        if not claim_token(nonce):
+            return bad("이미 낸 게임이에요.")
+        before = max([(TEAM_RECORD["score"], TEAM_RECORD["acc"])] + [(r["score"], r["acc"]) for r in rank_top(1)])
+        out = rank_submit(player, nick, score, acc)
+        return jsonify({"ready": True, "score": score, "best": out["best"], "nick": out["nick"],
+                        "new_top": out["improved"] and (score, acc) > before, "top": _rank_list(player)})
     except Exception as e:  # noqa: BLE001
         print("순위표 저장 실패:", type(e).__name__, str(e)[:120])
         return jsonify({"ready": False})
