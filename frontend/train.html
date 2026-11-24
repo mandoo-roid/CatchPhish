@@ -320,13 +320,14 @@ function pick(fr) {
 }
 function mk(fr) {
   const d = pick(fr), b = document.createElement("button"); b.className = "c in";
-  b.innerHTML = `<span class="f">${esc(d[0])}</span><span class="m">${esc(d[1])}</span>`; b._d = d; b._t = tm;
+  b.innerHTML = `<span class="f">${esc(d[0])}</span><span class="m">${esc(d[1])}</span>`; b._d = d; b._t = tm; b._life = 9 + Math.floor(Math.random() * 5);
   if (retry.find(x => x.d === d && x.st === 0)) b._re = 1; b.onclick = () => hit(b); return b;
 }
 function settle(b) { if (b._re) { const r = retry.find(x => x.d === b._d && x.st === 0); if (r) r.st = 1; } }
 function swap(b, n) { if (b._d[2] === 0) settle(b); b.replaceWith(n); }
 function ensure() { const ts = [...g.children]; const rk = ts.filter(x => x._d[2] === 1 && !x._busy).length;
-  if (rk < 2) { const dec = ts.filter(x => x._d[2] === 0 && !x._busy && !x._re); for (let i = 0; i < 2 - rk && i < dec.length; i++) swap(dec[i], mk(true)); } }
+  // 수정 (A 11/25): 피싱으로 바꿀 정상 카드를 화면 순서(왼쪽 위부터)가 아니라 무작위로 고른다. 늘 같은 자리에 피싱이 뜨지 않게
+  if (rk < 2) { const dec = ts.filter(x => x._d[2] === 0 && !x._busy && !x._re).sort(() => Math.random() - 0.5); for (let i = 0; i < 2 - rk && i < dec.length; i++) swap(dec[i], mk(true)); } }
 function fill() { g.innerHTML = ""; for (let i = 0; i < 8; i++) g.appendChild(mk()); ensure(); }
 function upd() { $("s").innerHTML = `${sc}<small>점</small>`; const c = $("cb"); if (cb > 1) { c.textContent = cb + " 콤보" + (MULT(cb) > 1 ? " ×" + MULT(cb) : ""); c.style.opacity = 1; } else c.style.opacity = 0; }
 function hit(b) {
@@ -356,8 +357,13 @@ function expire() {
 }
 function toast(m) { const t = $("toast"); t.textContent = m; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 1400); }
 function setLv(n) { lvl = n; [...$("lv").querySelectorAll("i")].forEach((x, i) => x.classList.toggle("on", i < n)); $("lvt").textContent = n + "단계"; }
-function refreshSome() { const dec = [...g.children].filter(x => x._d[2] === 0 && !x._busy && (x._t - tm) >= 5);
-  if (dec.length) swap(dec[Math.floor(Math.random() * dec.length)], mk()); ensure(); }
+// 수정 (A 11/25): 정상 카드도 카드마다 9~13초(무작위) 지나면 새 카드로 바뀐다. 한 번에(1초에) 하나씩만 바꿔 화면이 한꺼번에 바뀌지 않게
+//   (4~8초, 6~10초는 A가 해 보니 너무 빨라서 처음과 그 사이로 조정)
+// 이유: 예전에는 정상 카드가 3초마다 하나씩만 바뀌어 오래 머물고, 새로 바뀌는 자리는 대부분 방금 피싱이 있던 자리였다.
+//   그래서 문자를 안 읽어도 "오래 떠 있는 건 정상, 방금 바뀐 자리는 피싱"으로 고를 수 있었다 (A가 직접 해 보다 발견).
+//   이제 모든 카드가 계속 바뀌어, 바뀐 자리만 보고는 피싱인지 알 수 없다. 새 카드는 피싱일 수도 정상일 수도 있다
+function refreshSome() { const old = [...g.children].filter(x => x._d[2] === 0 && !x._busy && (x._t - tm) >= x._life).sort((a, b) => b._t - a._t);
+  if (old.length) swap(old[0], mk()); ensure(); }   // 가장 오래된 것 하나 (tm은 줄어들어서 _t가 클수록 먼저 뜬 카드)
 function start() {
   sc = 0; cb = 0; best = 0; lockUntil = 0; g.classList.remove("g-lock"); tm = T;
   t0 = Date.now(); ev = []; gameToken = null;
@@ -369,7 +375,7 @@ function start() {
     if (tm === 40) { setLv(2); toast("2단계: 비슷한 문자가 섞여요!"); SFX.level(); }
     if (tm === 20) { setLv(3); toast("3단계: 보낸 곳이 같은 짝 주의!"); $("tbar").classList.add("late"); SFX.level(); }
     if (tm > 0 && tm <= 5) SFX.tick();
-    expire(); if (tm % 3 === 0) refreshSome(); if (tm <= 0) end();
+    expire(); refreshSome(); if (tm <= 0) end();
   }, 1000);
 }
 function uniq(a) { return [...new Map(a.map(d => [d[0] + d[1], d])).values()]; }
