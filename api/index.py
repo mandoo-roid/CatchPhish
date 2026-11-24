@@ -8,6 +8,7 @@
 # 10(자유 훈련 기록): /api/train-log. 한 판 끝난 숫자를 장부와 다른 표에 남긴다 (A 11/20)
 # 11(순위표): /api/rank. GET은 위 10명, POST는 누른 기록과 별명을 받아 서버가 점수를 다시 계산해 올린다 (A 11/24)
 # 12(게임 시작표): /api/train-start. 서버가 서명한 시작표를 준다. 순위표에 낼 때 필요 (A 11/24)
+# 13(제작팀 기록): /api/rank/team. 회사 코드가 맞으면 이번 판(서버가 다시 계산한 점수)을 제작팀 기록으로 올린다 (A 11/25)
 # 7(장부 기록): 2번(/api/answer)에서 채점이 끝나면 C의 ledger_v2.append_record로 장부에 한 줄 저장한다 (A 10/28, 10/30 v2).
 # 결과(3번)는 지금처럼 화면이 보낸 선택 목록으로 서버가 다시 채점한다 (팀 결정 10/28).
 
@@ -60,7 +61,7 @@ except Exception as e:  # noqa: BLE001
 
 # 자유 훈련 순위표 (A 11/24): 불러오기에 실패하면 순위표만 "준비 중"으로 보이고 게임은 그대로 돈다
 try:
-    from rank import submit as rank_submit, top as rank_top, nick_of, other_nicks, claim_token  # noqa: E402
+    from rank import submit as rank_submit, top as rank_top, nick_of, other_nicks, claim_token, get_team, set_team  # noqa: E402
     RANK_READY = True
 except Exception as e:  # noqa: BLE001
     print("순위표 코드 불러오기 실패:", type(e).__name__)
@@ -596,10 +597,23 @@ def _replay_score(events):
     return sc, (hits * 1000 // taps if taps else 0)
 
 
+def _team():
+    # 하는 일: 지금 제작팀 기록. 코드 속 숫자(TEAM_RECORD, 팀원 기록을 캡처로 받아 고침)와
+    #   DB 기록(A가 결과 화면에서 회사 코드로 올림, A 11/25) 중 높은 쪽 (점수, 그다음 정확도)
+    try:
+        db = get_team()
+    except Exception as e:  # noqa: BLE001
+        print("제작팀 기록 읽기 실패:", type(e).__name__)
+        db = None
+    base = (TEAM_RECORD["score"], TEAM_RECORD["acc"])
+    return max(base, db) if db else base
+
+
 def _rank_list(me=None):
     # 하는 일: 표의 위 10명과 제작팀 기록을 합쳐 높은 점수 순 10명을 돌려준다. 다른 사람의 게임 번호는 보내지 않는다
     # 수정 (A 11/25): 점수가 같으면 정확도가 높은 사람이 위. 정확도는 % (소수점 버림)로 보여 준다
-    rows = [{"nick": TEAM_RECORD["nick"], "score": TEAM_RECORD["score"], "acc": TEAM_RECORD["acc"], "team": True}]
+    ts, ta = _team()
+    rows = [{"nick": TEAM_RECORD["nick"], "score": ts, "acc": ta, "team": True}]
     rows += [{"nick": r["nick"], "score": r["score"], "acc": r["acc"], "me": r["player"] == me} for r in rank_top(10)]
     rows.sort(key=lambda r: (-r["score"], -r["acc"]))   # 둘 다 같으면 제작팀, 그다음 먼저 낸 사람이 위 (넘어야 1등)
     for r in rows:
@@ -615,6 +629,56 @@ def rank_get():
         return jsonify({"ready": True, "top": _rank_list()})
     except Exception as e:  # noqa: BLE001
         print("순위표 불러오기 실패:", type(e).__name__, str(e)[:120])
+        return jsonify({"ready": False})
+
+
+def _check_game(player, token, events):
+    # 하는 일: 시작표와 누른 기록을 검사하고 (점수, 정확도, 시작표 번호)를 돌려준다. 문제가 있으면 None
+    # 1) 시작표: 서명이 맞는지, 이 사람 것인지, 60초가 지났는지, 너무 오래되지 않았는지 (처음 쓰는지는 저장 직전에 claim_token)
+    try:
+        p, start, nonce, sig = token.split(".")
+        start = int(start)
+    except Exception:  # noqa: BLE001
+        return None
+    if not hmac.compare_digest(sig, _sign(f"{p}.{start}.{nonce}")) or p != player:
+        return None
+    age = _now_ms() - start
+    if age < 55000 or age > 30 * 60 * 1000:
+        return None
+    # 2) 점수 다시 계산
+    replay = _replay_score(events)
+    return None if replay is None else (replay[0], replay[1], nonce)
+
+
+@app.post("/api/rank/team")
+def rank_team():
+    # 서버 약속 13번 (A 11/25): 결과 화면 숨은 입구(제목 7번 누르기)에서 회사 코드를 넣으면 이번 판을 제작팀 기록으로 올린다
+    # 이유: 전시 날 관람객이 기록을 쉽게 깨면 A가 어디서든(집, 폰) 바로 기록을 올려 난이도를 지키려고 (A 아이디어, 카페 키오스크 관리자 입구처럼)
+    # 참고: 숨은 입구는 편의일 뿐, 지키는 것은 회사 코드와 틀린 시도 막기(관리자 화면과 같은 admin_guard)다.
+    #       점수는 회사 코드가 맞아도 서버가 누른 기록으로 다시 계산한 값만 쓴다. 지금 제작팀 기록보다 높을 때만 바꾼다
+    data = request.get_json(silent=True) or {}
+    err = _check_company_code(data)
+    if err:
+        return err
+    player = data.get("player")
+    if not (isinstance(player, str) and GAME_ID.match(player)):
+        return bad("게임 번호가 올바르지 않습니다.")
+    if not RANK_READY or TRAIN_CARDS is None:
+        return jsonify({"ready": False})
+    checked = _check_game(player, data.get("token"), data.get("events"))
+    if checked is None:
+        return bad("게임 기록을 확인할 수 없어요.")
+    score, acc, nonce = checked
+    try:
+        cur = _team()
+        if (score, acc) <= cur:
+            return jsonify({"ready": True, "updated": False, "score": score, "team": {"score": cur[0], "acc": cur[1] // 10}})
+        if not claim_token(nonce):
+            return bad("이미 낸 게임이에요.")
+        set_team(score, acc)
+        return jsonify({"ready": True, "updated": True, "score": score, "team": {"score": score, "acc": acc // 10}})
+    except Exception as e:  # noqa: BLE001
+        print("제작팀 기록 저장 실패:", type(e).__name__, str(e)[:120])
         return jsonify({"ready": False})
 
 
@@ -642,22 +706,10 @@ def rank_post():
         return bad("게임 번호가 올바르지 않습니다.")
     if not RANK_READY or TRAIN_CARDS is None:
         return jsonify({"ready": False})
-    # 1) 시작표 확인: 서명이 맞는지, 이 사람 것인지, 60초가 지났는지, 너무 오래되지 않았는지, 처음 쓰는지
-    try:
-        p, start, nonce, sig = token.split(".")
-        start = int(start)
-    except Exception:  # noqa: BLE001
+    checked = _check_game(player, token, events)
+    if checked is None:
         return bad("게임 기록을 확인할 수 없어요.")
-    if not hmac.compare_digest(sig, _sign(f"{p}.{start}.{nonce}")) or p != player:
-        return bad("게임 기록을 확인할 수 없어요.")
-    age = _now_ms() - start
-    if age < 55000 or age > 30 * 60 * 1000:
-        return bad("게임 기록을 확인할 수 없어요.")
-    # 2) 점수 다시 계산
-    replay = _replay_score(events)
-    if replay is None:
-        return bad("게임 기록을 확인할 수 없어요.")
-    score, acc = replay
+    score, acc, nonce = checked
     try:
         # 3) 별명: 이미 정한 사람은 그 별명 그대로, 처음이면 검사
         nick = nick_of(player)
@@ -668,7 +720,7 @@ def rank_post():
             nick = data.get("nick").strip()
         if not claim_token(nonce):
             return bad("이미 낸 게임이에요.")
-        before = max([(TEAM_RECORD["score"], TEAM_RECORD["acc"])] + [(r["score"], r["acc"]) for r in rank_top(1)])
+        before = max([_team()] + [(r["score"], r["acc"]) for r in rank_top(1)])
         out = rank_submit(player, nick, score, acc)
         return jsonify({"ready": True, "score": score, "best": out["best"], "nick": out["nick"],
                         "new_top": out["improved"] and (score, acc) > before, "top": _rank_list(player)})
